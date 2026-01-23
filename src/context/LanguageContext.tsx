@@ -69,8 +69,6 @@ const resources = {
       settings_language: 'Language',
       settings_sound: 'Sound',
       settings_haptics: 'Haptics',
-      settings_upgrade: 'Upgrade to Pro',
-      settings_restore: 'Restore Purchases',
     },
   },
   ru: {
@@ -134,8 +132,6 @@ const resources = {
       settings_language: 'Язык',
       settings_sound: 'Звук',
       settings_haptics: 'Вибрация',
-      settings_upgrade: 'Обновить до Pro',
-      settings_restore: 'Восстановить покупки',
     },
   },
   de: {
@@ -199,8 +195,6 @@ const resources = {
       settings_language: 'Sprache',
       settings_sound: 'Ton',
       settings_haptics: 'Haptik',
-      settings_upgrade: 'Auf Pro upgraden',
-      settings_restore: 'Käufe wiederherstellen',
     },
   },
   fr: {
@@ -264,8 +258,6 @@ const resources = {
       settings_language: 'Langue',
       settings_sound: 'Son',
       settings_haptics: 'Haptique',
-      settings_upgrade: 'Passer à Pro',
-      settings_restore: 'Restaurer les achats',
     },
   },
   pt: {
@@ -329,8 +321,6 @@ const resources = {
       settings_language: 'Idioma',
       settings_sound: 'Som',
       settings_haptics: 'Háptico',
-      settings_upgrade: 'Atualizar para Pro',
-      settings_restore: 'Restaurar Compras',
     },
   },
   ja: {
@@ -394,8 +384,6 @@ const resources = {
       settings_language: '言語',
       settings_sound: '音',
       settings_haptics: 'ハプティック',
-      settings_upgrade: 'Proにアップグレード',
-      settings_restore: '購入を復元',
     },
   },
   zh: {
@@ -459,8 +447,6 @@ const resources = {
       settings_language: '语言',
       settings_sound: '声音',
       settings_haptics: '触觉反馈',
-      settings_upgrade: '升级到专业版',
-      settings_restore: '恢复购买',
     },
   },
   ko: {
@@ -524,8 +510,6 @@ const resources = {
       settings_language: '언어',
       settings_sound: '소리',
       settings_haptics: '햅틱 피드백',
-      settings_upgrade: 'Pro로 업그레이드',
-      settings_restore: '구매 복원',
     },
   },
   uk: {
@@ -589,8 +573,6 @@ const resources = {
       settings_language: 'Мова',
       settings_sound: 'Звук',
       settings_haptics: 'Вібрація',
-      settings_upgrade: 'Оновити до Pro',
-      settings_restore: 'Відновити покупки',
     },
   },
   es: {
@@ -641,8 +623,6 @@ const resources = {
       settings_language: 'Idioma',
       settings_sound: 'Sonido',
       settings_haptics: 'Hápticos',
-      settings_upgrade: 'Actualizar a Pro',
-      settings_restore: 'Restaurar Compras',
     },
   },
 };

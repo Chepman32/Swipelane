@@ -21,7 +21,6 @@ import { StackNavigationProp } from '@react-navigation/stack';
 
 import FeedbackService from '../services/FeedbackService';
 import ExportService from '../services/ExportService';
-import IAPService from '../services/IAPService';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import {
@@ -52,7 +51,6 @@ const PreviewScreen: React.FC = () => {
 
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [isExporting, setIsExporting] = useState(false);
-  const [isProUser, setIsProUser] = useState(false);
   const scrollX = useRef(new Animated.Value(0)).current;
   const slideRefs = useRef<View[]>([]);
   const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -64,11 +62,6 @@ const PreviewScreen: React.FC = () => {
   const availableHeight = screenHeight - headerHeight - exportButtonHeight;
   const imageContainerHeight = availableHeight; // Use available height without minimum constraint
 
-  useEffect(() => {
-    IAPService.isPro().then(setIsProUser);
-  }, []);
-
-
   const handleExport = async () => {
     if (isExporting) return;
 
@@ -76,14 +69,10 @@ const PreviewScreen: React.FC = () => {
     setIsExporting(true);
 
     try {
-      // Use the ExportService to handle export with watermark
       const result = await ExportService.exportSlides(
         slides,
         slideRefs.current.map(ref => ({ current: ref })),
         {
-          addWatermark: !isProUser,
-          watermarkText: 'Made with Text to Slides',
-          watermarkPosition: 'bottomRight',
           quality: 0.9,
           format: 'png',
           resolution: 1080,
@@ -215,13 +204,6 @@ const PreviewScreen: React.FC = () => {
           </Text>
           {previewEffects.overlayElements}
         </View>
-
-        {/* Watermark preview for free users */}
-        {!isProUser && (
-          <View style={styles.watermarkPreview}>
-            <Text style={styles.watermarkText}>Made with Text to Slides</Text>
-          </View>
-        )}
       </View>
     );
   };
@@ -310,12 +292,7 @@ const PreviewScreen: React.FC = () => {
             </Text>
           </View>
         ) : (
-          <View>
-            <Text style={styles.exportButtonText}>{t('preview_export')}</Text>
-            {!isProUser && (
-              <Text style={styles.watermarkNotice}>Includes watermark</Text>
-            )}
-          </View>
+          <Text style={styles.exportButtonText}>{t('preview_export')}</Text>
         )}
       </TouchableOpacity>
     </View>
@@ -405,30 +382,10 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#666',
   },
-  watermarkPreview: {
-    position: 'absolute',
-    bottom: 10,
-    right: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-  },
-  watermarkText: {
-    fontSize: 10,
-    color: 'rgba(0, 0, 0, 0.5)',
-    fontStyle: 'italic',
-  },
   exportingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  watermarkNotice: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.8)',
-    marginTop: 2,
-    textAlign: 'center',
   },
 });
 

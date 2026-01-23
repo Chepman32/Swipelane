@@ -14,8 +14,6 @@ import { CameraRoll } from '@react-native-camera-roll/camera-roll';
 import ViewShot, { captureRef } from 'react-native-view-shot';
 import RNFS from 'react-native-fs';
 import { Alert, Platform, PermissionsAndroid, Linking } from 'react-native';
-import { manipulateAsync, SaveFormat } from 'react-native-image-manipulator';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   DEFAULT_SLIDE_FONT_ID,
   getSlideFontByFamily,
@@ -29,9 +27,6 @@ import { isTextEffectSupported } from '../constants/textEffects';
 import TextEffectsEngine from './TextEffectsEngine';
 
 export interface ExportOptions {
-  addWatermark: boolean;
-  watermarkText?: string;
-  watermarkPosition?: 'topLeft' | 'topRight' | 'bottomLeft' | 'bottomRight';
   quality?: number;
   format?: 'png' | 'jpg';
   resolution?: number;
@@ -221,32 +216,14 @@ const applyTextEffectsToCanvas = (
 
 class ExportService {
   private static instance: ExportService;
-  private isProUser: boolean = false;
 
-  private constructor() {
-    this.checkProStatus();
-  }
+  private constructor() {}
 
   static getInstance(): ExportService {
     if (!ExportService.instance) {
       ExportService.instance = new ExportService();
     }
     return ExportService.instance;
-  }
-
-  private async checkProStatus() {
-    try {
-      const proStatus = await AsyncStorage.getItem('proStatus');
-      this.isProUser = proStatus === 'true';
-    } catch (error) {
-      console.error('Error checking pro status:', error);
-      this.isProUser = false;
-    }
-  }
-
-  public setProStatus(isPro: boolean) {
-    this.isProUser = isPro;
-    AsyncStorage.setItem('proStatus', isPro.toString());
   }
 
   private async requestStoragePermission(): Promise<boolean> {
@@ -320,48 +297,12 @@ class ExportService {
     });
   }
 
-  private async addWatermarkToImage(
-    imagePath: string,
-    watermarkText: string = 'Text to Slides',
-    position: string = 'bottomRight',
-  ): Promise<string> {
-    try {
-      // Calculate watermark position
-      const watermarkActions = [];
-
-      // Add semi-transparent background for watermark
-      const watermarkBackground = {
-        overlay: {
-          uri: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
-          position: { x: 0, y: 0 },
-          opacity: 0.5,
-        },
-      };
-
-      // Use image manipulation to add watermark text
-      const watermarkedImage = await manipulateAsync(imagePath, [], {
-        compress: 0.9,
-        format: SaveFormat.PNG,
-      });
-
-      // For now, return the original image path as we need native module for text overlay
-      // In production, you would use a native module or Skia for proper text watermarking
-      return watermarkedImage.uri;
-    } catch (error) {
-      console.error('Error adding watermark:', error);
-      return imagePath;
-    }
-  }
-
   public async exportSlides(
     slides: Slide[],
     viewRefs: React.RefObject<any>[],
     options: ExportOptions = {},
   ): Promise<{ success: boolean; savedPaths: string[]; error?: string }> {
     const {
-      addWatermark = !this.isProUser,
-      watermarkText = 'Made with Text to Slides',
-      watermarkPosition = 'bottomRight',
       quality = 0.9,
       format = 'png',
       resolution = 1080,
@@ -426,28 +367,13 @@ class ExportService {
           // Capture the view
           const uri = await captureRef(viewRef, captureOptions);
 
-          // Add watermark if not Pro user
-          let finalUri = uri;
-          if (addWatermark) {
-            finalUri = await this.addWatermarkToImage(
-              uri,
-              watermarkText,
-              watermarkPosition,
-            );
-          }
-
           // Save to camera roll
-          const savedPath = await CameraRoll.save(finalUri, {
+          const savedPath = await CameraRoll.save(uri, {
             type: 'photo',
             album: 'Text to Slides',
           });
 
           savedPaths.push(savedPath);
-
-          // Clean up temporary file
-          if (uri !== finalUri) {
-            await RNFS.unlink(uri).catch(() => {});
-          }
         } catch (slideError) {
           console.error(`Error exporting slide ${i + 1}:`, slideError);
         }
@@ -484,7 +410,6 @@ class ExportService {
     },
   ): Promise<{ success: boolean; savedPaths: string[]; error?: string }> {
     const savedPaths: string[] = [];
-    const addWatermark = !this.isProUser;
     const textEffectsEngine = TextEffectsEngine.getInstance();
 
     try {
@@ -645,44 +570,6 @@ class ExportService {
           );
         });
 
-        // Add watermark if not Pro
-        if (addWatermark) {
-          const watermarkFont = matchFont({
-            fontFamily: 'System',
-            fontSize: 16,
-            fontWeight: 'normal',
-          });
-          const watermarkPaint = Skia.Paint();
-          watermarkPaint.setColor(Skia.Color('rgba(0, 0, 0, 0.5)'));
-
-          const watermarkText = 'Made with Text to Slides';
-          const textBounds = watermarkFont.getTextBounds(watermarkText);
-
-          let watermarkX = canvasSize.width - textBounds.width - 20;
-          let watermarkY = canvasSize.height - 20;
-
-          // Draw watermark background
-          const watermarkBgPaint = Skia.Paint();
-          watermarkBgPaint.setColor(Skia.Color('rgba(255, 255, 255, 0.7)'));
-
-          const watermarkBgRect = Skia.XYWHRect(
-            watermarkX - 5,
-            watermarkY - textBounds.height - 5,
-            textBounds.width + 10,
-            textBounds.height + 10,
-          );
-          canvas.drawRect(watermarkBgRect, watermarkBgPaint);
-
-          // Draw watermark text
-          canvas.drawText(
-            watermarkText,
-            watermarkX,
-            watermarkY,
-            watermarkPaint,
-            watermarkFont,
-          );
-        }
-
         // Save the image
         const image = surface.makeImageSnapshot();
         const data = image.encodeToBase64('png');
@@ -736,9 +623,6 @@ class ExportService {
     );
   }
 
-  public showUpgradePrompt() {
-    console.log('Upgrade prompt');
-  }
 }
 
 export default ExportService.getInstance();

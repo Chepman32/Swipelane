@@ -105,7 +105,7 @@ const TestScreen: React.FC = () => {
     // Test 5: IAP Service
     try {
       const products = await IAPService.getProducts();
-      const isProStatus = await IAPService.isProUser();
+      const isProStatus = await IAPService.isPro();
       results.push({ name: 'IAP Service', status: 'success' });
     } catch (error) {
       results.push({ name: 'IAP Service', status: 'failed', error: String(error) });

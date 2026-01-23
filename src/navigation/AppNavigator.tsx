@@ -9,7 +9,6 @@ import ImageSelectionScreen from '../screens/ImageSelectionScreen';
 import EditorScreen from '../screens/EditorScreen';
 import PreviewScreen from '../screens/PreviewScreen';
 import SettingsScreen from '../screens/SettingsScreen';
-import UpgradeScreen from '../screens/UpgradeScreen';
 import TextEffectsTestScreen from '../screens/TextEffectsTestScreen';
 
 export type RootStackParamList = {
@@ -19,7 +18,6 @@ export type RootStackParamList = {
   Editor: { text: string; images: string[] };
   Preview: { slides: any[] };
   Settings: undefined;
-  Upgrade: undefined;
   TextEffectsTest: undefined;
 };
 
@@ -94,15 +92,6 @@ const AppNavigator: React.FC = () => {
           options={{
             headerShown: true,
             title: 'Settings',
-            headerBackTitle: 'Back',
-          }}
-        />
-        <Stack.Screen
-          name="Upgrade"
-          component={UpgradeScreen}
-          options={{
-            headerShown: true,
-            title: 'Go Pro',
             headerBackTitle: 'Back',
           }}
         />

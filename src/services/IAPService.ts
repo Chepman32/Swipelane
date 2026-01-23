@@ -170,19 +170,9 @@ class IAPService {
     }
   }
 
-  // Check if user has pro access
+  // Check if user has pro access - app is now completely free
   async isPro(): Promise<boolean> {
-    if (this.purchases.length === 0) {
-      // Try loading from storage
-      const cachedPurchases = await AsyncStorage.getItem('purchases');
-      if (cachedPurchases) {
-        this.purchases = JSON.parse(cachedPurchases);
-      }
-    }
-
-    // Check if any purchase is valid
-    // In production, would validate receipts
-    return this.purchases.length > 0;
+    return true;
   }
 
   // Get active subscription or purchase

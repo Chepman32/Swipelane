@@ -8,7 +8,6 @@ export interface UserPreferences {
   language: Language;
   soundEnabled: boolean;
   hapticsEnabled: boolean;
-  isProUser: boolean;
 }
 
 export const defaultPreferences: UserPreferences = {
@@ -16,7 +15,6 @@ export const defaultPreferences: UserPreferences = {
   language: 'en',
   soundEnabled: true,
   hapticsEnabled: true,
-  isProUser: false,
 };
 
 export const usePreferences = () => {

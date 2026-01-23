@@ -1,29 +1,19 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Alert,
   Modal,
   FlatList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage, Language } from '../context/LanguageContext';
 import { themes, Theme } from '../context/ThemeContext';
 import { usePreferences } from '../hooks/usePreferences';
 import FeedbackService from '../services/FeedbackService';
-import IAPService from '../services/IAPService';
-
-type RootStackParamList = {
-  Upgrade: undefined;
-};
-
-type SettingsScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Upgrade'>;
 
 const languages: { code: Language; name: string; nativeName: string }[] = [
   { code: 'en', name: 'English', nativeName: 'English' },
@@ -39,17 +29,11 @@ const languages: { code: Language; name: string; nativeName: string }[] = [
 ];
 
 const SettingsScreen: React.FC = () => {
-  const navigation = useNavigation<SettingsScreenNavigationProp>();
   const { currentTheme, setTheme, themeDefinition } = useTheme();
   const { currentLanguage, setLanguage, t } = useLanguage();
   const { preferences, updatePreferences } = usePreferences();
 
   const [showLanguageModal, setShowLanguageModal] = React.useState(false);
-  const [isProUser, setIsProUser] = React.useState(false);
-
-  useEffect(() => {
-    IAPService.isPro().then(setIsProUser);
-  }, []);
 
   const handleThemeChange = (theme: Theme) => {
     FeedbackService.buttonTap();
@@ -61,27 +45,6 @@ const SettingsScreen: React.FC = () => {
     setLanguage(language);
     setShowLanguageModal(false);
     FeedbackService.success();
-  };
-
-
-  const handleUpgrade = () => {
-    navigation.navigate('Upgrade');
-  };
-
-  const handleRestorePurchases = async () => {
-    FeedbackService.buttonTap();
-    try {
-      const restored = await IAPService.restorePurchases();
-      if (restored) {
-        setIsProUser(true);
-        Alert.alert('Success', 'Purchases restored successfully!');
-        FeedbackService.success();
-      } else {
-        Alert.alert('No Purchases', 'No previous purchases found.');
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Failed to restore purchases. Please try again.');
-    }
   };
 
   const currentLanguageName = languages.find(l => l.code === currentLanguage)?.nativeName || currentLanguage;
@@ -123,27 +86,6 @@ const SettingsScreen: React.FC = () => {
             {currentLanguageName} ›
           </Text>
         </TouchableOpacity>
-      </View>
-      
-      {/* Upgrade Section */}
-      <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: themeDefinition.colors.text }]}>Premium</Text>
-        {isProUser ? (
-          <View style={styles.proSection}>
-            <Text style={styles.proText}>✓ Pro Version Active</Text>
-            <TouchableOpacity
-              style={[styles.restoreButton, { backgroundColor: themeDefinition.colors.card }]}
-              onPress={handleRestorePurchases}>
-              <Text style={[styles.restoreButtonText, { color: themeDefinition.colors.text }]}>{t('settings_restore')}</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <TouchableOpacity
-            style={[styles.upgradeButton, { backgroundColor: themeDefinition.colors.primary }]}
-            onPress={handleUpgrade}>
-            <Text style={styles.upgradeButtonText}>{t('settings_upgrade')}</Text>
-          </TouchableOpacity>
-        )}
       </View>
       </ScrollView>
 
@@ -255,35 +197,6 @@ const styles = StyleSheet.create({
   settingValue: {
     fontSize: 16,
     color: '#666',
-  },
-  proSection: {
-    alignItems: 'center',
-  },
-  proText: {
-    fontSize: 16,
-    color: '#34C759',
-    fontWeight: 'bold',
-    marginBottom: 15,
-  },
-  upgradeButton: {
-    backgroundColor: '#007AFF',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  upgradeButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  restoreButton: {
-    backgroundColor: '#f0f0f0',
-    padding: 10,
-    borderRadius: 5,
-  },
-  restoreButtonText: {
-    color: '#333',
-    fontSize: 16,
   },
   modalContainer: {
     flex: 1,
