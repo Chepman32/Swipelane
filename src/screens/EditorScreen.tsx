@@ -15,6 +15,8 @@ import {
   ScrollView,
   Platform,
   Alert,
+  TextInput,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -185,9 +187,9 @@ const EditorScreen: React.FC = () => {
   const [isEffectsPaletteVisible, setEffectsPaletteVisible] = useState(false);
   const [activeTextEffectsCategory, setActiveTextEffectsCategory] =
     useState<TextEffectCategory>('lighting'); // Default to "Light & Glow" category which has supported effects
-  const [selectedTextEffectId, setSelectedTextEffectId] = useState<
-    string | null
-  >(null);
+  const [selectedTextEffectId, setSelectedTextEffectId] = useState<string | null>(null);
+  const [isEditingText, setIsEditingText] = useState(false);
+  const [editingText, setEditingText] = useState('');
 
   // Undo/Redo history management
   const [, setHistory] = useState<Slide[][]>([initialSlides]);
@@ -655,11 +657,17 @@ const EditorScreen: React.FC = () => {
 
   const panGesture = Gesture.Pan()
     .onStart(_ => {
+      // Don't start dragging if we're in text editing mode
+      if (isEditingText) return;
+      
       // Store the current position as starting point
       startX.value = translateX.value;
       startY.value = translateY.value;
     })
     .onUpdate(event => {
+      // Don't update position if we're in text editing mode
+      if (isEditingText) return;
+      
       // Calculate new position based on translation from start
       const newX = startX.value + event.translationX;
       const newY = startY.value + event.translationY;
@@ -697,6 +705,9 @@ const EditorScreen: React.FC = () => {
       translateY.value = constrainedY;
     })
     .onEnd(() => {
+      // Don't update position if we're in text editing mode
+      if (isEditingText) return;
+      
       // Update slide position using runOnJS
       runOnJS(updateSlidePosition)(translateX.value, translateY.value);
     })
@@ -1128,6 +1139,37 @@ const EditorScreen: React.FC = () => {
     navigation.navigate('Preview', { slides });
   };
 
+  // Text editing functions
+  const handleStartEditingText = () => {
+    if (currentSlide) {
+      setEditingText(currentSlide.text);
+      setIsEditingText(true);
+      FeedbackService.buttonTap();
+    }
+  };
+
+  const handleFinishEditingText = () => {
+    if (currentSlide && editingText.trim() !== currentSlide.text) {
+      setSlides(prevSlides => {
+        const newSlides = [...prevSlides];
+        const slide = newSlides[currentSlideIndex];
+        slide.text = editingText.trim();
+        addToHistory(newSlides);
+        return newSlides;
+      });
+      setHasUnsavedChanges(true);
+    }
+    setIsEditingText(false);
+    setEditingText('');
+    FeedbackService.buttonTap();
+  };
+
+  const handleCancelEditingText = () => {
+    setIsEditingText(false);
+    setEditingText('');
+    FeedbackService.buttonTap();
+  };
+
   return (
     <View
       style={[
@@ -1204,34 +1246,85 @@ const EditorScreen: React.FC = () => {
                 />
               ) : (
                 <>
-                  {previewEffects.underlayElements.map((element, index) =>
-                    React.cloneElement(element as React.ReactElement, {
-                      key: `${activeFontId}-${index}-${element.key}`,
-                    }),
-                  )}
-                  <Text
-                    style={[
-                      styles.slideText,
-                      {
-                        fontSize: currentSlide.fontSize,
-                        color: currentSlide.color,
-                        textAlign: currentSlide.textAlign,
-                        fontWeight: activeFontOption?.supportsWeightToggle
-                          ? currentSlide.fontWeight
-                          : undefined,
-                        fontFamily: resolvedFontFamily,
-                        lineHeight: currentSlide.fontSize * 1.35,
-                        // Add wrapping to prevent text from overflowing
-                      },
-                      previewEffects.textStyle,
-                    ]}
-                  >
-                    {currentSlide.text}
-                  </Text>
-                  {previewEffects.overlayElements.map((element, index) =>
-                    React.cloneElement(element as React.ReactElement, {
-                      key: `${activeFontId}-overlay-${index}-${element.key}`,
-                    }),
+                  {isEditingText ? (
+                    <KeyboardAvoidingView behavior="padding" style={styles.textEditingContainer}>
+                      <TextInput
+                        style={[
+                          styles.textInput,
+                          {
+                            fontSize: currentSlide.fontSize,
+                            color: currentSlide.color,
+                            textAlign: currentSlide.textAlign,
+                            fontWeight: activeFontOption?.supportsWeightToggle
+                              ? currentSlide.fontWeight
+                              : undefined,
+                            fontFamily: resolvedFontFamily,
+                            lineHeight: currentSlide.fontSize * 1.35,
+                          },
+                        ]}
+                        value={editingText}
+                        onChangeText={setEditingText}
+                        multiline
+                        autoFocus
+                        onBlur={handleFinishEditingText}
+                        onSubmitEditing={handleFinishEditingText}
+                        returnKeyType="done"
+                      />
+                      <View style={styles.textEditingButtons}>
+                        <TouchableOpacity
+                          style={[styles.editButton, styles.cancelButton]}
+                          onPress={handleCancelEditingText}
+                        >
+                          <Text style={styles.editButtonText}>Cancel</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[styles.editButton, styles.saveButton]}
+                          onPress={handleFinishEditingText}
+                        >
+                          <Text style={styles.editButtonText}>Save</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </KeyboardAvoidingView>
+                  ) : (
+                    <View
+                      style={styles.textTouchableArea}
+                    >
+                      <TouchableOpacity
+                        style={styles.textEditTrigger}
+                        onPress={handleStartEditingText}
+                        activeOpacity={0.7}
+                      >
+                        {previewEffects.underlayElements.map((element, index) =>
+                          React.cloneElement(element as React.ReactElement, {
+                            key: `${activeFontId}-${index}-${element.key}`,
+                          }),
+                        )}
+                        <Text
+                          style={[
+                            styles.slideText,
+                            {
+                              fontSize: currentSlide.fontSize,
+                              color: currentSlide.color,
+                              textAlign: currentSlide.textAlign,
+                              fontWeight: activeFontOption?.supportsWeightToggle
+                                ? currentSlide.fontWeight
+                                : undefined,
+                              fontFamily: resolvedFontFamily,
+                              lineHeight: currentSlide.fontSize * 1.35,
+                              // Add wrapping to prevent text from overflowing
+                            },
+                            previewEffects.textStyle,
+                          ]}
+                        >
+                          {currentSlide.text}
+                        </Text>
+                        {previewEffects.overlayElements.map((element, index) =>
+                          React.cloneElement(element as React.ReactElement, {
+                            key: `${activeFontId}-overlay-${index}-${element.key}`,
+                          }),
+                        )}
+                      </TouchableOpacity>
+                    </View>
                   )}
                 </>
               )}
@@ -1307,8 +1400,14 @@ const EditorScreen: React.FC = () => {
       {(isColorPaletteVisible ||
         isOpacityPaletteVisible ||
         isFontPaletteVisible ||
-        isEffectsPaletteVisible) && (
-        <View style={[styles.toolPalette, { top: imageContainerHeight - 160 }]}>
+        isEffectsPaletteVisible) && (() => {
+        // Adjust color and effects palette position to match spacing of font/opacity palettes
+        const paletteTopPosition = (isColorPaletteVisible || isEffectsPaletteVisible)
+          ? imageContainerHeight - 130  // Move color/effects palettes 30px lower
+          : imageContainerHeight - 160; // Standard position for font/opacity
+
+        return (
+        <View style={[styles.toolPalette, { top: paletteTopPosition }]}>
           {isColorPaletteVisible && (
             <ScrollView
               ref={colorPaletteScrollRef}
@@ -1478,7 +1577,8 @@ const EditorScreen: React.FC = () => {
             </View>
           )}
         </View>
-      )}
+        );
+      })()}
 
       {/* Main toolbar - always visible */}
       <View
@@ -2104,6 +2204,57 @@ const styles = StyleSheet.create({
     marginTop: 10,
     color: '#fff',
     textAlign: 'center',
+  },
+
+  // Text editing styles
+  textEditingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 100,
+  },
+  textInput: {
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    borderRadius: 8,
+    padding: 12,
+    minWidth: '80%',
+    maxWidth: '90%',
+    textAlignVertical: 'top',
+  },
+  textEditingButtons: {
+    flexDirection: 'row',
+    marginTop: 16,
+    gap: 12,
+  },
+  editButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 6,
+    minWidth: 80,
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: '#FF3B30',
+  },
+  saveButton: {
+    backgroundColor: '#34C759',
+  },
+  editButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  textTouchableArea: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 60,
+  },
+  textEditTrigger: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 60,
   },
 });
 

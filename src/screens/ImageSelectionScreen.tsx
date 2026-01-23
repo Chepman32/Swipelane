@@ -273,7 +273,10 @@ const ImageSelectionScreen: React.FC = () => {
             </View>
 
             {hasUserMadeChoice[index] ? (
-              <View style={styles.imagePreview}>
+              <TouchableOpacity
+                style={styles.imagePreview}
+                onPress={() => handleSelectImage(index)}
+              >
                 {selectedImages[index] !== '' ? (
                   <Image
                     source={{ uri: selectedImages[index] }}
@@ -287,13 +290,16 @@ const ImageSelectionScreen: React.FC = () => {
                     </Text>
                   </View>
                 )}
-              </View>
+              </TouchableOpacity>
             ) : (
-              <View style={styles.emptyImagePreview}>
+              <TouchableOpacity
+                style={styles.emptyImagePreview}
+                onPress={() => handleSelectImage(index)}
+              >
                 <Text style={styles.emptyImageText}>
                   {t('image_selection_no_image')}
                 </Text>
-              </View>
+              </TouchableOpacity>
             )}
           </View>
         ))}
