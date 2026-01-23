@@ -96,7 +96,8 @@ export type TextEffectType =
   | 'textureOverlay'
   | 'chalk'
   | 'shineSweep'
-  | 'particles';
+  | 'particles'
+  | 'glossy3d';
 
 export interface TextEffectDefinition {
   id: TextEffectType;
@@ -1310,6 +1311,99 @@ export const TEXT_EFFECT_DEFINITIONS: Record<
     ],
     supportsAnimation: true,
   },
+  glossy3d: {
+    id: 'glossy3d',
+    name: 'Glossy 3D',
+    category: 'lighting',
+    layer: 'overlay',
+    description: 'Glossy, embossed text with gradient fill, multiple strokes, and highlight shine.',
+    parameters: [
+      {
+        id: 'fillColorTop',
+        label: 'Fill Top Color',
+        type: 'color',
+        defaultValue: '#FF6B9D',
+      },
+      {
+        id: 'fillColorBottom',
+        label: 'Fill Bottom Color',
+        type: 'color',
+        defaultValue: '#C51162',
+      },
+      {
+        id: 'outerStrokeColor',
+        label: 'Outer Stroke Color',
+        type: 'color',
+        defaultValue: '#000000',
+      },
+      {
+        id: 'outerStrokeWidth',
+        label: 'Outer Stroke Width',
+        type: 'slider',
+        defaultValue: 6,
+        min: 2,
+        max: 12,
+        step: 1,
+      },
+      {
+        id: 'innerStrokeColor',
+        label: 'Inner Stroke Color',
+        type: 'color',
+        defaultValue: '#FFFFFF',
+      },
+      {
+        id: 'innerStrokeWidth',
+        label: 'Inner Stroke Width',
+        type: 'slider',
+        defaultValue: 3,
+        min: 1,
+        max: 8,
+        step: 0.5,
+      },
+      {
+        id: 'highlightIntensity',
+        label: 'Highlight Intensity',
+        type: 'slider',
+        defaultValue: 0.7,
+        min: 0,
+        max: 1,
+        step: 0.05,
+      },
+      {
+        id: 'highlightHeight',
+        label: 'Highlight Height',
+        type: 'slider',
+        defaultValue: 0.25,
+        min: 0.1,
+        max: 0.5,
+        step: 0.05,
+      },
+      {
+        id: 'shadowColor',
+        label: 'Shadow Color',
+        type: 'color',
+        defaultValue: 'rgba(0,0,0,0.4)',
+      },
+      {
+        id: 'shadowOffsetY',
+        label: 'Shadow Offset',
+        type: 'slider',
+        defaultValue: 6,
+        min: 2,
+        max: 20,
+        step: 1,
+      },
+      {
+        id: 'shadowBlur',
+        label: 'Shadow Blur',
+        type: 'slider',
+        defaultValue: 4,
+        min: 0,
+        max: 16,
+        step: 1,
+      },
+    ],
+  },
 };
 
 export const TEXT_EFFECT_CATEGORIES: Array<{
@@ -1359,6 +1453,7 @@ const SUPPORTED_EFFECT_TYPES_INTERNAL: TextEffectType[] = [
   'longShadow',
   'bloom',
   'letterpress',
+  'glossy3d',
 ];
 
 const SUPPORTED_EFFECT_TYPES_SET = new Set<TextEffectType>(

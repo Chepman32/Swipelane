@@ -5,6 +5,7 @@ import { NeonPass } from './passes/neon';
 import { SoftShadowPass } from './passes/softShadow';
 import { LongShadowPass } from './passes/longShadow';
 import { BloomPass } from './passes/bloom';
+import { Glossy3DPass } from './passes/glossy3d';
 
  const getTextWidth = (
    font: import('@shopify/react-native-skia').SkFont,
@@ -221,6 +222,27 @@ export const EffectPipeline = React.forwardRef<
                     threshold={Number(effect.values.threshold)}
                     radius={Number(effect.values.radius)}
                     intensity={Number(effect.values.intensity)}
+                  />
+                );
+              case 'glossy3d':
+                return (
+                  <Glossy3DPass
+                    key={key}
+                    text={line}
+                    x={x}
+                    baselineY={lineBaselineY}
+                    font={font}
+                    fillColorTop={String(effect.values.fillColorTop)}
+                    fillColorBottom={String(effect.values.fillColorBottom)}
+                    outerStrokeColor={String(effect.values.outerStrokeColor)}
+                    outerStrokeWidth={Number(effect.values.outerStrokeWidth)}
+                    innerStrokeColor={String(effect.values.innerStrokeColor)}
+                    innerStrokeWidth={Number(effect.values.innerStrokeWidth)}
+                    highlightIntensity={Number(effect.values.highlightIntensity)}
+                    highlightHeight={Number(effect.values.highlightHeight)}
+                    shadowColor={String(effect.values.shadowColor)}
+                    shadowOffsetY={Number(effect.values.shadowOffsetY)}
+                    shadowBlur={Number(effect.values.shadowBlur)}
                   />
                 );
               default:

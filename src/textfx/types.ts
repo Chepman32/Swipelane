@@ -27,7 +27,8 @@ export type EffectId =
   | 'materialTexture'
   | 'chalkEdge'
   | 'shineStatic'
-  | 'particlesStatic';
+  | 'particlesStatic'
+  | 'glossy3d';
 
 export type EffectParam =
   | {

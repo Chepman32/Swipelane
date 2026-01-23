@@ -15,6 +15,7 @@ export function convertToNewFormat(
     longShadow: 'longShadow',
     bloom: 'bloomHalo',
     letterpress: 'letterpress',
+    glossy3d: 'glossy3d',
   };
 
   const newId = typeMapping[oldEffect.type];
@@ -84,6 +85,7 @@ export function convertToOldFormat(
     longShadow: 'longShadow',
     bloomHalo: 'bloom',
     letterpress: 'letterpress',
+    glossy3d: 'glossy3d',
   };
 
   const oldType = typeMapping[newEffect.id];
