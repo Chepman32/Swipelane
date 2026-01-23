@@ -97,7 +97,8 @@ export type TextEffectType =
   | 'chalk'
   | 'shineSweep'
   | 'particles'
-  | 'glossy3d';
+  | 'glossy3d'
+  | 'chrome3d';
 
 export interface TextEffectDefinition {
   id: TextEffectType;
@@ -1404,6 +1405,96 @@ export const TEXT_EFFECT_DEFINITIONS: Record<
       },
     ],
   },
+  chrome3d: {
+    id: 'chrome3d',
+    name: 'Chrome 3D',
+    category: 'lighting',
+    layer: 'overlay',
+    description: 'Metallic chrome text with deep 3D extrusion and reflective shine.',
+    parameters: [
+      {
+        id: 'metallicLight',
+        label: 'Metallic Light',
+        type: 'color',
+        defaultValue: '#E8E8E8',
+      },
+      {
+        id: 'metallicMid',
+        label: 'Metallic Mid',
+        type: 'color',
+        defaultValue: '#A0A0A0',
+      },
+      {
+        id: 'metallicDark',
+        label: 'Metallic Dark',
+        type: 'color',
+        defaultValue: '#505050',
+      },
+      {
+        id: 'extrusionDepth',
+        label: 'Extrusion Depth',
+        type: 'slider',
+        defaultValue: 10,
+        min: 4,
+        max: 20,
+        step: 1,
+      },
+      {
+        id: 'extrusionColor',
+        label: 'Extrusion Color',
+        type: 'color',
+        defaultValue: '#404040',
+      },
+      {
+        id: 'outerStrokeColor',
+        label: 'Outer Stroke Color',
+        type: 'color',
+        defaultValue: '#303030',
+      },
+      {
+        id: 'outerStrokeWidth',
+        label: 'Outer Stroke Width',
+        type: 'slider',
+        defaultValue: 3,
+        min: 1,
+        max: 8,
+        step: 0.5,
+      },
+      {
+        id: 'innerStrokeColor',
+        label: 'Inner Stroke Color',
+        type: 'color',
+        defaultValue: '#D0D0D0',
+      },
+      {
+        id: 'innerStrokeWidth',
+        label: 'Inner Stroke Width',
+        type: 'slider',
+        defaultValue: 2,
+        min: 0.5,
+        max: 6,
+        step: 0.5,
+      },
+      {
+        id: 'shineIntensity',
+        label: 'Shine Intensity',
+        type: 'slider',
+        defaultValue: 0.6,
+        min: 0,
+        max: 1,
+        step: 0.05,
+      },
+      {
+        id: 'shineAngle',
+        label: 'Shine Angle',
+        type: 'slider',
+        defaultValue: 135,
+        min: 0,
+        max: 360,
+        step: 15,
+      },
+    ],
+  },
 };
 
 export const TEXT_EFFECT_CATEGORIES: Array<{
@@ -1454,6 +1545,7 @@ const SUPPORTED_EFFECT_TYPES_INTERNAL: TextEffectType[] = [
   'bloom',
   'letterpress',
   'glossy3d',
+  'chrome3d',
 ];
 
 const SUPPORTED_EFFECT_TYPES_SET = new Set<TextEffectType>(

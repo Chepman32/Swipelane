@@ -6,6 +6,7 @@ import { SoftShadowPass } from './passes/softShadow';
 import { LongShadowPass } from './passes/longShadow';
 import { BloomPass } from './passes/bloom';
 import { Glossy3DPass } from './passes/glossy3d';
+import { Chrome3DPass } from './passes/chrome3d';
 
  const getTextWidth = (
    font: import('@shopify/react-native-skia').SkFont,
@@ -243,6 +244,27 @@ export const EffectPipeline = React.forwardRef<
                     shadowColor={String(effect.values.shadowColor)}
                     shadowOffsetY={Number(effect.values.shadowOffsetY)}
                     shadowBlur={Number(effect.values.shadowBlur)}
+                  />
+                );
+              case 'chrome3d':
+                return (
+                  <Chrome3DPass
+                    key={key}
+                    text={line}
+                    x={x}
+                    baselineY={lineBaselineY}
+                    font={font}
+                    metallicLight={String(effect.values.metallicLight)}
+                    metallicMid={String(effect.values.metallicMid)}
+                    metallicDark={String(effect.values.metallicDark)}
+                    extrusionDepth={Number(effect.values.extrusionDepth)}
+                    extrusionColor={String(effect.values.extrusionColor)}
+                    outerStrokeColor={String(effect.values.outerStrokeColor)}
+                    outerStrokeWidth={Number(effect.values.outerStrokeWidth)}
+                    innerStrokeColor={String(effect.values.innerStrokeColor)}
+                    innerStrokeWidth={Number(effect.values.innerStrokeWidth)}
+                    shineIntensity={Number(effect.values.shineIntensity)}
+                    shineAngle={Number(effect.values.shineAngle)}
                   />
                 );
               default:
