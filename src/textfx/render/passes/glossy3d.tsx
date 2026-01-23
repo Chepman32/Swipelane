@@ -2,7 +2,6 @@ import React from 'react';
 import {
   Group,
   Text as SkText,
-  BlurMask,
   LinearGradient,
   vec,
   type SkFont,
@@ -41,7 +40,6 @@ export const Glossy3DPass: React.FC<Glossy3DPassProps> = ({
   highlightHeight,
   shadowColor,
   shadowOffsetY,
-  shadowBlur,
 }) => {
   // Calculate text height from font size for gradient positioning
   const fontSize = (font as any)?.getSize?.() ?? 24;
@@ -51,19 +49,43 @@ export const Glossy3DPass: React.FC<Glossy3DPassProps> = ({
   const highlightTopY = baselineY - textHeight;
   const highlightBottomY = baselineY - textHeight * (1 - highlightHeight);
 
+  // 3D extrusion: create solid depth layers
+  const extrusionSteps = Math.max(4, Math.round(shadowOffsetY));
+  const stepX = 1; // Slight horizontal offset for 3D angle
+  const stepY = shadowOffsetY / extrusionSteps;
+
   return (
     <Group>
-      {/* Layer 1: Shadow - Blurred text offset downward */}
-      <Group>
-        <BlurMask blur={shadowBlur} style="outer" />
-        <SkText
-          text={text}
-          x={x}
-          y={baselineY + shadowOffsetY}
-          font={font}
-          color={shadowColor}
-        />
-      </Group>
+      {/* Layer 1: 3D Extrusion - Solid stacked layers for depth */}
+      {Array.from({ length: extrusionSteps }).map((_, index) => {
+        const offsetX = stepX * (extrusionSteps - index);
+        const offsetY = stepY * (extrusionSteps - index);
+
+        return (
+          <Group key={`extrusion-${index}`}>
+            {/* Extrusion outer stroke */}
+            <SkText
+              text={text}
+              x={x + offsetX}
+              y={baselineY + offsetY}
+              font={font}
+              color={shadowColor}
+              style="stroke"
+              strokeWidth={outerStrokeWidth}
+              strokeJoin="round"
+              strokeCap="round"
+            />
+            {/* Extrusion fill */}
+            <SkText
+              text={text}
+              x={x + offsetX}
+              y={baselineY + offsetY}
+              font={font}
+              color={shadowColor}
+            />
+          </Group>
+        );
+      })}
 
       {/* Layer 2: Outer Stroke - Black stroke for depth */}
       <SkText
