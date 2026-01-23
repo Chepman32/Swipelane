@@ -9,7 +9,6 @@ import ImageSelectionScreen from '../screens/ImageSelectionScreen';
 import EditorScreen from '../screens/EditorScreen';
 import PreviewScreen from '../screens/PreviewScreen';
 import SettingsScreen from '../screens/SettingsScreen';
-import TextEffectsTestScreen from '../screens/TextEffectsTestScreen';
 
 export type RootStackParamList = {
   Splash: undefined;
@@ -18,7 +17,6 @@ export type RootStackParamList = {
   Editor: { text: string; images: string[] };
   Preview: { slides: any[] };
   Settings: undefined;
-  TextEffectsTest: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -93,13 +91,6 @@ const AppNavigator: React.FC = () => {
             headerShown: true,
             title: 'Settings',
             headerBackTitle: 'Back',
-          }}
-        />
-        <Stack.Screen
-          name="TextEffectsTest"
-          component={TextEffectsTestScreen}
-          options={{
-            headerShown: false,
           }}
         />
       </Stack.Navigator>

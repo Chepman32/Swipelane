@@ -145,16 +145,6 @@ const HomeScreen: React.FC = () => {
               {t('home_generate_button')}
             </Text>
           </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.generateButton,
-              { backgroundColor: '#00E5FF', marginTop: 12 },
-            ]}
-            onPress={() => (navigation as any).navigate('TextEffectsTest')}
-          >
-            <Text style={styles.generateButtonText}>Test Text Effects</Text>
-          </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
