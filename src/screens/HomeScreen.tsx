@@ -2,65 +2,345 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
+  FlatList,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
+  RefreshControl,
+  Image,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { estimateSlideCount } from '../utils/textUtils';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import StorageService from '../services/StorageService';
 import FeedbackService from '../services/FeedbackService';
+import { ProjectState } from '../services/StorageService';
+import { buildPreviewEffects } from '../utils/textEffectsPreview';
+import {
+  getSlideFontByFamily,
+  resolveFontFamilyForPlatform,
+} from '../constants/fonts';
+import { Platform } from 'react-native';
 
 type RootStackParamList = {
-  ImageSelection: { text: string };
+  NewProject: undefined;
+  ImageSelection: { text: string; images?: string[] };
   Settings: undefined;
 };
 
 type HomeScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
-  'ImageSelection'
+  'NewProject'
 >;
 
+type GridItem = ProjectState | { isCreateButton: true } | (ProjectState & { isCurrentProject: true });
+
+// Helper function to check if item is current project
+const isCurrentProject = (item: GridItem): item is ProjectState & { isCurrentProject: true } => {
+  return 'isCurrentProject' in item && item.isCurrentProject === true;
+};
+
+const platformKey: 'ios' | 'android' | 'default' =
+  Platform.OS === 'ios' ? 'ios' : Platform.OS === 'android' ? 'android' : 'default';
+
+const SlidePreview: React.FC<{ slide: any }> = ({ slide }) => {
+  const { themeDefinition } = useTheme();
+  const { width: screenWidth } = Dimensions.get('window');
+  const previewWidth = Math.min(screenWidth - 80, 150);
+  const previewHeight = (previewWidth * 16) / 9; // 16:9 aspect ratio
+
+  if (!slide) {
+    return (
+      <View
+        style={[
+          styles.slidePreview,
+          {
+            backgroundColor: themeDefinition.colors.card,
+            borderColor: themeDefinition.colors.border,
+          },
+        ]}
+      >
+        <Text
+          style={[
+            styles.noPreviewText,
+            { color: themeDefinition.colors.text + '66' },
+          ]}
+        >
+          No slides yet
+        </Text>
+      </View>
+    );
+  }
+
+  const fontOption = slide.fontId
+    ? getSlideFontByFamily(slide.fontFamily)
+    : getSlideFontByFamily(slide.fontFamily);
+  const fontFamily = resolveFontFamilyForPlatform(fontOption, platformKey);
+
+  const effects = buildPreviewEffects(slide.textEffects || [], {
+    text: slide.text,
+    fontSize: Math.max(12, slide.fontSize * 0.4),
+    textColor: slide.color,
+    fontFamily,
+    fontWeight: slide.fontWeight,
+  });
+
+  return (
+    <View
+      style={[
+        styles.slidePreview,
+        {
+          backgroundColor: slide.backgroundColor || themeDefinition.colors.card,
+          borderColor: themeDefinition.colors.border,
+          width: previewWidth,
+          height: previewHeight,
+        },
+      ]}
+    >
+      {/* Background Image */}
+      {slide.image && (
+        <Image
+          source={{ uri: slide.image }}
+          style={styles.backgroundImage}
+          resizeMode="cover"
+        />
+      )}
+      
+      {/* Underlay Effects */}
+      {effects.underlayElements.map((element, index) => (
+        <View key={`underlay-${index}`} style={styles.effectLayer}>
+          {element}
+        </View>
+      ))}
+      
+      {/* Text Content */}
+      <View
+        style={[
+          styles.textContainer,
+          {
+            left: slide.position?.x * 0.4 || 10,
+            top: slide.position?.y * 0.4 || 20,
+          },
+        ]}
+      >
+        <Text
+          style={[
+            styles.previewText,
+            {
+              color: slide.color,
+              fontSize: Math.max(12, slide.fontSize * 0.4),
+              fontFamily,
+              fontWeight: slide.fontWeight,
+              textAlign: slide.textAlign,
+              ...effects.textStyle,
+            },
+          ]}
+          numberOfLines={3}
+        >
+          {slide.text}
+        </Text>
+      </View>
+      
+      {/* Overlay Effects */}
+      <View style={[styles.effectLayer, effects.overlayStyle]}>
+        {effects.overlayElements.map((element, index) => (
+          <View key={`overlay-${index}`}>{element}</View>
+        ))}
+      </View>
+    </View>
+  );
+};
+
 const HomeScreen: React.FC = () => {
-  const [text, setText] = useState('');
+  const [recentProjects, setRecentProjects] = useState<ProjectState[]>([]);
+  const [currentProject, setCurrentProject] = useState<ProjectState | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const { themeDefinition } = useTheme();
   const { t } = useLanguage();
 
-  // Load last saved text if any
+  // Load recent projects and current project
   useEffect(() => {
-    StorageService.loadCurrentProject().then(project => {
-      if (project && !project.isCompleted && project.text) {
-        setText(project.text);
-      }
-    });
+    loadProjects();
   }, []);
 
-  const handleGenerateSlides = () => {
-    if (text.trim().length === 0) {
-      FeedbackService.error();
-      Alert.alert(t('home_error_empty'), '');
-      return;
+  const loadProjects = async () => {
+    try {
+      const [recent, current] = await Promise.all([
+        StorageService.getRecentProjects(),
+        StorageService.loadCurrentProject(),
+      ]);
+      setRecentProjects(recent);
+      setCurrentProject(current);
+    } catch (error) {
+      console.error('Error loading projects:', error);
     }
-
-    FeedbackService.buttonTap();
-    // Navigate to image selection screen with the text
-    navigation.navigate('ImageSelection', { text });
   };
 
-  const handleSettings = () => {
+  const handleCreateNewProject = () => {
     FeedbackService.buttonTap();
-    navigation.navigate('Settings');
+    navigation.navigate('NewProject');
   };
 
-  const estimatedSlides = estimateSlideCount(text);
+  const handleOpenProject = (project: ProjectState) => {
+    FeedbackService.buttonTap();
+    // Load the project as current and navigate to image selection
+    StorageService.saveCurrentProject(project).then(() => {
+      // Extract images from slides to pass to ImageSelectionScreen
+      const images = project.slides.map(slide => slide.image || '');
+      navigation.navigate('ImageSelection', { text: project.text, images });
+    });
+  };
+
+  const handleDeleteProject = (projectId: string) => {
+    Alert.alert(
+      'Delete Project',
+      'Are you sure you want to delete this project?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              // Check if it's the current project
+              if (currentProject && currentProject.id === projectId) {
+                await StorageService.clearCurrentProject();
+                setCurrentProject(null);
+              } else {
+                await StorageService.deleteRecentProject(projectId);
+              }
+              await loadProjects();
+              FeedbackService.buttonTap();
+            } catch (error) {
+              console.error('Error deleting project:', error);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadProjects();
+    setRefreshing(false);
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString();
+  };
+
+
+  const renderProjectItem = (props: { item: ProjectState; isCurrent?: boolean }) => {
+    const { item, isCurrent } = props;
+    const firstSlide = item.slides && item.slides.length > 0 ? item.slides[0] : null;
+    
+    return (
+      <TouchableOpacity
+        style={[
+          styles.projectCard,
+          {
+            backgroundColor: themeDefinition.colors.card,
+            borderColor: isCurrent ? themeDefinition.colors.primary || '#007AFF' : themeDefinition.colors.border,
+            borderWidth: isCurrent ? 2 : 1,
+          },
+        ]}
+        onPress={() => handleOpenProject(item)}
+        onLongPress={() => handleDeleteProject(item.id)}
+      >
+        {/* Current Project Badge */}
+        {isCurrent && (
+          <View style={[
+            styles.currentProjectBadge,
+            { backgroundColor: themeDefinition.colors.primary || '#007AFF' }
+          ]}>
+            <Text style={styles.currentProjectBadgeText}>Current</Text>
+          </View>
+        )}
+        
+        {/* Slide Preview */}
+        <SlidePreview slide={firstSlide} />
+        
+        {/* Project Info */}
+        <View style={styles.projectInfo}>
+          <Text
+            style={[
+              styles.projectTitle,
+              { color: themeDefinition.colors.text },
+            ]}
+            numberOfLines={1}
+          >
+            {item.text.trim().split('\n')[0] || 'Untitled Project'}
+          </Text>
+          <View style={styles.projectFooter}>
+            <Text
+              style={[
+                styles.projectDate,
+                { color: themeDefinition.colors.text + '66' },
+              ]}
+            >
+              {formatDate(item.lastModified)}
+            </Text>
+            <Text
+              style={[
+                styles.projectSlides,
+                { color: themeDefinition.colors.text + '66' },
+              ]}
+            >
+              {item.slides.length} slides
+            </Text>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderCreateButton = () => (
+    <TouchableOpacity
+      style={[
+        styles.createButton,
+        {
+          backgroundColor: themeDefinition.colors.card,
+          borderColor: themeDefinition.colors.border,
+        },
+      ]}
+      onPress={handleCreateNewProject}
+    >
+      <Text style={[styles.createButtonText, { color: themeDefinition.colors.primary || '#007AFF' }]}>
+        +
+      </Text>
+      <Text style={[styles.createButtonLabel, { color: themeDefinition.colors.text }]}>
+        New Project
+      </Text>
+    </TouchableOpacity>
+  );
+
+  const renderItem = ({ item }: { item: GridItem }) => {
+    if ('isCreateButton' in item) {
+      return renderCreateButton();
+    }
+    if (isCurrentProject(item)) {
+      return renderProjectItem({ item, isCurrent: true });
+    }
+    return renderProjectItem({ item, isCurrent: false });
+  };
+
+  const keyExtractor = (item: GridItem, _index: number) => {
+    if ('isCreateButton' in item) return 'create-button';
+    if ('isCurrentProject' in item) return `current-${item.id}`;
+    return item.id;
+  };
+
+  const gridData: GridItem[] = [
+    { isCreateButton: true },
+    ...(currentProject ? [{ ...currentProject, isCurrentProject: true as const }] : []),
+    ...recentProjects,
+  ];
 
   return (
     <SafeAreaView
@@ -69,84 +349,34 @@ const HomeScreen: React.FC = () => {
         { backgroundColor: themeDefinition.colors.background },
       ]}
     >
-      <KeyboardAvoidingView
-        style={styles.keyboardContainer}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      <View
+        style={[
+          styles.header,
+          { borderBottomColor: themeDefinition.colors.border },
+        ]}
       >
-        <View
-          style={[
-            styles.header,
-            { borderBottomColor: themeDefinition.colors.border },
-          ]}
+        <Text style={[styles.title, { color: themeDefinition.colors.text }]}>
+          {t('app_name')}
+        </Text>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('Settings')}
+          style={styles.settingsButton}
         >
-          <Text style={[styles.title, { color: themeDefinition.colors.text }]}>
-            {t('app_name')}
-          </Text>
-          <TouchableOpacity
-            onPress={handleSettings}
-            style={styles.settingsButton}
-          >
-            <Text style={styles.settingsButtonText}>⚙️</Text>
-          </TouchableOpacity>
-        </View>
+          <Text style={styles.settingsButtonText}>⚙️</Text>
+        </TouchableOpacity>
+      </View>
 
-        <View style={styles.content}>
-          <Text
-            style={[styles.subtitle, { color: themeDefinition.colors.text }]}
-          >
-            {t('home_subtitle')}
-          </Text>
-
-          <TextInput
-            style={[
-              styles.textInput,
-              {
-                backgroundColor: themeDefinition.colors.card,
-                color: themeDefinition.colors.text,
-                borderColor: themeDefinition.colors.border,
-              },
-            ]}
-            multiline
-            placeholder={t('home_placeholder')}
-            placeholderTextColor={themeDefinition.colors.text + '66'}
-            value={text}
-            onChangeText={setText}
-            textAlignVertical="top"
-          />
-
-          <View style={styles.infoContainer}>
-            <Text
-              style={[styles.infoText, { color: themeDefinition.colors.text }]}
-            >
-              {text.trim().length > 0
-                ? `${t('home_character_count', {
-                    count: text.trim().length,
-                  })} | Estimated slides: ${estimatedSlides}`
-                : t('home_start_typing')}
-            </Text>
-          </View>
-
-          <TouchableOpacity
-            style={[
-              styles.generateButton,
-              text.trim().length > 0
-                ? { backgroundColor: '#007AFF' }
-                : { backgroundColor: '#ccc' },
-            ]}
-            onPress={handleGenerateSlides}
-            disabled={text.trim().length === 0}
-          >
-            <Text
-              style={[
-                styles.generateButtonText,
-                text.trim().length === 0 && { color: '#999' },
-              ]}
-            >
-              {t('home_generate_button')}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </KeyboardAvoidingView>
+      <FlatList
+        data={gridData}
+        renderItem={renderItem}
+        keyExtractor={keyExtractor}
+        numColumns={2}
+        contentContainerStyle={styles.gridContainer}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+        showsVerticalScrollIndicator={false}
+      />
     </SafeAreaView>
   );
 };
@@ -155,9 +385,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-  },
-  keyboardContainer: {
-    flex: 1,
   },
   header: {
     flexDirection: 'row',
@@ -179,44 +406,111 @@ const styles = StyleSheet.create({
   settingsButtonText: {
     fontSize: 24,
   },
-  content: {
-    flex: 1,
-    padding: 20,
+  gridContainer: {
+    padding: 16,
   },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  textInput: {
+  projectCard: {
     flex: 1,
+    margin: 8,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 15,
-    fontSize: 16,
-    backgroundColor: '#f9f9f9',
+    minHeight: 200,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    overflow: 'hidden',
   },
-  infoContainer: {
-    marginVertical: 15,
+  currentProjectBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    zIndex: 10,
   },
-  infoText: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-  },
-  generateButton: {
-    backgroundColor: '#007AFF',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  generateButtonText: {
+  currentProjectBadgeText: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: 10,
     fontWeight: 'bold',
+  },
+  slidePreview: {
+    width: '100%',
+    height: 120,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  backgroundImage: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+  },
+  effectLayer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+  },
+  textContainer: {
+    position: 'absolute',
+    maxWidth: '80%',
+  },
+  previewText: {
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  noPreviewText: {
+    fontSize: 14,
+    fontStyle: 'italic',
+  },
+  projectInfo: {
+    padding: 12,
+  },
+  projectTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  projectFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  projectDate: {
+    fontSize: 12,
+  },
+  projectSlides: {
+    fontSize: 12,
+  },
+  createButton: {
+    flex: 1,
+    margin: 8,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    minHeight: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  createButtonText: {
+    fontSize: 48,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  createButtonLabel: {
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 

@@ -22,9 +22,12 @@ import {
 import { useLanguage } from '../context/LanguageContext';
 
 type RootStackParamList = {
+  Splash: undefined;
   Home: undefined;
-  ImageSelection: { text: string };
+  ImageSelection: { text: string; images?: string[] };
   Editor: { text: string; images: string[] };
+  Preview: { slides: any[] };
+  Settings: undefined;
 };
 
 type ImageSelectionRouteProp = RouteProp<RootStackParamList, 'ImageSelection'>;
@@ -36,7 +39,7 @@ type ImageSelectionNavigationProp = StackNavigationProp<
 const ImageSelectionScreen: React.FC = () => {
   const route = useRoute<ImageSelectionRouteProp>();
   const navigation = useNavigation<ImageSelectionNavigationProp>();
-  const { text } = route.params;
+  const { text, images: initialImages } = route.params;
   const insets = useSafeAreaInsets();
   const { t } = useLanguage();
 
@@ -61,12 +64,26 @@ const ImageSelectionScreen: React.FC = () => {
     return truncated;
   };
 
-  const [selectedImages, setSelectedImages] = useState<string[]>(() =>
-    Array(requiredImages).fill(''),
-  );
-  const [hasUserMadeChoice, setHasUserMadeChoice] = useState<boolean[]>(() =>
-    Array(requiredImages).fill(false),
-  );
+  const [selectedImages, setSelectedImages] = useState<string[]>(() => {
+    // If images are provided in navigation params, use them
+    if (initialImages && initialImages.length > 0) {
+      return ensureCapacity(initialImages);
+    }
+    // Otherwise, start with empty array
+    return Array(requiredImages).fill('');
+  });
+  const [hasUserMadeChoice, setHasUserMadeChoice] = useState<boolean[]>(() => {
+    // If images are provided, mark as having user choice
+    if (initialImages && initialImages.length > 0) {
+      const choiceArray = Array(initialImages.length).fill(true);
+      // Ensure the array has the required length
+      if (choiceArray.length < requiredImages) {
+        return [...choiceArray, ...Array(requiredImages - choiceArray.length).fill(false)];
+      }
+      return choiceArray.slice(0, requiredImages);
+    }
+    return Array(requiredImages).fill(false);
+  });
   const hasRestoredImages = React.useRef(false);
 
   useEffect(() => {

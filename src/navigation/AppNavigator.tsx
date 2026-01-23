@@ -4,6 +4,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import AnimatedSplashScreen from '../screens/AnimatedSplashScreen';
 import SplashScreen from '../screens/SplashScreen';
 import HomeScreen from '../screens/HomeScreen';
+import NewProjectScreen from '../screens/NewProjectScreen';
 import StorageService from '../services/StorageService';
 import ImageSelectionScreen from '../screens/ImageSelectionScreen';
 import EditorScreen from '../screens/EditorScreen';
@@ -13,7 +14,8 @@ import SettingsScreen from '../screens/SettingsScreen';
 export type RootStackParamList = {
   Splash: undefined;
   Home: undefined;
-  ImageSelection: { text: string };
+  NewProject: undefined;
+  ImageSelection: { text: string; images?: string[] };
   Editor: { text: string; images: string[] };
   Preview: { slides: any[] };
   Settings: undefined;
@@ -57,6 +59,7 @@ const AppNavigator: React.FC = () => {
           }}
         />
         <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name="NewProject" component={NewProjectScreen} />
         <Stack.Screen
           name="ImageSelection"
           component={ImageSelectionScreen}
