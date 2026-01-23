@@ -1402,7 +1402,7 @@ const EditorScreen: React.FC = () => {
         isEffectsPaletteVisible) && (() => {
         // Adjust color and effects palette position to match spacing of font/opacity palettes
         const paletteTopPosition = (isColorPaletteVisible || isEffectsPaletteVisible)
-          ? imageContainerHeight - 130  // Move color/effects palettes 30px lower
+          ? imageContainerHeight - 150  // Move color/effects palettes 20px higher
           : imageContainerHeight - 160; // Standard position for font/opacity
 
         return (
@@ -2089,24 +2089,25 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.7)',
     borderRadius: 24,
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 12,
   },
   effectOptionButton: {
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 12,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.3)',
     marginHorizontal: 6,
     alignItems: 'center',
     minWidth: 80,
+    minHeight: 50,
   },
   activeEffectOption: {
     borderColor: '#00FFCC',
     backgroundColor: 'rgba(0,255,204,0.15)',
   },
   effectOptionLabel: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#FFFFFF',
     fontWeight: '500',
   },
