@@ -1243,6 +1243,8 @@ const EditorScreen: React.FC = () => {
                   height={currentSlide.fontSize * 2}
                   textColor={currentSlide.color}
                   effects={newFormatEffects}
+                  lineHeight={currentSlide.fontSize * 1.35}
+                  background="transparent"
                 />
               ) : (
                 <>

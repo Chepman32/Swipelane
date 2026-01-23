@@ -13,7 +13,7 @@ export function convertToNewFormat(
     neonGlow: 'neon',
     softShadow: 'softShadow',
     longShadow: 'longShadow',
-    bloom: 'bloom',
+    bloom: 'bloomHalo',
     letterpress: 'letterpress',
   };
 
