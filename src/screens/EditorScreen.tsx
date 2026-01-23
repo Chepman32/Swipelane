@@ -1358,12 +1358,12 @@ const EditorScreen: React.FC = () => {
         </View>
       )}
 
-      {/* Navigation arrows overlayed on slide */}
+      {/* Navigation arrows above the canvas */}
       {slides.length > 1 && (
-        <>
+        <View style={[styles.navigationAboveCanvas, { top: 80 }]}>
           <TouchableOpacity
             style={[
-              styles.navArrowLeft,
+              styles.navArrowBelow,
               currentSlideIndex === 0 && styles.navArrowDisabled,
             ]}
             onPress={() => {
@@ -1379,7 +1379,7 @@ const EditorScreen: React.FC = () => {
 
           <TouchableOpacity
             style={[
-              styles.navArrowRight,
+              styles.navArrowBelow,
               currentSlideIndex === slides.length - 1 &&
                 styles.navArrowDisabled,
             ]}
@@ -1393,12 +1393,11 @@ const EditorScreen: React.FC = () => {
           >
             <Text style={styles.navArrowText}>›</Text>
           </TouchableOpacity>
-        </>
+        </View>
       )}
 
       {/* Tool-specific palettes - positioned above main toolbar */}
       {(isColorPaletteVisible ||
-        isOpacityPaletteVisible ||
         isFontPaletteVisible ||
         isEffectsPaletteVisible) && (() => {
         // Adjust color and effects palette position to match spacing of font/opacity palettes
@@ -1545,40 +1544,41 @@ const EditorScreen: React.FC = () => {
               })}
             </ScrollView>
           )}
-
-          {isOpacityPaletteVisible && (
-            <View style={styles.opacityPaletteContainer}>
-              {[0, 0.2, 0.4, 0.6, 0.8, 1].map(opacity => {
-                const currentOpacity = parseFloat(
-                  currentSlide.backgroundColor.split(',')[3].replace(')', ''),
-                );
-                const borderColor =
-                  Math.abs(currentOpacity - opacity) < 0.01
-                    ? '#FFFFFF'
-                    : 'rgba(255,255,255,0.3)';
-                return (
-                  <TouchableOpacity
-                    key={opacity}
-                    style={[
-                      styles.opacityOption,
-                      {
-                        backgroundColor: `rgba(0,0,0,${opacity})`,
-                        borderColor,
-                      },
-                    ]}
-                    onPress={() => {
-                      handleBackgroundOpacityChange(opacity);
-                      // Opacity palette stays open for multiple selections
-                      // setOpacityPaletteVisible(false);
-                    }}
-                  />
-                );
-              })}
-            </View>
-          )}
         </View>
         );
       })()}
+
+      {/* Opacity palette - positioned separately between canvas and tool panel */}
+      {isOpacityPaletteVisible && (
+        <View style={[styles.opacityPaletteContainer, { position: 'absolute', top: imageContainerHeight - 130, left: 0, right: 0, justifyContent: 'center' }]}>
+          {[0, 0.2, 0.4, 0.6, 0.8, 1].map(opacity => {
+            const currentOpacity = parseFloat(
+              currentSlide.backgroundColor.split(',')[3].replace(')', ''),
+            );
+            const borderColor =
+              Math.abs(currentOpacity - opacity) < 0.01
+                ? '#FFFFFF'
+                : 'rgba(255,255,255,0.3)';
+            return (
+              <TouchableOpacity
+                key={opacity}
+                style={[
+                  styles.opacityOption,
+                  {
+                    backgroundColor: `rgba(0,0,0,${opacity})`,
+                    borderColor,
+                  },
+                ]}
+                onPress={() => {
+                  handleBackgroundOpacityChange(opacity);
+                  // Opacity palette stays open for multiple selections
+                  // setOpacityPaletteVisible(false);
+                }}
+              />
+            );
+          })}
+        </View>
+      )}
 
       {/* Main toolbar - always visible */}
       <View
@@ -1836,37 +1836,24 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     flexShrink: 1,
   },
-  navArrowLeft: {
+  // Navigation arrows above canvas
+  navigationAboveCanvas: {
     position: 'absolute',
-    left: 5,
-    top: '50%',
-    marginTop: -30,
-    width: 50,
-    height: 60,
-    justifyContent: 'center',
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    borderTopRightRadius: 30,
-    borderBottomRightRadius: 30,
+    paddingHorizontal: 10,
     zIndex: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 8,
   },
-  navArrowRight: {
-    position: 'absolute',
-    right: 5,
-    top: '50%',
-    marginTop: -30,
+  navArrowBelow: {
     width: 50,
-    height: 60,
+    height: 50,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.7)',
-    borderTopLeftRadius: 30,
-    borderBottomLeftRadius: 30,
+    borderRadius: 25,
     zIndex: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -2175,11 +2162,11 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   opacityOption: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 40,
+    height: 48,
+    borderRadius: 20,
     borderWidth: 2,
-    marginHorizontal: 4,
+    marginHorizontal: 5,
   },
   previewButton: {
     backgroundColor: '#34C759',
