@@ -1,4 +1,4 @@
-package com.texttoslides
+package com.texora.app
 
 import android.app.Application
 import com.facebook.react.PackageList

@@ -9,7 +9,7 @@ node_require('react-native-permissions/scripts/setup.rb')
 
 platform :ios, min_ios_version_supported
 prepare_react_native_project!
-project 'TexttoSlides.xcodeproj'
+project 'Texora.xcodeproj'
 
 # iOS permission handlers required by react-native-permissions
 setup_permissions([
@@ -24,7 +24,7 @@ if linkage != nil
   use_frameworks! :linkage => linkage.to_sym
 end
 
-target 'TexttoSlides' do
+target 'Texora' do
   config = use_native_modules!
 
   use_react_native!(

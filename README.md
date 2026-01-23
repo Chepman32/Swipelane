@@ -1,4 +1,4 @@
-# Text-to-Slides Mobile App
+# Texora
 
 A React Native mobile application that converts plain text posts into beautiful image slides with overlaid text, ideal for Instagram carousel posts. Features a polished UI with animations, multi-theme support, localization, and offline-first functionality.
 
@@ -193,7 +193,7 @@ src/
 1. **Clone the repository:**
 ```bash
 git clone <repository-url>
-cd TexttoSlides
+cd Texora
 ```
 
 2. **Install dependencies:**

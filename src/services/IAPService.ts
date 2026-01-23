@@ -3,8 +3,8 @@ import { Alert, Platform } from 'react-native';
 
 // Product IDs for App Store and Google Play
 const PRODUCT_IDS = Platform.select({
-  ios: ['com.texttoslides.pro', 'com.texttoslides.pro.monthly'],
-  android: ['com.texttoslides.pro', 'com.texttoslides.pro.monthly'],
+  ios: ['com.texora.pro', 'com.texora.pro.monthly'],
+  android: ['com.texora.pro', 'com.texora.pro.monthly'],
   default: []
 });
 
@@ -59,8 +59,8 @@ class IAPService {
       // Simulate available products
       this.products = [
         {
-          productId: 'com.texttoslides.pro',
-          title: 'Text to Slides Pro',
+          productId: 'com.texora.pro',
+          title: 'Texora Pro',
           description: 'Unlock all features: Remove watermark, unlimited slides, premium templates',
           price: '4.99',
           localizedPrice: '$4.99',
@@ -68,8 +68,8 @@ class IAPService {
           type: 'iap'
         },
         {
-          productId: 'com.texttoslides.pro.monthly',
-          title: 'Text to Slides Pro Monthly',
+          productId: 'com.texora.pro.monthly',
+          title: 'Texora Pro Monthly',
           description: 'Monthly subscription to all Pro features',
           price: '1.99',
           localizedPrice: '$1.99/month',
