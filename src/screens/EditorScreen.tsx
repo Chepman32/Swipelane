@@ -98,7 +98,7 @@ const SKIA_FONT_SOURCES: Record<SlideFontId, number> = {
 
 type RootStackParamList = {
   Home: undefined;
-  Editor: { text: string; images: string[] };
+  Editor: { text: string; images: string[]; projectId: string };
   Preview: { slides: any[] };
 };
 
@@ -129,7 +129,7 @@ const filterSupportedEffects = (
 const EditorScreen: React.FC = () => {
   const route = useRoute<EditorRouteProp>();
   const navigation = useNavigation<EditorNavigationProp>();
-  const { text, images } = route.params;
+  const { text, images, projectId } = route.params;
   const insets = useSafeAreaInsets();
   const { themeDefinition } = useTheme();
   const {} = useLanguage();
@@ -147,7 +147,6 @@ const EditorScreen: React.FC = () => {
     colorSwatchSize,
   } = useResponsive();
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const projectId = useRef<string>(`project_${Date.now()}`);
   const isRestoringFromStorage = useRef(false);
 
   // Optimize text and split using the same algorithm as ImageSelectionScreen
@@ -399,7 +398,7 @@ const EditorScreen: React.FC = () => {
       textEffects: filterSupportedEffects(slide.textEffects),
     }));
     const projectState: ProjectState = {
-      id: projectId.current,
+      id: projectId,
       text,
       slides: sanitizedSlidesForPersist,
       images,
@@ -414,7 +413,7 @@ const EditorScreen: React.FC = () => {
     } catch (error) {
       console.error('Failed to auto-save project:', error);
     }
-  }, [text, slides, images]);
+  }, [text, slides, images, projectId]);
 
   // Set up auto-save
   useEffect(() => {
@@ -488,7 +487,6 @@ const EditorScreen: React.FC = () => {
               }, 0);
             }
           }
-          projectId.current = savedProject.id;
         } else {
           StorageService.clearCurrentProject();
         }
@@ -1140,7 +1138,7 @@ const EditorScreen: React.FC = () => {
       textEffects: filterSupportedEffects(slide.textEffects),
     }));
     const projectState: ProjectState = {
-      id: projectId.current,
+      id: projectId,
       text,
       slides: sanitizedSlidesForPersist,
       images,

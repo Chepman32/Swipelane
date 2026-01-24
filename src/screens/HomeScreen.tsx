@@ -28,7 +28,7 @@ import { useResponsive } from '../hooks/useResponsive';
 
 type RootStackParamList = {
   NewProject: undefined;
-  ImageSelection: { text: string; images?: string[] };
+  ImageSelection: { text: string; projectId: string; images?: string[] };
   Settings: undefined;
 };
 
@@ -198,7 +198,7 @@ const HomeScreen: React.FC = () => {
     StorageService.saveCurrentProject(project).then(() => {
       // Extract images from slides to pass to ImageSelectionScreen
       const images = project.slides.map(slide => slide.image || '');
-      navigation.navigate('ImageSelection', { text: project.text, images });
+      navigation.navigate('ImageSelection', { text: project.text, projectId: project.id, images });
     });
   };
 
@@ -342,7 +342,7 @@ const HomeScreen: React.FC = () => {
   const gridData: GridItem[] = [
     { isCreateButton: true },
     ...(currentProject ? [{ ...currentProject, isCurrentProject: true as const }] : []),
-    ...recentProjects,
+    ...recentProjects.filter(p => !currentProject || p.id !== currentProject.id),
   ];
 
   return (

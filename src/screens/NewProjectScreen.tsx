@@ -20,7 +20,7 @@ import FeedbackService from '../services/FeedbackService';
 import { useResponsive } from '../hooks/useResponsive';
 
 type RootStackParamList = {
-  ImageSelection: { text: string };
+  ImageSelection: { text: string; projectId: string };
   Home: undefined;
 };
 
@@ -57,8 +57,8 @@ const NewProjectScreen: React.FC = () => {
 
     // Save the new project as current
     StorageService.saveCurrentProject(newProject).then(() => {
-      // Navigate to image selection screen with the text
-      navigation.navigate('ImageSelection', { text });
+      // Navigate to image selection screen with the text and projectId
+      navigation.navigate('ImageSelection', { text, projectId: newProject.id });
     });
   };
 

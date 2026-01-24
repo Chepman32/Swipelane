@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -26,8 +26,8 @@ import type { ProjectState } from '../services/StorageService';
 type RootStackParamList = {
   Splash: undefined;
   Home: undefined;
-  ImageSelection: { text: string; images?: string[] };
-  Editor: { text: string; images: string[] };
+  ImageSelection: { text: string; projectId: string; images?: string[] };
+  Editor: { text: string; images: string[]; projectId: string };
   Preview: { slides: any[] };
   Settings: undefined;
 };
@@ -41,7 +41,7 @@ type ImageSelectionNavigationProp = StackNavigationProp<
 const ImageSelectionScreen: React.FC = () => {
   const route = useRoute<ImageSelectionRouteProp>();
   const navigation = useNavigation<ImageSelectionNavigationProp>();
-  const { text, images: initialImages } = route.params;
+  const { text, images: initialImages, projectId } = route.params;
   const insets = useSafeAreaInsets();
   const { t } = useLanguage();
 
@@ -89,7 +89,6 @@ const ImageSelectionScreen: React.FC = () => {
     return Array(requiredImages).fill(false);
   });
   const hasRestoredImages = React.useRef(false);
-  const projectId = useRef<string>(`project_${Date.now()}`);
 
   const saveProjectState = useCallback(async (images: string[]) => {
     try {
@@ -106,7 +105,7 @@ const ImageSelectionScreen: React.FC = () => {
       }));
 
       const projectState: ProjectState = {
-        id: projectId.current,
+        id: projectId,
         text,
         slides: projectSlides,
         images,
@@ -119,7 +118,7 @@ const ImageSelectionScreen: React.FC = () => {
     } catch (error) {
       console.error('Failed to save project state:', error);
     }
-  }, [slides, text]);
+  }, [slides, text, projectId]);
 
   useEffect(() => {
     if (hasRestoredImages.current) {
@@ -286,7 +285,7 @@ const ImageSelectionScreen: React.FC = () => {
     if (normalizedImages.some((img, idx) => selectedImages[idx] !== img)) {
       setSelectedImages(normalizedImages);
     }
-    navigation.navigate('Editor', { text, images: normalizedImages });
+    navigation.navigate('Editor', { text, images: normalizedImages, projectId });
   };
 
   return (
