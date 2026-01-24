@@ -18,6 +18,7 @@ import {
   Alert,
   TextInput,
   KeyboardAvoidingView,
+  Pressable,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -206,8 +207,9 @@ const EditorScreen: React.FC = () => {
   const [editingText, setEditingText] = useState('');
 
   // Undo/Redo history management
-  const [, setHistory] = useState<Slide[][]>([initialSlides]);
+  const [history, setHistory] = useState<Slide[][]>([initialSlides]);
   const [historyIndex, setHistoryIndex] = useState(0);
+  const historyIndexRef = useRef(0);
   const isRestoringFromHistory = useRef(false);
 
   const currentSlide = slides[currentSlideIndex];
@@ -437,7 +439,38 @@ const EditorScreen: React.FC = () => {
     });
   }, [navigation, saveProject, text, projectId, images]);
 
-  // Set up custom header with folder button
+  // Undo/Redo handlers
+  const handleUndo = useCallback(() => {
+    FeedbackService.buttonTap();
+    if (historyIndexRef.current > 0) {
+      const newIndex = historyIndexRef.current - 1;
+      isRestoringFromHistory.current = true;
+      setSlides(history[newIndex]);
+      historyIndexRef.current = newIndex;
+      setHistoryIndex(newIndex);
+      setHasUnsavedChanges(true);
+      setTimeout(() => {
+        isRestoringFromHistory.current = false;
+      }, 0);
+    }
+  }, [history]);
+
+  const handleRedo = useCallback(() => {
+    FeedbackService.buttonTap();
+    if (historyIndexRef.current < history.length - 1) {
+      const newIndex = historyIndexRef.current + 1;
+      isRestoringFromHistory.current = true;
+      setSlides(history[newIndex]);
+      historyIndexRef.current = newIndex;
+      setHistoryIndex(newIndex);
+      setHasUnsavedChanges(true);
+      setTimeout(() => {
+        isRestoringFromHistory.current = false;
+      }, 0);
+    }
+  }, [history]);
+
+  // Set up custom header with folder button and undo/redo
   useLayoutEffect(() => {
     navigation.setOptions({
       headerLeft: () => (
@@ -449,15 +482,29 @@ const EditorScreen: React.FC = () => {
         </TouchableOpacity>
       ),
       headerRight: () => (
-        <TouchableOpacity
-          onPress={handleOpenImageSelection}
-          style={{ paddingHorizontal: 15 }}
-        >
-          <Text style={{ fontSize: 20 }}>📁</Text>
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity
+            onPress={handleUndo}
+            style={{ paddingHorizontal: 8, opacity: historyIndex > 0 ? 1 : 0.3 }}
+          >
+            <Text style={{ fontSize: 20 }}>↩️</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleRedo}
+            style={{ paddingHorizontal: 8, opacity: historyIndex < history.length - 1 ? 1 : 0.3 }}
+          >
+            <Text style={{ fontSize: 20 }}>↪️</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleOpenImageSelection}
+            style={{ paddingHorizontal: 12 }}
+          >
+            <Text style={{ fontSize: 20 }}>📁</Text>
+          </TouchableOpacity>
+        </View>
       ),
     });
-  }, [navigation, handleBackToHome, handleOpenImageSelection]);
+  }, [navigation, handleBackToHome, handleOpenImageSelection, handleUndo, handleRedo, historyIndex, history.length]);
 
   // Set up auto-save
   useEffect(() => {
@@ -509,6 +556,7 @@ const EditorScreen: React.FC = () => {
               isRestoringFromHistory.current = true;
               setSlides(updatedSlides);
               setHistory([updatedSlides]);
+              historyIndexRef.current = 0;
               setHistoryIndex(0);
               setCurrentSlideIndex(0);
               setTimeout(() => {
@@ -524,6 +572,7 @@ const EditorScreen: React.FC = () => {
               }));
               setSlides(sanitizedSlides);
               setHistory([sanitizedSlides]);
+              historyIndexRef.current = 0;
               setHistoryIndex(0);
               setCurrentSlideIndex(0);
               setTimeout(() => {
@@ -617,7 +666,7 @@ const EditorScreen: React.FC = () => {
       );
       if (!isRestoringFromHistory.current) {
         setHistory(prevHistory => {
-          const currentIndex = historyIndex;
+          const currentIndex = historyIndexRef.current;
           const newHistory = prevHistory.slice(0, currentIndex + 1);
           newHistory.push(newSlides);
           console.log(
@@ -628,18 +677,22 @@ const EditorScreen: React.FC = () => {
           );
 
           // Keep history limited to 20 items
+          let newIndex: number;
           if (newHistory.length > 20) {
             newHistory.shift();
-            setHistoryIndex(19);
+            newIndex = 19;
           } else {
-            setHistoryIndex(newHistory.length - 1);
+            newIndex = newHistory.length - 1;
           }
+
+          historyIndexRef.current = newIndex;
+          setHistoryIndex(newIndex);
 
           return newHistory;
         });
       }
     },
-    [historyIndex],
+    [],
   );
 
   // Function to update slide position (needs to be called from JS thread)
@@ -1406,6 +1459,14 @@ const EditorScreen: React.FC = () => {
               </View>
             </View>
           </GestureDetector>
+
+          {/* Backdrop to close text editing when tapping outside */}
+          {isEditingText && (
+            <Pressable
+              style={[StyleSheet.absoluteFill, { zIndex: 999 }]}
+              onPress={handleFinishEditingText}
+            />
+          )}
         </View>
       </View>
 
