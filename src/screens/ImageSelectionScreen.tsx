@@ -8,6 +8,7 @@ import {
   ScrollView,
   Image,
   StatusBar,
+  Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -92,11 +93,17 @@ const ImageSelectionScreen: React.FC = () => {
 
   const saveProjectState = useCallback(async (images: string[]) => {
     try {
+      // Calculate centered position (matching EditorScreen's slideSize calculation)
+      const screenWidth = Dimensions.get('window').width;
+      const slideSize = Math.min(screenWidth * 0.99, screenWidth - 10);
+      const centeredX = (slideSize - 100) / 2;
+      const centeredY = slideSize / 3;
+
       const projectSlides = slides.map((slideText, index) => ({
         id: index,
         text: slideText,
         image: images[index] || '',
-        position: { x: 0, y: 0 },
+        position: { x: centeredX, y: centeredY },
         fontSize: 24,
         color: '#000000',
         backgroundColor: '#ffffff',

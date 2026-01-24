@@ -15,8 +15,8 @@ export type RootStackParamList = {
   Splash: undefined;
   Home: undefined;
   NewProject: undefined;
-  ImageSelection: { text: string; images?: string[] };
-  Editor: { text: string; images: string[] };
+  ImageSelection: { text: string; projectId: string; images?: string[] };
+  Editor: { text: string; images: string[]; projectId: string };
   Preview: { slides: any[] };
   Settings: undefined;
 };

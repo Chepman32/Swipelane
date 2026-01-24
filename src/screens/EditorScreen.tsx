@@ -4,6 +4,7 @@ import React, {
   useCallback,
   useRef,
   useMemo,
+  useLayoutEffect,
 } from 'react';
 import {
   View,
@@ -100,6 +101,7 @@ type RootStackParamList = {
   Home: undefined;
   Editor: { text: string; images: string[]; projectId: string };
   Preview: { slides: any[] };
+  ImageSelection: { text: string; projectId: string; images?: string[] };
 };
 
 type EditorRouteProp = RouteProp<RootStackParamList, 'Editor'>;
@@ -414,6 +416,48 @@ const EditorScreen: React.FC = () => {
       console.error('Failed to auto-save project:', error);
     }
   }, [text, slides, images, projectId]);
+
+  // Navigation handlers for custom header
+  const handleBackToHome = useCallback(async () => {
+    FeedbackService.buttonTap();
+    await saveProject();
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Home' }],
+    });
+  }, [navigation, saveProject]);
+
+  const handleOpenImageSelection = useCallback(async () => {
+    FeedbackService.buttonTap();
+    await saveProject();
+    navigation.navigate('ImageSelection', {
+      text: text,
+      projectId: projectId,
+      images: images,
+    });
+  }, [navigation, saveProject, text, projectId, images]);
+
+  // Set up custom header with folder button
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerLeft: () => (
+        <TouchableOpacity
+          onPress={handleBackToHome}
+          style={{ paddingHorizontal: 15 }}
+        >
+          <Text style={{ fontSize: 17, color: '#007AFF' }}>‹ Back</Text>
+        </TouchableOpacity>
+      ),
+      headerRight: () => (
+        <TouchableOpacity
+          onPress={handleOpenImageSelection}
+          style={{ paddingHorizontal: 15 }}
+        >
+          <Text style={{ fontSize: 20 }}>📁</Text>
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, handleBackToHome, handleOpenImageSelection]);
 
   // Set up auto-save
   useEffect(() => {
