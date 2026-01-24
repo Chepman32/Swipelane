@@ -140,10 +140,8 @@ const EditorScreen: React.FC = () => {
     sliderHeight: SLIDER_HEIGHT,
     scale: scaleSize,
     scaleFont,
-    isPad,
     controlGap,
     paddingHorizontal: responsivePadding,
-    smallButtonSize,
     mediumButtonSize,
     largeButtonSize,
     navArrowSize,
@@ -650,7 +648,7 @@ const EditorScreen: React.FC = () => {
         newPosition: (1 - clampedProgress) * SLIDER_HEIGHT,
       });
     }
-  }, [currentSlideIndex, currentSlide, sliderTranslateY]);
+  }, [currentSlideIndex, currentSlide, sliderTranslateY, SLIDER_HEIGHT]);
 
   useEffect(() => {
     if (!selectedTextEffectId) {
@@ -722,7 +720,7 @@ const EditorScreen: React.FC = () => {
   const updateSlidePosition = (x: number, y: number) => {
     setSlides(prevSlides => {
       const newSlides = [...prevSlides];
-      const slide = newSlides[currentSlideIndex];
+      const slide = { ...newSlides[currentSlideIndex] };
       if (slide) {
         slide.position = { x, y };
         newSlides[currentSlideIndex] = slide;
@@ -736,7 +734,7 @@ const EditorScreen: React.FC = () => {
     FeedbackService.textResize();
     setSlides(prevSlides => {
       const newSlides = [...prevSlides];
-      const slide = newSlides[currentSlideIndex];
+      const slide = { ...newSlides[currentSlideIndex] };
 
       const clampedFontSize = Math.max(
         MIN_FONT_SIZE,
@@ -757,12 +755,12 @@ const EditorScreen: React.FC = () => {
   };
 
   const updateFontSize = useCallback(
-    (newFontSize: number) => {
-      console.log('updateFontSize called with:', newFontSize);
+    (newFontSize: number, saveToHistory: boolean = true) => {
+      console.log('updateFontSize called with:', newFontSize, 'saveToHistory:', saveToHistory);
       FeedbackService.textResize();
       setSlides(prevSlides => {
         const newSlides = [...prevSlides];
-        const slide = newSlides[currentSlideIndex];
+        const slide = { ...newSlides[currentSlideIndex] };
         const clampedFontSize = Math.max(
           MIN_FONT_SIZE,
           Math.min(MAX_FONT_SIZE, newFontSize),
@@ -777,7 +775,9 @@ const EditorScreen: React.FC = () => {
             SLIDER_HEIGHT,
         );
         newSlides[currentSlideIndex] = slide;
-        addToHistory(newSlides);
+        if (saveToHistory) {
+          addToHistory(newSlides);
+        }
         setHasUnsavedChanges(true);
         console.log('Font size updated to:', slide.fontSize);
         return newSlides;
@@ -890,7 +890,7 @@ const EditorScreen: React.FC = () => {
         MIN_FONT_SIZE + progress * (MAX_FONT_SIZE - MIN_FONT_SIZE),
       );
       if (updateFontSize) {
-        runOnJS(updateFontSize)(liveFontSize);
+        runOnJS(updateFontSize)(liveFontSize, false);
       }
     })
     .onEnd(() => {
@@ -902,7 +902,7 @@ const EditorScreen: React.FC = () => {
 
       // Update font size only when gesture ends
       if (updateFontSize) {
-        runOnJS(updateFontSize)(fontSize);
+        runOnJS(updateFontSize)(fontSize, true);
       }
 
       // Snap to final position
@@ -1000,7 +1000,7 @@ const EditorScreen: React.FC = () => {
     FeedbackService.buttonTap();
     setSlides(prevSlides => {
       const newSlides = [...prevSlides];
-      const slide = newSlides[currentSlideIndex];
+      const slide = { ...newSlides[currentSlideIndex] };
       const oldTextColor = slide.color; // Store the old text color before we change it
 
       slide.color = color;
@@ -1078,7 +1078,7 @@ const EditorScreen: React.FC = () => {
     FeedbackService.buttonTap();
     setSlides(prevSlides => {
       const newSlides = [...prevSlides];
-      const slide = newSlides[currentSlideIndex];
+      const slide = { ...newSlides[currentSlideIndex] };
       slide.backgroundColor = `rgba(0,0,0,${opacity})`;
       newSlides[currentSlideIndex] = slide;
       addToHistory(newSlides);
@@ -1303,8 +1303,9 @@ const EditorScreen: React.FC = () => {
     if (currentSlide && editingText.trim() !== currentSlide.text) {
       setSlides(prevSlides => {
         const newSlides = [...prevSlides];
-        const slide = newSlides[currentSlideIndex];
+        const slide = { ...newSlides[currentSlideIndex] };
         slide.text = editingText.trim();
+        newSlides[currentSlideIndex] = slide;
         addToHistory(newSlides);
         return newSlides;
       });
