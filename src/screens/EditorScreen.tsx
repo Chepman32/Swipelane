@@ -150,6 +150,7 @@ const EditorScreen: React.FC = () => {
     colorSwatchSize,
   } = useResponsive();
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const textEditTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isRestoringFromStorage = useRef(false);
 
   // Optimize text and split using the same algorithm as ImageSelectionScreen
@@ -207,9 +208,11 @@ const EditorScreen: React.FC = () => {
   const [editingText, setEditingText] = useState('');
 
   // Undo/Redo history management
-  const [history, setHistory] = useState<Slide[][]>([initialSlides]);
-  const [historyIndex, setHistoryIndex] = useState(0);
+  const [_history, setHistory] = useState<Slide[][]>([initialSlides]);
+  const [_historyIndex, setHistoryIndex] = useState(0);
   const historyIndexRef = useRef(0);
+  const historyRef = useRef<Slide[][]>([initialSlides]);
+  const [headerUpdateTrigger, setHeaderUpdateTrigger] = useState(0);
   const isRestoringFromHistory = useRef(false);
 
   const currentSlide = slides[currentSlideIndex];
@@ -442,33 +445,45 @@ const EditorScreen: React.FC = () => {
   // Undo/Redo handlers
   const handleUndo = useCallback(() => {
     FeedbackService.buttonTap();
-    if (historyIndexRef.current > 0) {
-      const newIndex = historyIndexRef.current - 1;
+    const currentHistory = historyRef.current;
+    const currentIndex = historyIndexRef.current;
+    
+    console.log('Undo called:', { currentIndex, historyLength: currentHistory.length });
+    
+    if (currentIndex > 0) {
+      const newIndex = currentIndex - 1;
       isRestoringFromHistory.current = true;
-      setSlides(history[newIndex]);
+      setSlides(currentHistory[newIndex]);
       historyIndexRef.current = newIndex;
       setHistoryIndex(newIndex);
       setHasUnsavedChanges(true);
+      setHeaderUpdateTrigger(prev => prev + 1);
       setTimeout(() => {
         isRestoringFromHistory.current = false;
       }, 0);
     }
-  }, [history]);
+  }, [setHeaderUpdateTrigger]);
 
   const handleRedo = useCallback(() => {
     FeedbackService.buttonTap();
-    if (historyIndexRef.current < history.length - 1) {
-      const newIndex = historyIndexRef.current + 1;
+    const currentHistory = historyRef.current;
+    const currentIndex = historyIndexRef.current;
+    
+    console.log('Redo called:', { currentIndex, historyLength: currentHistory.length });
+    
+    if (currentIndex < currentHistory.length - 1) {
+      const newIndex = currentIndex + 1;
       isRestoringFromHistory.current = true;
-      setSlides(history[newIndex]);
+      setSlides(currentHistory[newIndex]);
       historyIndexRef.current = newIndex;
       setHistoryIndex(newIndex);
       setHasUnsavedChanges(true);
+      setHeaderUpdateTrigger(prev => prev + 1);
       setTimeout(() => {
         isRestoringFromHistory.current = false;
       }, 0);
     }
-  }, [history]);
+  }, [setHeaderUpdateTrigger]);
 
   // Set up custom header with folder button and undo/redo
   useLayoutEffect(() => {
@@ -485,13 +500,13 @@ const EditorScreen: React.FC = () => {
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <TouchableOpacity
             onPress={handleUndo}
-            style={{ paddingHorizontal: 8, opacity: historyIndex > 0 ? 1 : 0.3 }}
+            style={{ paddingHorizontal: 8, opacity: historyIndexRef.current > 0 ? 1 : 0.3 }}
           >
             <Text style={{ fontSize: 20 }}>↩️</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={handleRedo}
-            style={{ paddingHorizontal: 8, opacity: historyIndex < history.length - 1 ? 1 : 0.3 }}
+            style={{ paddingHorizontal: 8, opacity: historyIndexRef.current < historyRef.current.length - 1 ? 1 : 0.3 }}
           >
             <Text style={{ fontSize: 20 }}>↪️</Text>
           </TouchableOpacity>
@@ -504,7 +519,7 @@ const EditorScreen: React.FC = () => {
         </View>
       ),
     });
-  }, [navigation, handleBackToHome, handleOpenImageSelection, handleUndo, handleRedo, historyIndex, history.length]);
+  }, [navigation, handleBackToHome, handleOpenImageSelection, handleUndo, handleRedo, headerUpdateTrigger]);
 
   // Set up auto-save
   useEffect(() => {
@@ -556,6 +571,7 @@ const EditorScreen: React.FC = () => {
               isRestoringFromHistory.current = true;
               setSlides(updatedSlides);
               setHistory([updatedSlides]);
+              historyRef.current = [updatedSlides];
               historyIndexRef.current = 0;
               setHistoryIndex(0);
               setCurrentSlideIndex(0);
@@ -572,6 +588,7 @@ const EditorScreen: React.FC = () => {
               }));
               setSlides(sanitizedSlides);
               setHistory([sanitizedSlides]);
+              historyRef.current = [sanitizedSlides];
               historyIndexRef.current = 0;
               setHistoryIndex(0);
               setCurrentSlideIndex(0);
@@ -687,12 +704,18 @@ const EditorScreen: React.FC = () => {
 
           historyIndexRef.current = newIndex;
           setHistoryIndex(newIndex);
+          
+          // Update the ref as well
+          historyRef.current = newHistory;
+          
+          // Trigger header update
+          setHeaderUpdateTrigger(prev => prev + 1);
 
           return newHistory;
         });
       }
     },
-    [],
+    [setHeaderUpdateTrigger],
   );
 
   // Function to update slide position (needs to be called from JS thread)
@@ -760,7 +783,7 @@ const EditorScreen: React.FC = () => {
         return newSlides;
       });
     },
-    [currentSlideIndex, addToHistory, currentFontSize, sliderTranslateY],
+    [currentSlideIndex, addToHistory, currentFontSize, sliderTranslateY, SLIDER_HEIGHT],
   );
 
   const panGesture = Gesture.Pan()
@@ -975,41 +998,42 @@ const EditorScreen: React.FC = () => {
 
   const handleTextColorChange = (color: string) => {
     FeedbackService.buttonTap();
-    const newSlides = [...slides];
-    const slide = newSlides[currentSlideIndex];
-    const oldTextColor = slide.color; // Store the old text color before we change it
+    setSlides(prevSlides => {
+      const newSlides = [...prevSlides];
+      const slide = newSlides[currentSlideIndex];
+      const oldTextColor = slide.color; // Store the old text color before we change it
 
-    slide.color = color;
+      slide.color = color;
 
-    // Update neon glow effects to use the new text color unless they have a custom glow color
-    if (slide.textEffects) {
-      slide.textEffects = slide.textEffects.map(effect => {
-        if (effect.type === 'neonGlow') {
-          const currentGlowColor = effect.parameters?.glowColor;
+      // Update neon glow effects to use the new text color unless they have a custom glow color
+      if (slide.textEffects) {
+        slide.textEffects = slide.textEffects.map(effect => {
+          if (effect.type === 'neonGlow') {
+            const currentGlowColor = effect.parameters?.glowColor;
 
-          // Update if: no glow color set, glow color is default cyan, or glow color matches the old text color
-          const shouldUpdate = !currentGlowColor ||
-                             currentGlowColor === '#00FFFF' ||
-                             currentGlowColor === oldTextColor;
+            // Update if: no glow color set, glow color is default cyan, or glow color matches the old text color
+            const shouldUpdate = !currentGlowColor ||
+                               currentGlowColor === '#00FFFF' ||
+                               currentGlowColor === oldTextColor;
 
-          if (shouldUpdate) {
-            return {
-              ...effect,
-              parameters: {
-                ...effect.parameters,
-                glowColor: color,
-              },
-            };
+            if (shouldUpdate) {
+              return {
+                ...effect,
+                parameters: {
+                  ...effect.parameters,
+                  glowColor: color,
+                },
+              };
+            }
           }
-        }
-        return effect;
-      });
-    }
+          return effect;
+        });
+      }
 
-    newSlides[currentSlideIndex] = slide;
-
-    setSlides(newSlides);
-    addToHistory(newSlides);
+      newSlides[currentSlideIndex] = slide;
+      addToHistory(newSlides);
+      return newSlides;
+    });
     // Color picker closes after selection (single selection behavior)
     setColorPaletteVisible(false);
     setFontPaletteVisible(false);
@@ -1255,6 +1279,25 @@ const EditorScreen: React.FC = () => {
       FeedbackService.buttonTap();
     }
   };
+  
+  const handleStartEditingTextDelayed = () => {
+    // Clear any existing timer
+    if (textEditTimerRef.current) {
+      clearTimeout(textEditTimerRef.current);
+    }
+    
+    // Start editing after 0.1 seconds (100ms)
+    textEditTimerRef.current = setTimeout(() => {
+      handleStartEditingText();
+    }, 100);
+  };
+  
+  const handleCancelDelayedTextEdit = () => {
+    if (textEditTimerRef.current) {
+      clearTimeout(textEditTimerRef.current);
+      textEditTimerRef.current = null;
+    }
+  };
 
   const handleFinishEditingText = () => {
     if (currentSlide && editingText.trim() !== currentSlide.text) {
@@ -1401,7 +1444,10 @@ const EditorScreen: React.FC = () => {
                     >
                       <TouchableOpacity
                         style={styles.textEditTrigger}
-                        onPress={handleStartEditingText}
+                        onPressIn={handleStartEditingTextDelayed}
+                        onPressOut={handleCancelDelayedTextEdit}
+                        onLongPress={handleStartEditingText}
+                        delayLongPress={200}
                         activeOpacity={0.7}
                       >
                         {previewEffects.underlayElements.map((element, index) =>
