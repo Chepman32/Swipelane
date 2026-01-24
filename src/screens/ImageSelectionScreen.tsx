@@ -8,6 +8,8 @@ import {
   ScrollView,
   Image,
   StatusBar,
+  useWindowDimensions,
+  Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -38,12 +40,95 @@ type ImageSelectionNavigationProp = StackNavigationProp<
   'Editor'
 >;
 
+const PannableImage = ({ uri, onPress }: { uri: string; onPress: () => void }) => {
+  const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
+  const [containerDimensions, setContainerDimensions] = useState<{ width: number; height: number } | null>(null);
+
+  useEffect(() => {
+    setImageDimensions(null);
+  }, [uri]);
+
+  const handleLayout = (event: any) => {
+    const { width, height } = event.nativeEvent.layout;
+    setContainerDimensions({ width, height });
+  };
+
+  const handleImageLoad = (event: any) => {
+    const { width, height } = event.nativeEvent.source;
+    setImageDimensions({ width, height });
+  };
+
+  if (!imageDimensions || !containerDimensions) {
+    return (
+      <TouchableOpacity
+        style={styles.imageContainer}
+        onLayout={handleLayout}
+        onPress={onPress}
+      >
+        <Image
+          source={{ uri }}
+          style={styles.previewImage}
+          resizeMode="cover"
+          onLoad={handleImageLoad}
+        />
+      </TouchableOpacity>
+    );
+  }
+
+  const containerAspect = containerDimensions.width / containerDimensions.height;
+  const imageAspect = imageDimensions.width / imageDimensions.height;
+  const isTooTall = imageAspect < containerAspect;
+
+  let renderWidth, renderHeight;
+
+  if (isTooTall) {
+    renderWidth = containerDimensions.width;
+    renderHeight = renderWidth / imageAspect;
+  } else {
+    renderHeight = containerDimensions.height;
+    renderWidth = renderHeight * imageAspect;
+  }
+
+  return (
+    <View style={styles.imageContainer}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ width: renderWidth, height: renderHeight }}
+        horizontal={!isTooTall}
+        showsHorizontalScrollIndicator={false}
+        showsVerticalScrollIndicator={false}
+        nestedScrollEnabled={true}
+        bounces={false}
+      >
+        <TouchableOpacity onPress={onPress}>
+          <Image
+            source={{ uri }}
+            style={{ width: renderWidth, height: renderHeight }}
+            resizeMode="contain"
+          />
+        </TouchableOpacity>
+      </ScrollView>
+    </View>
+  );
+};
+
 const ImageSelectionScreen: React.FC = () => {
   const route = useRoute<ImageSelectionRouteProp>();
   const navigation = useNavigation<ImageSelectionNavigationProp>();
   const { text, images: initialImages, projectId } = route.params;
   const insets = useSafeAreaInsets();
   const { t } = useLanguage();
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  // Ensure we have non-zero dimensions
+  const validWidth = screenWidth || Dimensions.get('window').width || 360;
+  const validHeight = screenHeight || Dimensions.get('window').height || 800;
+
+  const slideSize = Math.min(validWidth * 0.99, validWidth - 10);
+  // Calculate available height for image container (matching EditorScreen logic)
+  const headerHeight = Math.max(insets.top, 20) + 60; // Safe area + title height
+  const previewButtonHeight = 80; // Height for preview button + margins
+  const availableHeight = validHeight - headerHeight - previewButtonHeight;
+  const imageContainerHeight = availableHeight;
 
   const optimizedText = optimizeForSlides(text);
   const optimalSlideCount = getOptimalSlideCount(optimizedText);
@@ -92,19 +177,40 @@ const ImageSelectionScreen: React.FC = () => {
 
   const saveProjectState = useCallback(async (images: string[]) => {
     try {
-      // Use the same default position as EditorScreen's initialSlides
-      // This ensures text appears in a reasonable position (upper-left area, not corner)
-      const projectSlides = slides.map((slideText, index) => ({
-        id: index,
-        text: slideText,
-        image: images[index] || '',
-        position: { x: 50, y: 100 },
-        fontSize: 24,
-        color: '#000000',
-        backgroundColor: '#ffffff',
-        textAlign: 'center' as const,
-        fontWeight: 'normal' as const,
-      }));
+      // Calculate centered positions
+      const projectSlides = slides.map((slideText, index) => {
+        const fontSize = 24;
+        const textLength = slideText.length;
+        const textPadding = 20;
+        const charsPerLine = Math.max(
+          1,
+          Math.floor((slideSize * 0.9) / (fontSize * 0.6)),
+        );
+        const numberOfLines = Math.ceil(textLength / charsPerLine);
+        const estimatedTextWidth = Math.min(
+          slideSize * 0.9,
+          textLength < charsPerLine
+            ? textLength * fontSize * 0.6
+            : slideSize * 0.9,
+        );
+        const estimatedTextHeight = numberOfLines * fontSize * 1.2 + textPadding;
+        
+        const centerX = Math.max(0, (slideSize - estimatedTextWidth) / 2);
+        const centerY = Math.max(0, (imageContainerHeight - estimatedTextHeight) / 2);
+
+        return {
+          id: index,
+          text: slideText,
+          image: images[index] || '',
+          position: { x: centerX, y: centerY },
+          fontSize: fontSize,
+          color: '#000000',
+          backgroundColor: '#ffffff',
+          textAlign: 'center' as const,
+          fontWeight: 'normal' as const,
+          textEffects: [],
+        };
+      });
 
       const projectState: ProjectState = {
         id: projectId,
@@ -120,7 +226,7 @@ const ImageSelectionScreen: React.FC = () => {
     } catch (error) {
       console.error('Failed to save project state:', error);
     }
-  }, [slides, text, projectId]);
+  }, [slides, text, projectId, slideSize, imageContainerHeight]);
 
   useEffect(() => {
     if (hasRestoredImages.current) {
@@ -340,16 +446,10 @@ const ImageSelectionScreen: React.FC = () => {
             {/* Image Preview Area */}
             <View style={styles.imagePreviewArea}>
               {hasUserMadeChoice[index] && selectedImages[index] !== '' ? (
-                <TouchableOpacity
+                <PannableImage
+                  uri={selectedImages[index]}
                   onPress={() => handleSelectImage(index)}
-                  style={styles.imageContainer}
-                >
-                  <Image
-                    source={{ uri: selectedImages[index] }}
-                    style={styles.previewImage}
-                    resizeMode="cover"
-                  />
-                </TouchableOpacity>
+                />
               ) : hasUserMadeChoice[index] ? (
                 <TouchableOpacity
                   style={styles.plainBackgroundContainer}

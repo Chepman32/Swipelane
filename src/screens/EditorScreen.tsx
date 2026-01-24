@@ -12,6 +12,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Image,
+  useWindowDimensions,
   Dimensions,
   ScrollView,
   Platform,
@@ -147,6 +148,19 @@ const EditorScreen: React.FC = () => {
     navArrowSize,
     colorSwatchSize,
   } = useResponsive();
+
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  // Ensure we have non-zero dimensions
+  const validWidth = screenWidth || Dimensions.get('window').width || 360;
+  const validHeight = screenHeight || Dimensions.get('window').height || 800;
+
+  const slideSize = Math.min(validWidth * 0.99, validWidth - 10); // Use 99% of screen width
+
+  // Calculate available height for image container
+  const headerHeight = Math.max(insets.top, 20) + 60; // Safe area + title height
+  const previewButtonHeight = 80; // Height for preview button + margins
+  const availableHeight = validHeight - headerHeight - previewButtonHeight;
+  const imageContainerHeight = availableHeight; // Use available height without minimum constraint
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const textEditTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isRestoringFromStorage = useRef(false);
@@ -159,26 +173,48 @@ const EditorScreen: React.FC = () => {
   // Create slides with enhanced properties
   const initialSlides: Slide[] =
     textSlides.length > 0
-      ? textSlides.map((slideText, index) => ({
-          id: index,
-          text: slideText,
-          image: images[index] || '',
-          position: { x: 50, y: 100 },
-          fontSize: 24,
-          color: '#FFFFFF',
-          backgroundColor: 'rgba(0,0,0,0.5)',
-          textAlign: 'center',
-          fontWeight: 'bold',
-          fontFamily: undefined,
-          fontId: DEFAULT_SLIDE_FONT_ID,
-          textEffects: [],
-        }))
+      ? textSlides.map((slideText, index) => {
+          // Calculate initial position to be centered
+          const fontSize = 24;
+          const textLength = slideText.length;
+          const textPadding = 20;
+          const charsPerLine = Math.max(
+            1,
+            Math.floor((slideSize * 0.9) / (fontSize * 0.6)),
+          );
+          const numberOfLines = Math.ceil(textLength / charsPerLine);
+          const estimatedTextWidth = Math.min(
+            slideSize * 0.9,
+            textLength < charsPerLine
+              ? textLength * fontSize * 0.6
+              : slideSize * 0.9,
+          );
+          const estimatedTextHeight = numberOfLines * fontSize * 1.2 + textPadding;
+          
+          const centerX = Math.max(0, (slideSize - estimatedTextWidth) / 2);
+          const centerY = Math.max(0, (imageContainerHeight - estimatedTextHeight) / 2);
+
+          return {
+            id: index,
+            text: slideText,
+            image: images[index] || '',
+            position: { x: centerX, y: centerY },
+            fontSize: fontSize,
+            color: '#FFFFFF',
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            textAlign: 'center',
+            fontWeight: 'bold',
+            fontFamily: undefined,
+            fontId: DEFAULT_SLIDE_FONT_ID,
+            textEffects: [],
+          };
+        })
       : [
           {
             id: 0,
             text: 'No text provided',
             image: '',
-            position: { x: 50, y: 100 },
+            position: { x: (slideSize - 200) / 2, y: (imageContainerHeight - 50) / 2 },
             fontSize: 24,
             color: '#FFFFFF',
             backgroundColor: 'rgba(0,0,0,0.5)',
@@ -226,8 +262,7 @@ const EditorScreen: React.FC = () => {
   const selectedTextEffectDefinition = selectedTextEffect
     ? TEXT_EFFECT_DEFINITIONS[selectedTextEffect.type]
     : undefined;
-  const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
-  const slideSize = Math.min(screenWidth * 0.99, screenWidth - 10); // Use 99% of screen width
+
 
   const overlayPaddingHorizontal = Math.max(
     12,
@@ -292,11 +327,7 @@ const EditorScreen: React.FC = () => {
       .filter((effect): effect is EffectInstance => effect !== null);
   }, [currentSlideEffects, currentSlide?.color]);
 
-  // Calculate available height for image container
-  const headerHeight = Math.max(insets.top, 20) + 60; // Safe area + title height
-  const previewButtonHeight = 80; // Height for preview button + margins
-  const availableHeight = screenHeight - headerHeight - previewButtonHeight;
-  const imageContainerHeight = availableHeight; // Use available height without minimum constraint
+
 
   // Animated values for drag and drop (must be declared at the top level)
   const translateX = useSharedValue(currentSlide?.position?.x || 50);
@@ -605,6 +636,54 @@ const EditorScreen: React.FC = () => {
 
     loadSavedProject();
   }, [images]); // Add images as dependency so it runs when images change
+
+  // Self-correction for initial 0,0 position if dimensions were not ready during initial load
+  useEffect(() => {
+    if (slideSize > 0 && imageContainerHeight > 0) {
+      setSlides(prevSlides => {
+        let changed = false;
+        const newSlides = prevSlides.map(slide => {
+          // Check if slide is at exact 0,0 and centered, which implies uninitialized position
+          // We only auto-correct if it's strictly 0,0 and centered text
+          if (slide.position.x === 0 && slide.position.y === 0 && slide.textAlign === 'center') {
+             const fontSize = slide.fontSize;
+             const textLength = slide.text.length;
+             const textPadding = 20;
+             const charsPerLine = Math.max(
+               1,
+               Math.floor((slideSize * 0.9) / (fontSize * 0.6)),
+             );
+             const numberOfLines = Math.ceil(textLength / charsPerLine);
+             const estimatedTextWidth = Math.min(
+               slideSize * 0.9,
+               textLength < charsPerLine
+                 ? textLength * fontSize * 0.6
+                 : slideSize * 0.9,
+             );
+             const estimatedTextHeight = numberOfLines * fontSize * 1.2 + textPadding;
+             
+             const centerX = Math.max(0, (slideSize - estimatedTextWidth) / 2);
+             const centerY = Math.max(0, (imageContainerHeight - estimatedTextHeight) / 2);
+
+             // Only update if the calculated position is significantly different from 0,0
+             if (centerX > 1 || centerY > 1) {
+               changed = true;
+               return { ...slide, position: { x: centerX, y: centerY } };
+             }
+          }
+          return slide;
+        });
+        
+        if (changed) {
+          console.log('Self-corrected slide positions from 0,0 to centered');
+          // We don't call addToHistory here to avoid polluting history with auto-correction
+          // But we should mark unsaved changes? Maybe not, to avoid prompting save on fresh open.
+          return newSlides;
+        }
+        return prevSlides;
+      });
+    }
+  }, [slideSize, imageContainerHeight]); // Run when dimensions change/ready
 
   // Update animated values when slide changes
   useEffect(() => {
