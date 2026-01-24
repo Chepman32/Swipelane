@@ -1618,9 +1618,11 @@ const EditorScreen: React.FC = () => {
       {isOpacityPaletteVisible && (
         <View style={[styles.opacityPaletteContainer, { position: 'absolute', top: imageContainerHeight - 130, left: 0, right: 0, justifyContent: 'center' }]}>
           {[0, 0.2, 0.4, 0.6, 0.8, 1].map(opacity => {
-            const currentOpacity = parseFloat(
-              currentSlide.backgroundColor.split(',')[3].replace(')', ''),
-            );
+            const currentOpacity = currentSlide?.backgroundColor
+              ? parseFloat(
+                  currentSlide.backgroundColor.split(',')[3]?.replace(')', '') || '0.5',
+                )
+              : 0.5;
             const borderColor =
               Math.abs(currentOpacity - opacity) < 0.01
                 ? '#FFFFFF'
