@@ -13,6 +13,7 @@ import {
   TextEffectParameterDefinition,
   TextEffectDefinition,
 } from '../constants/textEffects';
+import { useResponsive } from '../hooks/useResponsive';
 
 interface TextEffectParameterEditorProps {
   effect: TextEffectInstance;
@@ -39,6 +40,8 @@ const TextEffectParameterEditor: React.FC<TextEffectParameterEditorProps> = ({
   onChangeParameter,
   onClose,
 }) => {
+  const { scale, scaleFont, maxPanelHeight, smallButtonSize } = useResponsive();
+
   const renderNumericControl = (parameter: TextEffectParameterDefinition<number>) => {
     const rawValue = Number(effect.parameters[parameter.id] ?? parameter.defaultValue ?? 0);
     const value = isNaN(rawValue) ? 0 : rawValue;
@@ -65,20 +68,20 @@ const TextEffectParameterEditor: React.FC<TextEffectParameterEditorProps> = ({
     return (
       <View key={parameter.id} style={styles.parameterRow}>
         <View style={styles.parameterLabelColumn}>
-          <Text style={styles.parameterLabel}>{parameter.label}</Text>
+          <Text style={[styles.parameterLabel, { fontSize: scaleFont(13) }]}>{parameter.label}</Text>
           {parameter.description ? (
-            <Text style={styles.parameterDescription} numberOfLines={2}>
+            <Text style={[styles.parameterDescription, { fontSize: scaleFont(11) }]} numberOfLines={2}>
               {parameter.description}
             </Text>
           ) : null}
         </View>
         <View style={styles.numericControlContainer}>
-          <TouchableOpacity style={styles.adjustButton} onPress={() => handleIncrement(-1)}>
-            <Text style={styles.adjustButtonText}>–</Text>
+          <TouchableOpacity style={[styles.adjustButton, { width: smallButtonSize, height: smallButtonSize, borderRadius: smallButtonSize / 2 }]} onPress={() => handleIncrement(-1)}>
+            <Text style={[styles.adjustButtonText, { fontSize: scaleFont(18) }]}>–</Text>
           </TouchableOpacity>
-          <Text style={styles.numericValue}>{value}</Text>
-          <TouchableOpacity style={styles.adjustButton} onPress={() => handleIncrement(1)}>
-            <Text style={styles.adjustButtonText}>+</Text>
+          <Text style={[styles.numericValue, { fontSize: scaleFont(14) }]}>{value}</Text>
+          <TouchableOpacity style={[styles.adjustButton, { width: smallButtonSize, height: smallButtonSize, borderRadius: smallButtonSize / 2 }]} onPress={() => handleIncrement(1)}>
+            <Text style={[styles.adjustButtonText, { fontSize: scaleFont(18) }]}>+</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -141,9 +144,10 @@ const TextEffectParameterEditor: React.FC<TextEffectParameterEditorProps> = ({
 
   const renderColorControl = (parameter: TextEffectParameterDefinition<string>) => {
     const currentValue = String(effect.parameters[parameter.id] ?? parameter.defaultValue ?? '#FFFFFF');
+    const colorSwatchSize = scale(28);
     return (
       <View key={parameter.id} style={styles.parameterColumn}>
-        <Text style={styles.parameterLabel}>{parameter.label}</Text>
+        <Text style={[styles.parameterLabel, { fontSize: scaleFont(13) }]}>{parameter.label}</Text>
         <View style={styles.colorRow}>
           {COLOR_SWATCHES.map(color => {
             const isActive = color.toLowerCase() === currentValue.toLowerCase();
@@ -152,7 +156,7 @@ const TextEffectParameterEditor: React.FC<TextEffectParameterEditorProps> = ({
                 key={color}
                 style={[
                   styles.colorSwatch,
-                  { backgroundColor: color },
+                  { backgroundColor: color, width: colorSwatchSize, height: colorSwatchSize, borderRadius: colorSwatchSize / 2 },
                   isActive && styles.colorSwatchActive,
                 ]}
                 onPress={() => onChangeParameter(parameter.id, color)}
@@ -161,14 +165,14 @@ const TextEffectParameterEditor: React.FC<TextEffectParameterEditorProps> = ({
           })}
         </View>
         <TextInput
-          style={styles.colorInput}
+          style={[styles.colorInput, { fontSize: scaleFont(13), padding: scale(8) }]}
           value={currentValue}
           autoCapitalize="none"
           autoCorrect={false}
           onChangeText={text => onChangeParameter(parameter.id, text)}
         />
         {parameter.description ? (
-          <Text style={styles.parameterDescription} numberOfLines={2}>
+          <Text style={[styles.parameterDescription, { fontSize: scaleFont(11) }]} numberOfLines={2}>
             {parameter.description}
           </Text>
         ) : null}
@@ -228,21 +232,21 @@ const TextEffectParameterEditor: React.FC<TextEffectParameterEditorProps> = ({
   };
 
   return (
-    <View style={styles.editorContainer}>
+    <View style={[styles.editorContainer, { maxHeight: maxPanelHeight, paddingHorizontal: scale(16), paddingVertical: scale(16) }]}>
       <View style={styles.headerRow}>
         <View style={styles.headerTitles}>
-          <Text style={styles.title}>{definition.name}</Text>
-          <Text style={styles.subtitle}>{definition.description}</Text>
+          <Text style={[styles.title, { fontSize: scaleFont(16) }]}>{definition.name}</Text>
+          <Text style={[styles.subtitle, { fontSize: scaleFont(12) }]}>{definition.description}</Text>
         </View>
         {onClose ? (
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <Text style={styles.closeButtonText}>Close</Text>
+          <TouchableOpacity style={[styles.closeButton, { paddingHorizontal: scale(12), paddingVertical: scale(6) }]} onPress={onClose}>
+            <Text style={[styles.closeButtonText, { fontSize: scaleFont(13) }]}>Close</Text>
           </TouchableOpacity>
         ) : null}
       </View>
       <ScrollView style={styles.parametersScroll} contentContainerStyle={styles.parametersContent}>
         {definition.parameters.length === 0 ? (
-          <Text style={styles.emptyParametersText}>No adjustable parameters for this effect.</Text>
+          <Text style={[styles.emptyParametersText, { fontSize: scaleFont(13) }]}>No adjustable parameters for this effect.</Text>
         ) : (
           definition.parameters.map(renderParameterControl)
         )}

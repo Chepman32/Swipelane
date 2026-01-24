@@ -65,8 +65,8 @@ import { EffectPipeline } from '../textfx/render/pipeline';
 import { convertToNewFormat } from '../textfx/utils/effectConverter';
 import type { EffectInstance } from '../textfx/types';
 import ColorPicker from '../assets/icons/ColorPicker.png';
+import { useResponsive } from '../hooks/useResponsive';
 
-const SLIDER_HEIGHT = 200;
 const MIN_FONT_SIZE = 12;
 const MAX_FONT_SIZE = 72;
 const COLOR_OPTIONS = [
@@ -133,6 +133,19 @@ const EditorScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const { themeDefinition } = useTheme();
   const {} = useLanguage();
+  const {
+    sliderHeight: SLIDER_HEIGHT,
+    scale: scaleSize,
+    scaleFont,
+    isPad,
+    controlGap,
+    paddingHorizontal: responsivePadding,
+    smallButtonSize,
+    mediumButtonSize,
+    largeButtonSize,
+    navArrowSize,
+    colorSwatchSize,
+  } = useResponsive();
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const projectId = useRef<string>(`project_${Date.now()}`);
   const isRestoringFromStorage = useRef(false);
@@ -1339,12 +1352,15 @@ const EditorScreen: React.FC = () => {
               style={[
                 styles.fontSizeSlider,
                 {
-                  top: Math.max(10, (imageContainerHeight - SLIDER_HEIGHT) / 2),
+                  top: Math.max(scaleSize(10), (imageContainerHeight - SLIDER_HEIGHT) / 2),
+                  width: scaleSize(50),
+                  height: SLIDER_HEIGHT,
+                  borderRadius: scaleSize(25),
                 },
               ]}
             >
-              <View style={styles.sliderTrack}>
-                <Animated.View style={[styles.sliderThumb, sliderThumbStyle]} />
+              <View style={[styles.sliderTrack, { width: scaleSize(8), height: SLIDER_HEIGHT }]}>
+                <Animated.View style={[styles.sliderThumb, { width: scaleSize(24), height: scaleSize(24), borderRadius: scaleSize(12), left: -scaleSize(8) }, sliderThumbStyle]} />
               </View>
             </View>
           </GestureDetector>
@@ -1362,10 +1378,11 @@ const EditorScreen: React.FC = () => {
 
       {/* Navigation arrows above the canvas */}
       {slides.length > 1 && (
-        <View style={[styles.navigationAboveCanvas, { top: 80 }]}>
+        <View style={[styles.navigationAboveCanvas, { top: scaleSize(80) }]}>
           <TouchableOpacity
             style={[
               styles.navArrowBelow,
+              { width: navArrowSize, height: navArrowSize, borderRadius: navArrowSize / 2 },
               currentSlideIndex === 0 && styles.navArrowDisabled,
             ]}
             onPress={() => {
@@ -1376,12 +1393,13 @@ const EditorScreen: React.FC = () => {
             }}
             disabled={currentSlideIndex === 0}
           >
-            <Text style={styles.navArrowText}>‹</Text>
+            <Text style={[styles.navArrowText, { fontSize: scaleFont(32) }]}>‹</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[
               styles.navArrowBelow,
+              { width: navArrowSize, height: navArrowSize, borderRadius: navArrowSize / 2 },
               currentSlideIndex === slides.length - 1 &&
                 styles.navArrowDisabled,
             ]}
@@ -1393,7 +1411,7 @@ const EditorScreen: React.FC = () => {
             }}
             disabled={currentSlideIndex === slides.length - 1}
           >
-            <Text style={styles.navArrowText}>›</Text>
+            <Text style={[styles.navArrowText, { fontSize: scaleFont(32) }]}>›</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -1428,6 +1446,10 @@ const EditorScreen: React.FC = () => {
                     style={[
                       styles.colorOption,
                       {
+                        width: colorSwatchSize,
+                        height: colorSwatchSize,
+                        borderRadius: colorSwatchSize / 2,
+                        marginHorizontal: scaleSize(4),
                         backgroundColor: color,
                         borderColor,
                       },
@@ -1584,16 +1606,17 @@ const EditorScreen: React.FC = () => {
 
       {/* Main toolbar - always visible */}
       <View
-        style={[styles.minimalControls, { top: imageContainerHeight - 60 }]}
+        style={[styles.minimalControls, { top: imageContainerHeight - scaleSize(60), gap: controlGap }]}
       >
         {/* Always show main toolbar buttons */}
         {
           <>
             {/* Text alignment controls */}
-            <View style={styles.alignmentControls}>
+            <View style={[styles.alignmentControls, { paddingHorizontal: scaleSize(4), paddingVertical: scaleSize(4) }]}>
               <TouchableOpacity
                 style={[
                   styles.alignmentButton,
+                  { width: mediumButtonSize, height: mediumButtonSize, borderRadius: mediumButtonSize / 2 },
                   currentSlide.textAlign === 'left' &&
                     styles.activeAlignmentButton,
                 ]}
@@ -1605,6 +1628,7 @@ const EditorScreen: React.FC = () => {
                 <Text
                   style={[
                     styles.alignmentIcon,
+                    { fontSize: scaleFont(16) },
                     currentSlide.textAlign === 'left' &&
                       styles.activeAlignmentIcon,
                   ]}
@@ -1616,6 +1640,7 @@ const EditorScreen: React.FC = () => {
               <TouchableOpacity
                 style={[
                   styles.alignmentButton,
+                  { width: mediumButtonSize, height: mediumButtonSize, borderRadius: mediumButtonSize / 2 },
                   currentSlide.textAlign === 'center' &&
                     styles.activeAlignmentButton,
                 ]}
@@ -1627,6 +1652,7 @@ const EditorScreen: React.FC = () => {
                 <Text
                   style={[
                     styles.alignmentIcon,
+                    { fontSize: scaleFont(16) },
                     currentSlide.textAlign === 'center' &&
                       styles.activeAlignmentIcon,
                   ]}
@@ -1638,6 +1664,7 @@ const EditorScreen: React.FC = () => {
               <TouchableOpacity
                 style={[
                   styles.alignmentButton,
+                  { width: mediumButtonSize, height: mediumButtonSize, borderRadius: mediumButtonSize / 2 },
                   currentSlide.textAlign === 'right' &&
                     styles.activeAlignmentButton,
                 ]}
@@ -1649,6 +1676,7 @@ const EditorScreen: React.FC = () => {
                 <Text
                   style={[
                     styles.alignmentIcon,
+                    { fontSize: scaleFont(16) },
                     currentSlide.textAlign === 'right' &&
                       styles.activeAlignmentIcon,
                   ]}
@@ -1662,6 +1690,7 @@ const EditorScreen: React.FC = () => {
             <TouchableOpacity
               style={[
                 styles.colorPickerButton,
+                { width: largeButtonSize, height: largeButtonSize, borderRadius: largeButtonSize / 2 },
                 isColorPaletteVisible && styles.activeColorPickerButton,
               ]}
               onPress={() => {
@@ -1677,13 +1706,14 @@ const EditorScreen: React.FC = () => {
                 }
               }}
             >
-              <Image source={ColorPicker} style={styles.colorWheel} />
+              <Image source={ColorPicker} style={[styles.colorWheel, { width: scaleSize(48), height: scaleSize(48) }]} />
             </TouchableOpacity>
 
             {/* Font picker */}
             <TouchableOpacity
               style={[
                 styles.fontPickerButton,
+                { width: largeButtonSize, height: largeButtonSize, borderRadius: largeButtonSize / 2 },
                 isFontPaletteVisible && styles.activeFontPickerButton,
               ]}
               onPress={() => {
@@ -1699,13 +1729,14 @@ const EditorScreen: React.FC = () => {
                 }
               }}
             >
-              <Text style={styles.fontPickerIcon}>Aa</Text>
+              <Text style={[styles.fontPickerIcon, { fontSize: scaleFont(18) }]}>Aa</Text>
             </TouchableOpacity>
 
             {/* Text effects tool */}
             <TouchableOpacity
               style={[
                 styles.textEffectsButton,
+                { width: largeButtonSize, height: largeButtonSize, borderRadius: largeButtonSize / 2 },
                 isEffectsPaletteVisible && styles.activeTextEffectsButton,
               ]}
               onPress={() => {
@@ -1721,13 +1752,14 @@ const EditorScreen: React.FC = () => {
                 }
               }}
             >
-              <Text style={styles.textEffectsIcon}>Fx</Text>
+              <Text style={[styles.textEffectsIcon, { fontSize: scaleFont(16) }]}>Fx</Text>
             </TouchableOpacity>
 
             {/* Background opacity picker */}
             <TouchableOpacity
               style={[
                 styles.opacityButton,
+                { width: largeButtonSize, height: largeButtonSize, borderRadius: largeButtonSize / 2 },
                 isOpacityPaletteVisible && styles.activeOpacityButton,
               ]}
               onPress={() => {
@@ -1743,7 +1775,7 @@ const EditorScreen: React.FC = () => {
                 }
               }}
             >
-              <Text style={styles.opacityIcon}>◐</Text>
+              <Text style={[styles.opacityIcon, { fontSize: scaleFont(18) }]}>◐</Text>
             </TouchableOpacity>
           </>
         }
@@ -1782,8 +1814,8 @@ const EditorScreen: React.FC = () => {
       )}
 
       {/* Preview button */}
-      <TouchableOpacity style={styles.previewButton} onPress={handlePreview}>
-        <Text style={styles.previewButtonText}>Preview Slides</Text>
+      <TouchableOpacity style={[styles.previewButton, { paddingVertical: scaleSize(15), marginHorizontal: responsivePadding }]} onPress={handlePreview}>
+        <Text style={[styles.previewButtonText, { fontSize: scaleFont(18) }]}>Preview Slides</Text>
       </TouchableOpacity>
     </View>
   );
@@ -1893,18 +1925,18 @@ const styles = StyleSheet.create({
   fontSizeSlider: {
     position: 'absolute',
     left: 10,
-    width: 50, // Increased width for better touch target
-    height: SLIDER_HEIGHT,
+    width: 50, // Base width, overridden by inline styles
+    height: 200, // Base height, overridden by inline styles
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.1)', // Add subtle background for better visibility
+    backgroundColor: 'rgba(0,0,0,0.1)',
     borderRadius: 25,
     zIndex: 5,
   },
   sliderTrack: {
-    width: 8, // Increased width for better visibility
-    height: SLIDER_HEIGHT,
-    backgroundColor: 'rgba(255,255,255,0.4)', // Slightly more visible
+    width: 8, // Base width, overridden by inline styles
+    height: 200, // Base height, overridden by inline styles
+    backgroundColor: 'rgba(255,255,255,0.4)',
     borderRadius: 4,
     position: 'relative',
   },

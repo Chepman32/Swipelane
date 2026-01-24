@@ -20,6 +20,7 @@ import {
   optimizeForSlides,
 } from '../utils/textUtils';
 import { useLanguage } from '../context/LanguageContext';
+import { useResponsive } from '../hooks/useResponsive';
 
 type RootStackParamList = {
   Splash: undefined;
@@ -42,6 +43,7 @@ const ImageSelectionScreen: React.FC = () => {
   const { text, images: initialImages } = route.params;
   const insets = useSafeAreaInsets();
   const { t } = useLanguage();
+  const { scale, scaleFont } = useResponsive();
 
   const optimizedText = optimizeForSlides(text);
   const optimalSlideCount = getOptimalSlideCount(optimizedText);
@@ -235,7 +237,7 @@ const ImageSelectionScreen: React.FC = () => {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <Text style={styles.subtitle}>
+      <Text style={[styles.subtitle, { fontSize: scaleFont(20), paddingHorizontal: scale(20), marginVertical: scale(15) }]}>
         {t('image_selection_subtitle', {
           count: requiredImages,
           plural: requiredImages > 1 ? 's' : '',
@@ -244,29 +246,29 @@ const ImageSelectionScreen: React.FC = () => {
 
       <ScrollView style={styles.content}>
         {slides.map((slideText, index) => (
-          <View key={index} style={styles.slideContainer}>
-            <Text style={styles.slideTitle}>
+          <View key={index} style={[styles.slideContainer, { marginHorizontal: scale(20), marginBottom: scale(20), padding: scale(15) }]}>
+            <Text style={[styles.slideTitle, { fontSize: scaleFont(18) }]}>
               {t('image_selection_slide', { number: index + 1 })}
             </Text>
-            <Text style={styles.slidePreview} numberOfLines={3}>
+            <Text style={[styles.slidePreview, { fontSize: scaleFont(14) }]} numberOfLines={3}>
               {slideText}
             </Text>
 
             <View style={styles.imageOptions}>
               <TouchableOpacity
-                style={styles.imageButton}
+                style={[styles.imageButton, { padding: scale(10) }]}
                 onPress={() => handleSelectImage(index)}
               >
-                <Text style={styles.imageButtonText}>
+                <Text style={[styles.imageButtonText, { fontSize: scaleFont(14) }]}>
                   {t('image_selection_select_image')}
                 </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.imageButton, styles.plainButton]}
+                style={[styles.imageButton, styles.plainButton, { padding: scale(10) }]}
                 onPress={() => handleUsePlainBackground(index)}
               >
-                <Text style={styles.imageButtonText}>
+                <Text style={[styles.imageButtonText, { fontSize: scaleFont(14) }]}>
                   {t('image_selection_plain_background')}
                 </Text>
               </TouchableOpacity>
@@ -308,6 +310,7 @@ const ImageSelectionScreen: React.FC = () => {
       <TouchableOpacity
         style={[
           styles.continueButton,
+          { padding: scale(15), marginHorizontal: scale(20), marginBottom: scale(20) },
           hasUserMadeChoice.filter(choice => choice).length ===
             requiredImages && styles.continueButtonEnabled,
         ]}
@@ -316,7 +319,7 @@ const ImageSelectionScreen: React.FC = () => {
           hasUserMadeChoice.filter(choice => choice).length !== requiredImages
         }
       >
-        <Text style={styles.continueButtonText}>
+        <Text style={[styles.continueButtonText, { fontSize: scaleFont(18) }]}>
           {t('image_selection_continue')}
         </Text>
       </TouchableOpacity>

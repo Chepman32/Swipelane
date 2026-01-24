@@ -24,6 +24,7 @@ import {
   resolveFontFamilyForPlatform,
 } from '../constants/fonts';
 import { Platform } from 'react-native';
+import { useResponsive } from '../hooks/useResponsive';
 
 type RootStackParamList = {
   NewProject: undefined;
@@ -48,8 +49,11 @@ const platformKey: 'ios' | 'android' | 'default' =
 
 const SlidePreview: React.FC<{ slide: any }> = ({ slide }) => {
   const { themeDefinition } = useTheme();
+  const { isPad, scaleFont } = useResponsive();
   const { width: screenWidth } = Dimensions.get('window');
-  const previewWidth = Math.min(screenWidth - 80, 150);
+  // Increase preview width cap for iPad
+  const maxPreviewWidth = isPad ? 200 : 150;
+  const previewWidth = Math.min(screenWidth - 80, maxPreviewWidth);
   const previewHeight = (previewWidth * 16) / 9; // 16:9 aspect ratio
 
   if (!slide) {
@@ -66,7 +70,7 @@ const SlidePreview: React.FC<{ slide: any }> = ({ slide }) => {
         <Text
           style={[
             styles.noPreviewText,
-            { color: themeDefinition.colors.text + '66' },
+            { color: themeDefinition.colors.text + '66', fontSize: scaleFont(14) },
           ]}
         >
           No slides yet
@@ -161,6 +165,7 @@ const HomeScreen: React.FC = () => {
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const { themeDefinition } = useTheme();
   const { t } = useLanguage();
+  const { gridColumns, scale, scaleFont, isPad } = useResponsive();
 
   // Load recent projects and current project
   useEffect(() => {
@@ -239,7 +244,7 @@ const HomeScreen: React.FC = () => {
   const renderProjectItem = (props: { item: ProjectState; isCurrent?: boolean }) => {
     const { item, isCurrent } = props;
     const firstSlide = item.slides && item.slides.length > 0 ? item.slides[0] : null;
-    
+
     return (
       <TouchableOpacity
         style={[
@@ -248,6 +253,8 @@ const HomeScreen: React.FC = () => {
             backgroundColor: themeDefinition.colors.card,
             borderColor: isCurrent ? themeDefinition.colors.primary || '#007AFF' : themeDefinition.colors.border,
             borderWidth: isCurrent ? 2 : 1,
+            margin: scale(8),
+            minHeight: isPad ? 280 : 200,
           },
         ]}
         onPress={() => handleOpenProject(item)}
@@ -257,21 +264,21 @@ const HomeScreen: React.FC = () => {
         {isCurrent && (
           <View style={[
             styles.currentProjectBadge,
-            { backgroundColor: themeDefinition.colors.primary || '#007AFF' }
+            { backgroundColor: themeDefinition.colors.primary || '#007AFF', top: scale(8), right: scale(8) }
           ]}>
-            <Text style={styles.currentProjectBadgeText}>Current</Text>
+            <Text style={[styles.currentProjectBadgeText, { fontSize: scaleFont(10) }]}>Current</Text>
           </View>
         )}
-        
+
         {/* Slide Preview */}
         <SlidePreview slide={firstSlide} />
-        
+
         {/* Project Info */}
-        <View style={styles.projectInfo}>
+        <View style={[styles.projectInfo, { padding: scale(12) }]}>
           <Text
             style={[
               styles.projectTitle,
-              { color: themeDefinition.colors.text },
+              { color: themeDefinition.colors.text, fontSize: scaleFont(16) },
             ]}
             numberOfLines={1}
           >
@@ -281,7 +288,7 @@ const HomeScreen: React.FC = () => {
             <Text
               style={[
                 styles.projectDate,
-                { color: themeDefinition.colors.text + '66' },
+                { color: themeDefinition.colors.text + '66', fontSize: scaleFont(12) },
               ]}
             >
               {formatDate(item.lastModified)}
@@ -289,7 +296,7 @@ const HomeScreen: React.FC = () => {
             <Text
               style={[
                 styles.projectSlides,
-                { color: themeDefinition.colors.text + '66' },
+                { color: themeDefinition.colors.text + '66', fontSize: scaleFont(12) },
               ]}
             >
               {item.slides.length} slides
@@ -307,14 +314,16 @@ const HomeScreen: React.FC = () => {
         {
           backgroundColor: themeDefinition.colors.card,
           borderColor: themeDefinition.colors.border,
+          margin: scale(8),
+          minHeight: isPad ? 280 : 200,
         },
       ]}
       onPress={handleCreateNewProject}
     >
-      <Text style={[styles.createButtonText, { color: themeDefinition.colors.primary || '#007AFF' }]}>
+      <Text style={[styles.createButtonText, { color: themeDefinition.colors.primary || '#007AFF', fontSize: scaleFont(48) }]}>
         +
       </Text>
-      <Text style={[styles.createButtonLabel, { color: themeDefinition.colors.text }]}>
+      <Text style={[styles.createButtonLabel, { color: themeDefinition.colors.text, fontSize: scaleFont(16) }]}>
         New Project
       </Text>
     </TouchableOpacity>
@@ -352,17 +361,17 @@ const HomeScreen: React.FC = () => {
       <View
         style={[
           styles.header,
-          { borderBottomColor: themeDefinition.colors.border },
+          { borderBottomColor: themeDefinition.colors.border, paddingHorizontal: scale(20) },
         ]}
       >
-        <Text style={[styles.title, { color: themeDefinition.colors.text }]}>
+        <Text style={[styles.title, { color: themeDefinition.colors.text, fontSize: scaleFont(24) }]}>
           {t('app_name')}
         </Text>
         <TouchableOpacity
           onPress={() => navigation.navigate('Settings')}
-          style={styles.settingsButton}
+          style={[styles.settingsButton, { padding: scale(10) }]}
         >
-          <Text style={styles.settingsButtonText}>⚙️</Text>
+          <Text style={[styles.settingsButtonText, { fontSize: scaleFont(24) }]}>⚙️</Text>
         </TouchableOpacity>
       </View>
 
@@ -370,8 +379,9 @@ const HomeScreen: React.FC = () => {
         data={gridData}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
-        numColumns={2}
-        contentContainerStyle={styles.gridContainer}
+        numColumns={gridColumns}
+        key={`grid-${gridColumns}`}
+        contentContainerStyle={[styles.gridContainer, { padding: scale(16) }]}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }

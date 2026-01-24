@@ -31,6 +31,7 @@ import {
   LEGACY_SYSTEM_FONT_ID,
 } from '../constants/fonts';
 import { buildPreviewEffects } from '../utils/textEffectsPreview';
+import { useResponsive } from '../hooks/useResponsive';
 
 type RootStackParamList = {
   Home: undefined;
@@ -48,6 +49,7 @@ const PreviewScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const { themeDefinition } = useTheme();
   const { t } = useLanguage();
+  const { scale, scaleFont } = useResponsive();
 
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [isExporting, setIsExporting] = useState(false);
@@ -258,12 +260,13 @@ const PreviewScreen: React.FC = () => {
       </View>
 
       {/* Slide indicators */}
-      <View style={styles.indicatorsContainer}>
+      <View style={[styles.indicatorsContainer, { marginVertical: scale(20) }]}>
         {slides.map((_, index) => (
           <View
             key={index}
             style={[
               styles.indicator,
+              { width: scale(8), height: scale(8), borderRadius: scale(4), marginHorizontal: scale(4) },
               index === currentSlideIndex && styles.activeIndicator,
             ]}
           />
@@ -278,6 +281,8 @@ const PreviewScreen: React.FC = () => {
             backgroundColor: isExporting
               ? themeDefinition.colors.border
               : '#34C759',
+            padding: scale(15),
+            margin: scale(20),
           },
           isExporting && styles.exportButtonDisabled,
         ]}
@@ -287,12 +292,12 @@ const PreviewScreen: React.FC = () => {
         {isExporting ? (
           <View style={styles.exportingContainer}>
             <ActivityIndicator size="small" color="#fff" />
-            <Text style={[styles.exportButtonText, { marginLeft: 10 }]}>
+            <Text style={[styles.exportButtonText, { marginLeft: scale(10), fontSize: scaleFont(18) }]}>
               Exporting...
             </Text>
           </View>
         ) : (
-          <Text style={styles.exportButtonText}>{t('preview_export')}</Text>
+          <Text style={[styles.exportButtonText, { fontSize: scaleFont(18) }]}>{t('preview_export')}</Text>
         )}
       </TouchableOpacity>
     </View>

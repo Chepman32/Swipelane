@@ -15,6 +15,7 @@ import {
   isTextEffectSupported,
 } from '../constants/textEffects';
 import { getEffectDisplayName } from '../textfx/registry';
+import { useResponsive } from '../hooks/useResponsive';
 
 interface TextEffectsPanelProps {
   activeCategory: TextEffectCategory;
@@ -37,6 +38,8 @@ const TextEffectsPanel: React.FC<TextEffectsPanelProps> = ({
   onEditEffect,
   selectedEffectId,
 }) => {
+  const { scale, scaleFont, maxPanelHeight, smallButtonSize } = useResponsive();
+
   const availableEffects = useMemo(
     () =>
       Object.values(TEXT_EFFECT_DEFINITIONS)
@@ -54,10 +57,10 @@ const TextEffectsPanel: React.FC<TextEffectsPanelProps> = ({
   );
 
   return (
-    <View style={styles.panelContainer}>
+    <View style={[styles.panelContainer, { maxHeight: maxPanelHeight }]}>
       <View style={styles.headerRow}>
-        <Text style={styles.panelTitle}>Text Effects</Text>
-        <Text style={styles.panelSubtitle}>
+        <Text style={[styles.panelTitle, { fontSize: scaleFont(16) }]}>Text Effects</Text>
+        <Text style={[styles.panelSubtitle, { fontSize: scaleFont(12) }]}>
           Stack multiple looks for each slide
         </Text>
       </View>
@@ -66,7 +69,7 @@ const TextEffectsPanel: React.FC<TextEffectsPanelProps> = ({
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.categoryTabsContainer}
-        style={styles.categoryTabs}
+        style={[styles.categoryTabs, { maxHeight: scale(44) }]}
       >
         {sortedCategories.map(category => {
           const isActive = category.id === activeCategory;
@@ -108,6 +111,7 @@ const TextEffectsPanel: React.FC<TextEffectsPanelProps> = ({
                 <TouchableOpacity
                   style={[
                     styles.toggleButton,
+                    { width: scale(54), height: smallButtonSize },
                     effect.enabled && styles.toggleButtonEnabled,
                   ]}
                   onPress={() => onToggleEffect(effect.instanceId)}
@@ -115,6 +119,7 @@ const TextEffectsPanel: React.FC<TextEffectsPanelProps> = ({
                   <Text
                     style={[
                       styles.toggleButtonText,
+                      { fontSize: scaleFont(11) },
                       effect.enabled && styles.toggleButtonTextEnabled,
                     ]}
                   >
@@ -129,29 +134,29 @@ const TextEffectsPanel: React.FC<TextEffectsPanelProps> = ({
                   onPress={() => onEditEffect(effect.instanceId)}
                 >
                   <View style={styles.activeEffectDetails}>
-                    <Text style={styles.activeEffectName}>
+                    <Text style={[styles.activeEffectName, { fontSize: scaleFont(13) }]}>
                       {definition?.name ?? getEffectDisplayName(effect.type)}
                     </Text>
                     {definition?.description ? (
                       <Text
-                        style={styles.activeEffectDescription}
+                        style={[styles.activeEffectDescription, { fontSize: scaleFont(11) }]}
                         numberOfLines={2}
                       >
                         {definition.description}
                       </Text>
                     ) : null}
                     {isSelected ? (
-                      <Text style={styles.activeEffectSelectedBadge}>
+                      <Text style={[styles.activeEffectSelectedBadge, { fontSize: scaleFont(10) }]}>
                         Editing
                       </Text>
                     ) : null}
                   </View>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={styles.removeButton}
+                  style={[styles.removeButton, { width: smallButtonSize, height: smallButtonSize, borderRadius: smallButtonSize / 2 }]}
                   onPress={() => onRemoveEffect(effect.instanceId)}
                 >
-                  <Text style={styles.removeButtonText}>×</Text>
+                  <Text style={[styles.removeButtonText, { fontSize: scaleFont(18) }]}>×</Text>
                 </TouchableOpacity>
               </View>
             );

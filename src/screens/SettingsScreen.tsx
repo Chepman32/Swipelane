@@ -14,6 +14,7 @@ import { useLanguage, Language } from '../context/LanguageContext';
 import { themes, Theme } from '../context/ThemeContext';
 import { usePreferences } from '../hooks/usePreferences';
 import FeedbackService from '../services/FeedbackService';
+import { useResponsive } from '../hooks/useResponsive';
 
 const languages: { code: Language; name: string; nativeName: string }[] = [
   { code: 'en', name: 'English', nativeName: 'English' },
@@ -32,6 +33,7 @@ const SettingsScreen: React.FC = () => {
   const { currentTheme, setTheme, themeDefinition } = useTheme();
   const { currentLanguage, setLanguage, t } = useLanguage();
   const { preferences, updatePreferences } = usePreferences();
+  const { scale, scaleFont } = useResponsive();
 
   const [showLanguageModal, setShowLanguageModal] = React.useState(false);
 
@@ -52,37 +54,38 @@ const SettingsScreen: React.FC = () => {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: themeDefinition.colors.background }]}>
       <ScrollView style={styles.scrollContainer}>
-      <Text style={[styles.title, { color: themeDefinition.colors.text }]}>{t('settings_title')}</Text>
-      
+      <Text style={[styles.title, { color: themeDefinition.colors.text, fontSize: scaleFont(24), paddingHorizontal: scale(20) }]}>{t('settings_title')}</Text>
+
       {/* Theme Selection */}
-      <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: themeDefinition.colors.text }]}>{t('settings_theme')}</Text>
+      <View style={[styles.section, { paddingHorizontal: scale(20) }]}>
+        <Text style={[styles.sectionTitle, { color: themeDefinition.colors.text, fontSize: scaleFont(18) }]}>{t('settings_theme')}</Text>
         <View style={styles.themeOptions}>
           {Object.values(themes).map((theme) => (
             <TouchableOpacity
               key={theme.name}
               style={[
                 styles.themeOption,
+                { padding: scale(15) },
                 currentTheme === theme.name && styles.selectedTheme,
                 { backgroundColor: theme.colors.card }
               ]}
               onPress={() => handleThemeChange(theme.name as Theme)}>
-              <Text style={[styles.themeText, { color: theme.colors.text }]}>
+              <Text style={[styles.themeText, { color: theme.colors.text, fontSize: scaleFont(16) }]}>
                 {theme.name.charAt(0).toUpperCase() + theme.name.slice(1)}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
       </View>
-      
+
       {/* Language Selection */}
-      <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: themeDefinition.colors.text }]}>{t('settings_language')}</Text>
+      <View style={[styles.section, { paddingHorizontal: scale(20) }]}>
+        <Text style={[styles.sectionTitle, { color: themeDefinition.colors.text, fontSize: scaleFont(18) }]}>{t('settings_language')}</Text>
         <TouchableOpacity
           style={[styles.settingRow, { borderBottomColor: themeDefinition.colors.border }]}
           onPress={() => setShowLanguageModal(true)}>
-          <Text style={[styles.settingLabel, { color: themeDefinition.colors.text }]}>{t('settings_language')}</Text>
-          <Text style={[styles.settingValue, { color: themeDefinition.colors.text }]}>
+          <Text style={[styles.settingLabel, { color: themeDefinition.colors.text, fontSize: scaleFont(16) }]}>{t('settings_language')}</Text>
+          <Text style={[styles.settingValue, { color: themeDefinition.colors.text, fontSize: scaleFont(16) }]}>
             {currentLanguageName} ›
           </Text>
         </TouchableOpacity>

@@ -17,6 +17,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import StorageService from '../services/StorageService';
 import FeedbackService from '../services/FeedbackService';
+import { useResponsive } from '../hooks/useResponsive';
 
 type RootStackParamList = {
   ImageSelection: { text: string };
@@ -33,6 +34,7 @@ const NewProjectScreen: React.FC = () => {
   const navigation = useNavigation<NewProjectScreenNavigationProp>();
   const { themeDefinition } = useTheme();
   const { t } = useLanguage();
+  const { scale, scaleFont } = useResponsive();
 
   const handleGenerateSlides = () => {
     if (text.trim().length === 0) {
@@ -81,23 +83,23 @@ const NewProjectScreen: React.FC = () => {
         <View
           style={[
             styles.header,
-            { borderBottomColor: themeDefinition.colors.border },
+            { borderBottomColor: themeDefinition.colors.border, paddingHorizontal: scale(20) },
           ]}
         >
-          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-            <Text style={[styles.backButtonText, { color: themeDefinition.colors.text }]}>
+          <TouchableOpacity onPress={handleBack} style={[styles.backButton, { padding: scale(10) }]}>
+            <Text style={[styles.backButtonText, { color: themeDefinition.colors.text, fontSize: scaleFont(24) }]}>
               ←
             </Text>
           </TouchableOpacity>
-          <Text style={[styles.title, { color: themeDefinition.colors.text }]}>
+          <Text style={[styles.title, { color: themeDefinition.colors.text, fontSize: scaleFont(24) }]}>
             {t('new_project_title') || 'New Project'}
           </Text>
           <View style={styles.placeholder} />
         </View>
 
-        <View style={styles.content}>
+        <View style={[styles.content, { padding: scale(20) }]}>
           <Text
-            style={[styles.subtitle, { color: themeDefinition.colors.text }]}
+            style={[styles.subtitle, { color: themeDefinition.colors.text, fontSize: scaleFont(16) }]}
           >
             {t('home_subtitle')}
           </Text>
@@ -109,6 +111,8 @@ const NewProjectScreen: React.FC = () => {
                 backgroundColor: themeDefinition.colors.card,
                 color: themeDefinition.colors.text,
                 borderColor: themeDefinition.colors.border,
+                fontSize: scaleFont(16),
+                padding: scale(15),
               },
             ]}
             multiline
@@ -121,7 +125,7 @@ const NewProjectScreen: React.FC = () => {
 
           <View style={styles.infoContainer}>
             <Text
-              style={[styles.infoText, { color: themeDefinition.colors.text }]}
+              style={[styles.infoText, { color: themeDefinition.colors.text, fontSize: scaleFont(14) }]}
             >
               {text.trim().length > 0
                 ? `${t('home_character_count', {
@@ -134,6 +138,7 @@ const NewProjectScreen: React.FC = () => {
           <TouchableOpacity
             style={[
               styles.generateButton,
+              { padding: scale(15) },
               text.trim().length > 0
                 ? { backgroundColor: '#007AFF' }
                 : { backgroundColor: '#ccc' },
@@ -144,6 +149,7 @@ const NewProjectScreen: React.FC = () => {
             <Text
               style={[
                 styles.generateButtonText,
+                { fontSize: scaleFont(18) },
                 text.trim().length === 0 && { color: '#999' },
               ]}
             >
