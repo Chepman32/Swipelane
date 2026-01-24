@@ -422,7 +422,9 @@ const ImageSelectionScreen: React.FC = () => {
           <View key={index} style={styles.slideCard}>
             <View style={styles.slideHeader}>
               <Text style={styles.slideNumber}>Slide {index + 1}</Text>
-              <Text style={styles.slideLocation}>Las Vegas</Text>
+              <Text style={styles.slideLocation} numberOfLines={2} ellipsizeMode="tail">
+                {slideText}
+              </Text>
             </View>
             
             <View style={styles.buttonContainer}>

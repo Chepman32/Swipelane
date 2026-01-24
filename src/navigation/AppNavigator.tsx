@@ -64,7 +64,7 @@ const AppNavigator: React.FC = () => {
           name="ImageSelection"
           component={ImageSelectionScreen}
           options={{
-            headerShown: true,
+            headerShown: false,
             title: 'Select Images',
             headerBackTitle: 'Back',
           }}

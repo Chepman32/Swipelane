@@ -162,7 +162,6 @@ const EditorScreen: React.FC = () => {
   const availableHeight = validHeight - headerHeight - previewButtonHeight;
   const imageContainerHeight = availableHeight; // Use available height without minimum constraint
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const textEditTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isRestoringFromStorage = useRef(false);
 
   // Optimize text and split using the same algorithm as ImageSelectionScreen
@@ -990,8 +989,17 @@ const EditorScreen: React.FC = () => {
     .runOnJS(true)
     .shouldCancelWhenOutside(false);
 
+  // Tap gesture for text editing
+  const tapGesture = Gesture.Tap()
+    .numberOfTaps(1)
+    .onEnd(() => {
+      runOnJS(handleStartEditingText)();
+    })
+    .runOnJS(true);
+
   // Compose all gestures
   const composed = Gesture.Simultaneous(
+    tapGesture,
     panGesture,
     Gesture.Simultaneous(pinchGesture, rotationGesture),
   );
@@ -1358,25 +1366,6 @@ const EditorScreen: React.FC = () => {
       FeedbackService.buttonTap();
     }
   };
-  
-  const handleStartEditingTextDelayed = () => {
-    // Clear any existing timer
-    if (textEditTimerRef.current) {
-      clearTimeout(textEditTimerRef.current);
-    }
-    
-    // Start editing after 0.1 seconds (100ms)
-    textEditTimerRef.current = setTimeout(() => {
-      handleStartEditingText();
-    }, 100);
-  };
-  
-  const handleCancelDelayedTextEdit = () => {
-    if (textEditTimerRef.current) {
-      clearTimeout(textEditTimerRef.current);
-      textEditTimerRef.current = null;
-    }
-  };
 
   const handleFinishEditingText = () => {
     if (currentSlide && editingText.trim() !== currentSlide.text) {
@@ -1522,13 +1511,8 @@ const EditorScreen: React.FC = () => {
                     <View
                       style={styles.textTouchableArea}
                     >
-                      <TouchableOpacity
+                      <View
                         style={styles.textEditTrigger}
-                        onPressIn={handleStartEditingTextDelayed}
-                        onPressOut={handleCancelDelayedTextEdit}
-                        onLongPress={handleStartEditingText}
-                        delayLongPress={200}
-                        activeOpacity={0.7}
                       >
                         {previewEffects.underlayElements.map((element, index) =>
                           React.cloneElement(element as React.ReactElement, {
@@ -1559,7 +1543,7 @@ const EditorScreen: React.FC = () => {
                             key: `${activeFontId}-overlay-${index}-${element.key}`,
                           }),
                         )}
-                      </TouchableOpacity>
+                      </View>
                     </View>
                   )}
                 </>
