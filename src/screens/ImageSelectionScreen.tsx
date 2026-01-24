@@ -7,6 +7,7 @@ import {
   Alert,
   ScrollView,
   Image,
+  StatusBar,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -20,7 +21,6 @@ import {
   optimizeForSlides,
 } from '../utils/textUtils';
 import { useLanguage } from '../context/LanguageContext';
-import { useResponsive } from '../hooks/useResponsive';
 import type { ProjectState } from '../services/StorageService';
 
 type RootStackParamList = {
@@ -44,7 +44,6 @@ const ImageSelectionScreen: React.FC = () => {
   const { text, images: initialImages } = route.params;
   const insets = useSafeAreaInsets();
   const { t } = useLanguage();
-  const { scale, scaleFont } = useResponsive();
 
   const optimizedText = optimizeForSlides(text);
   const optimalSlideCount = getOptimalSlideCount(optimizedText);
@@ -292,72 +291,80 @@ const ImageSelectionScreen: React.FC = () => {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <Text style={[styles.subtitle, { fontSize: scaleFont(20), paddingHorizontal: scale(20), marginVertical: scale(15) }]}>
-        {t('image_selection_subtitle', {
-          count: requiredImages,
-          plural: requiredImages > 1 ? 's' : '',
-        })}
+      <StatusBar barStyle="light-content" backgroundColor="#1a1a2e" />
+      
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.backIcon}>‹</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Select Images</Text>
+        <View style={styles.headerSpacer} />
+      </View>
+
+      {/* Subtitle */}
+      <Text style={styles.subtitle}>
+        Choose background images for your {requiredImages} slide{requiredImages > 1 ? 's' : ''}
       </Text>
 
       <ScrollView style={styles.content}>
         {slides.map((slideText, index) => (
-          <View key={index} style={[styles.slideContainer, { marginHorizontal: scale(20), marginBottom: scale(20), padding: scale(15) }]}>
-            <Text style={[styles.slideTitle, { fontSize: scaleFont(18) }]}>
-              {t('image_selection_slide', { number: index + 1 })}
-            </Text>
-            <Text style={[styles.slidePreview, { fontSize: scaleFont(14) }]} numberOfLines={3}>
-              {slideText}
-            </Text>
-
-            <View style={styles.imageOptions}>
+          <View key={index} style={styles.slideCard}>
+            <View style={styles.slideHeader}>
+              <Text style={styles.slideNumber}>Slide {index + 1}</Text>
+              <Text style={styles.slideLocation}>Las Vegas</Text>
+            </View>
+            
+            <View style={styles.buttonContainer}>
               <TouchableOpacity
-                style={[styles.imageButton, { padding: scale(10) }]}
+                style={styles.selectImageButton}
                 onPress={() => handleSelectImage(index)}
               >
-                <Text style={[styles.imageButtonText, { fontSize: scaleFont(14) }]}>
-                  {t('image_selection_select_image')}
-                </Text>
+                <Text style={styles.buttonIcon}>📷</Text>
+                <Text style={styles.selectImageText}>Select Image</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.imageButton, styles.plainButton, { padding: scale(10) }]}
+                style={styles.plainBackgroundButton}
                 onPress={() => handleUsePlainBackground(index)}
               >
-                <Text style={[styles.imageButtonText, { fontSize: scaleFont(14) }]}>
-                  {t('image_selection_plain_background')}
-                </Text>
+                <Text style={styles.buttonIcon}>+</Text>
+                <Text style={styles.plainBackgroundText}>Plain Background</Text>
               </TouchableOpacity>
             </View>
 
-            {hasUserMadeChoice[index] ? (
-              <TouchableOpacity
-                style={styles.imagePreview}
-                onPress={() => handleSelectImage(index)}
-              >
-                {selectedImages[index] !== '' ? (
+            {/* Image Preview Area */}
+            <View style={styles.imagePreviewArea}>
+              {hasUserMadeChoice[index] && selectedImages[index] !== '' ? (
+                <TouchableOpacity
+                  onPress={() => handleSelectImage(index)}
+                  style={styles.imageContainer}
+                >
                   <Image
                     source={{ uri: selectedImages[index] }}
                     style={styles.previewImage}
-                    resizeMode="contain"
+                    resizeMode="cover"
                   />
-                ) : (
-                  <View style={styles.plainBackgroundPreview}>
-                    <Text style={styles.plainBackgroundText}>
-                      {t('image_selection_plain_background')}
-                    </Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity
-                style={styles.emptyImagePreview}
-                onPress={() => handleSelectImage(index)}
-              >
-                <Text style={styles.emptyImageText}>
-                  {t('image_selection_no_image')}
-                </Text>
-              </TouchableOpacity>
-            )}
+                </TouchableOpacity>
+              ) : hasUserMadeChoice[index] ? (
+                <TouchableOpacity
+                  style={styles.plainBackgroundContainer}
+                  onPress={() => handleSelectImage(index)}
+                >
+                  <View style={styles.plainBackgroundPlaceholder} />
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  style={styles.emptyImageContainer}
+                  onPress={() => handleSelectImage(index)}
+                >
+                  <Text style={styles.emptyImageText}>No image selected</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
         ))}
       </ScrollView>
@@ -365,7 +372,6 @@ const ImageSelectionScreen: React.FC = () => {
       <TouchableOpacity
         style={[
           styles.continueButton,
-          { padding: scale(15), marginHorizontal: scale(20), marginBottom: scale(20) },
           hasUserMadeChoice.filter(choice => choice).length ===
             requiredImages && styles.continueButtonEnabled,
         ]}
@@ -374,9 +380,7 @@ const ImageSelectionScreen: React.FC = () => {
           hasUserMadeChoice.filter(choice => choice).length !== requiredImages
         }
       >
-        <Text style={[styles.continueButtonText, { fontSize: scaleFont(18) }]}>
-          {t('image_selection_continue')}
-        </Text>
+        <Text style={styles.continueButtonText}>Continue to Editor</Text>
       </TouchableOpacity>
     </View>
   );
@@ -385,119 +389,163 @@ const ImageSelectionScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#1a1a2e',
   },
-  subtitle: {
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+  },
+  backButton: {
+    padding: 5,
+  },
+  headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#666',
-    marginBottom: 20,
+    color: '#ffffff',
+    flex: 1,
     textAlign: 'center',
+  },
+  headerSpacer: {
+    width: 34,
+  },
+  subtitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#ffffff',
+    textAlign: 'center',
+    paddingHorizontal: 20,
+    marginBottom: 20,
   },
   content: {
     flex: 1,
-    paddingHorizontal: 8,
+    paddingHorizontal: 20,
   },
-  slideContainer: {
+  slideCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 8,
-    marginBottom: 15,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
-  slideTitle: {
-    fontSize: 18,
+  slideHeader: {
+    marginBottom: 20,
+  },
+  slideNumber: {
+    fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 10,
+    color: '#ffffff',
+    marginBottom: 4,
   },
-  slidePreview: {
+  slideLocation: {
     fontSize: 14,
-    color: '#333',
-    marginBottom: 15,
-    fontStyle: 'italic',
+    color: 'rgba(255, 255, 255, 0.7)',
   },
-  imageOptions: {
+  buttonContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    gap: 12,
+    marginBottom: 20,
   },
-  imageButton: {
+  selectImageButton: {
+    flex: 1,
     backgroundColor: '#007AFF',
-    padding: 10,
-    borderRadius: 5,
-    flex: 0.48,
-  },
-  plainButton: {
-    backgroundColor: '#666',
-  },
-  imageButtonText: {
-    color: '#fff',
-    textAlign: 'center',
-    fontWeight: 'bold',
-  },
-  selectedText: {
-    marginTop: 10,
-    textAlign: 'center',
-    color: '#007AFF',
-    fontWeight: 'bold',
-  },
-  imagePreview: {
-    marginTop: 10,
+    flexDirection: 'row',
     alignItems: 'center',
-  },
-  previewImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: '#007AFF',
-  },
-  plainBackgroundPreview: {
-    width: 100,
-    height: 100,
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: '#007AFF',
-    backgroundColor: '#f0f0f0',
     justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    gap: 8,
+  },
+  selectImageText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  buttonIcon: {
+    fontSize: 16,
+    color: '#ffffff',
+  },
+  plainBackgroundButton: {
+    flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    gap: 8,
   },
   plainBackgroundText: {
-    fontSize: 12,
-    color: '#666',
-    textAlign: 'center',
+    color: '#666666',
+    fontSize: 14,
+    fontWeight: '600',
   },
-  emptyImagePreview: {
-    marginTop: 10,
-    width: 100,
-    height: 100,
-    borderRadius: 8,
+  backIcon: {
+    fontSize: 24,
+    color: '#ffffff',
+    fontWeight: 'bold',
+  },
+  imagePreviewArea: {
+    width: '100%',
+    height: 200,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  imageContainer: {
+    width: '100%',
+    height: '100%',
+  },
+  previewImage: {
+    width: '100%',
+    height: '100%',
+  },
+  plainBackgroundContainer: {
+    width: '100%',
+    height: '100%',
+  },
+  plainBackgroundPlaceholder: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 12,
+  },
+  emptyImageContainer: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#ddd',
+    borderColor: 'rgba(255, 255, 255, 0.2)',
     borderStyle: 'dashed',
     justifyContent: 'center',
     alignItems: 'center',
-    alignSelf: 'center',
   },
   emptyImageText: {
-    fontSize: 12,
-    color: '#999',
+    color: 'rgba(255, 255, 255, 0.5)',
+    fontSize: 14,
     textAlign: 'center',
   },
   continueButton: {
-    backgroundColor: '#ccc',
-    padding: 15,
-    margin: 8,
-    marginBottom: 40,
-    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    marginHorizontal: 20,
+    marginBottom: 20,
+    paddingVertical: 16,
+    borderRadius: 12,
     alignItems: 'center',
   },
   continueButtonEnabled: {
     backgroundColor: '#007AFF',
   },
   continueButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 
