@@ -92,8 +92,18 @@ class StorageService {
           JSON.stringify(normalizedProject)
         );
 
-        // Also add to recent projects
-        await this.addToRecentProjects(normalizedProject);
+        // Only add to recent projects if project is completed or if it's a new project
+        // This prevents duplicates during auto-save
+        if (normalizedProject.isCompleted) {
+          await this.addToRecentProjects(normalizedProject);
+        } else {
+          // Check if this is a new project (not already in recent projects)
+          const recentProjects = await this.getRecentProjects();
+          const existsInRecent = recentProjects.some(p => p.id === normalizedProject.id);
+          if (!existsInRecent) {
+            await this.addToRecentProjects(normalizedProject);
+          }
+        }
       },
       undefined,
       'saveCurrentProject'

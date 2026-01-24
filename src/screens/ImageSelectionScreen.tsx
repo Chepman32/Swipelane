@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -21,6 +21,7 @@ import {
 } from '../utils/textUtils';
 import { useLanguage } from '../context/LanguageContext';
 import { useResponsive } from '../hooks/useResponsive';
+import type { ProjectState } from '../services/StorageService';
 
 type RootStackParamList = {
   Splash: undefined;
@@ -48,10 +49,12 @@ const ImageSelectionScreen: React.FC = () => {
   const optimizedText = optimizeForSlides(text);
   const optimalSlideCount = getOptimalSlideCount(optimizedText);
   const computedSlides = smartSplit(optimizedText, optimalSlideCount);
-  const slides =
+  const slides = useMemo(() => 
     computedSlides && computedSlides.length > 0
       ? computedSlides
-      : [optimizedText || text || 'No content'];
+      : [optimizedText || text || 'No content'],
+    [computedSlides, optimizedText, text]
+  );
 
   const requiredImages = slides.length;
 
@@ -87,6 +90,37 @@ const ImageSelectionScreen: React.FC = () => {
     return Array(requiredImages).fill(false);
   });
   const hasRestoredImages = React.useRef(false);
+  const projectId = useRef<string>(`project_${Date.now()}`);
+
+  const saveProjectState = useCallback(async (images: string[]) => {
+    try {
+      const projectSlides = slides.map((slideText, index) => ({
+        id: index,
+        text: slideText,
+        image: images[index] || '',
+        position: { x: 0, y: 0 },
+        fontSize: 24,
+        color: '#000000',
+        backgroundColor: '#ffffff',
+        textAlign: 'center' as const,
+        fontWeight: 'normal' as const,
+      }));
+
+      const projectState: ProjectState = {
+        id: projectId.current,
+        text,
+        slides: projectSlides,
+        images,
+        lastModified: new Date().toISOString(),
+        isCompleted: false,
+      };
+
+      await StorageService.saveCurrentProject(projectState);
+      console.log('Project state saved after image selection');
+    } catch (error) {
+      console.error('Failed to save project state:', error);
+    }
+  }, [slides, text]);
 
   useEffect(() => {
     if (hasRestoredImages.current) {
@@ -124,6 +158,9 @@ const ImageSelectionScreen: React.FC = () => {
           setSelectedImages(restoredImages);
           // Mark all restored slides as having user choice
           setHasUserMadeChoice(Array(requiredImages).fill(true));
+          
+          // Save project state with restored images
+          await saveProjectState(restoredImages);
         }
       } catch (error) {
         console.error('Failed to restore selected images:', error);
@@ -135,7 +172,7 @@ const ImageSelectionScreen: React.FC = () => {
     return () => {
       isActive = false;
     };
-  }, [requiredImages]);
+  }, [requiredImages, saveProjectState]);
 
   const handleSelectImage = async (index: number) => {
     FeedbackService.buttonTap();
@@ -158,6 +195,15 @@ const ImageSelectionScreen: React.FC = () => {
           return next;
         });
         FeedbackService.success();
+
+        // Check if all slides now have images selected and save project state
+        const updatedChoices = [...hasUserMadeChoice];
+        updatedChoices[index] = true;
+        if (updatedChoices.filter(choice => choice).length === requiredImages) {
+          const updatedImages = [...selectedImages];
+          updatedImages[index] = imageUri;
+          saveProjectState(updatedImages);
+        }
 
         // Try to process the image in the background (optional)
         ImageService.processImage(imageUri, {
@@ -208,6 +254,15 @@ const ImageSelectionScreen: React.FC = () => {
       return next;
     });
     FeedbackService.success();
+
+    // Check if all slides now have images selected and save project state
+    const updatedChoices = [...hasUserMadeChoice];
+    updatedChoices[index] = true;
+    if (updatedChoices.filter(choice => choice).length === requiredImages) {
+      const updatedImages = [...selectedImages];
+      updatedImages[index] = '';
+      saveProjectState(updatedImages);
+    }
   };
 
   const handleContinue = () => {

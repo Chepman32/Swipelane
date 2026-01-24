@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -167,10 +167,12 @@ const HomeScreen: React.FC = () => {
   const { t } = useLanguage();
   const { gridColumns, scale, scaleFont, isPad } = useResponsive();
 
-  // Load recent projects and current project
-  useEffect(() => {
-    loadProjects();
-  }, []);
+  // Load recent projects and current project when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      loadProjects();
+    }, [])
+  );
 
   const loadProjects = async () => {
     try {
@@ -260,15 +262,7 @@ const HomeScreen: React.FC = () => {
         onPress={() => handleOpenProject(item)}
         onLongPress={() => handleDeleteProject(item.id)}
       >
-        {/* Current Project Badge */}
-        {isCurrent && (
-          <View style={[
-            styles.currentProjectBadge,
-            { backgroundColor: themeDefinition.colors.primary || '#007AFF', top: scale(8), right: scale(8) }
-          ]}>
-            <Text style={[styles.currentProjectBadgeText, { fontSize: scaleFont(10) }]}>Current</Text>
-          </View>
-        )}
+        {/* Current Project Badge - REMOVED */}
 
         {/* Slide Preview */}
         <SlidePreview slide={firstSlide} />
