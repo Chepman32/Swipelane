@@ -20,6 +20,7 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Pressable,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -162,68 +163,71 @@ const EditorScreen: React.FC = () => {
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isRestoringFromStorage = useRef(false);
 
-  // Optimize text and split using the same algorithm as ImageSelectionScreen
-  const optimizedText = optimizeForSlides(text);
-  const optimalSlideCount = getOptimalSlideCount(optimizedText);
-  const textSlides = smartSplit(optimizedText, optimalSlideCount);
+  // Helper function to create initial slides from text
+  const createInitialSlides = useCallback((): Slide[] => {
+    const optimizedText = optimizeForSlides(text);
+    const optimalSlideCount = getOptimalSlideCount(optimizedText);
+    const textSlides = smartSplit(optimizedText, optimalSlideCount);
 
-  // Create slides with enhanced properties
-  const initialSlides: Slide[] =
-    textSlides.length > 0
-      ? textSlides.map((slideText, index) => {
-          // Calculate initial position to be centered
-          const fontSize = 24;
-          const textLength = slideText.length;
-          const textPadding = 20;
-          const charsPerLine = Math.max(
-            1,
-            Math.floor((slideSize * 0.9) / (fontSize * 0.6)),
-          );
-          const numberOfLines = Math.ceil(textLength / charsPerLine);
-          const estimatedTextWidth = Math.min(
-            slideSize * 0.9,
-            textLength < charsPerLine
-              ? textLength * fontSize * 0.6
-              : slideSize * 0.9,
-          );
-          const estimatedTextHeight = numberOfLines * fontSize * 1.2 + textPadding;
-          
-          const centerX = Math.max(0, (slideSize - estimatedTextWidth) / 2);
-          const centerY = Math.max(0, (imageContainerHeight - estimatedTextHeight) / 2);
+    if (textSlides.length === 0) {
+      return [
+        {
+          id: 0,
+          text: 'No text provided',
+          image: '',
+          position: { x: (slideSize - 200) / 2, y: (imageContainerHeight - 50) / 2 },
+          fontSize: 24,
+          color: '#FFFFFF',
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          textAlign: 'center',
+          fontWeight: 'bold',
+          fontFamily: undefined,
+          fontId: DEFAULT_SLIDE_FONT_ID,
+          textEffects: [],
+        },
+      ];
+    }
 
-          return {
-            id: index,
-            text: slideText,
-            image: images[index] || '',
-            position: { x: centerX, y: centerY },
-            fontSize: fontSize,
-            color: '#FFFFFF',
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            textAlign: 'center',
-            fontWeight: 'bold',
-            fontFamily: undefined,
-            fontId: DEFAULT_SLIDE_FONT_ID,
-            textEffects: [],
-          };
-        })
-      : [
-          {
-            id: 0,
-            text: 'No text provided',
-            image: '',
-            position: { x: (slideSize - 200) / 2, y: (imageContainerHeight - 50) / 2 },
-            fontSize: 24,
-            color: '#FFFFFF',
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            textAlign: 'center',
-            fontWeight: 'bold',
-            fontFamily: undefined,
-            fontId: DEFAULT_SLIDE_FONT_ID,
-            textEffects: [],
-          },
-        ];
+    return textSlides.map((slideText, index) => {
+      const fontSize = 24;
+      const textLength = slideText.length;
+      const textPadding = 20;
+      const charsPerLine = Math.max(
+        1,
+        Math.floor((slideSize * 0.9) / (fontSize * 0.6)),
+      );
+      const numberOfLines = Math.ceil(textLength / charsPerLine);
+      const estimatedTextWidth = Math.min(
+        slideSize * 0.9,
+        textLength < charsPerLine
+          ? textLength * fontSize * 0.6
+          : slideSize * 0.9,
+      );
+      const estimatedTextHeight = numberOfLines * fontSize * 1.2 + textPadding;
 
-  const [slides, setSlides] = useState<Slide[]>(initialSlides);
+      const centerX = Math.max(0, (slideSize - estimatedTextWidth) / 2);
+      const centerY = Math.max(0, (imageContainerHeight - estimatedTextHeight) / 2);
+
+      return {
+        id: index,
+        text: slideText,
+        image: images[index] || '',
+        position: { x: centerX, y: centerY },
+        fontSize: fontSize,
+        color: '#FFFFFF',
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        textAlign: 'center',
+        fontWeight: 'bold',
+        fontFamily: undefined,
+        fontId: DEFAULT_SLIDE_FONT_ID,
+        textEffects: [],
+      };
+    });
+  }, [text, images, slideSize, imageContainerHeight]);
+
+  // Loading state for project initialization
+  const [isLoadingProject, setIsLoadingProject] = useState(true);
+  const [slides, setSlides] = useState<Slide[]>([]);
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isColorPaletteVisible, setColorPaletteVisible] = useState(false);
@@ -239,10 +243,10 @@ const EditorScreen: React.FC = () => {
   const [editingText, setEditingText] = useState('');
 
   // Undo/Redo history management
-  const [_history, setHistory] = useState<Slide[][]>([initialSlides]);
+  const [_history, setHistory] = useState<Slide[][]>([]);
   const [_historyIndex, setHistoryIndex] = useState(0);
   const historyIndexRef = useRef(0);
-  const historyRef = useRef<Slide[][]>([initialSlides]);
+  const historyRef = useRef<Slide[][]>([]);
   const [headerUpdateTrigger, setHeaderUpdateTrigger] = useState(0);
   const isRestoringFromHistory = useRef(false);
 
@@ -575,70 +579,88 @@ const EditorScreen: React.FC = () => {
     };
   }, [hasUnsavedChanges, saveProject]);
 
-  // Load saved project if exists
+  // Load saved project if exists, or create initial slides
   useEffect(() => {
     const loadSavedProject = async () => {
       try {
         const savedProject = await StorageService.loadCurrentProject();
-        if (savedProject && !savedProject.isCompleted) {
-          if (savedProject.slides && savedProject.slides.length > 0) {
-            // Check if the images from navigation params are different from saved project
-            const savedImages = savedProject.slides.map(
-              slide => slide.image || '',
-            );
-            const imagesChanged =
-              images.length !== savedImages.length ||
-              images.some((img, index) => img !== savedImages[index]);
+        if (savedProject && !savedProject.isCompleted && savedProject.slides?.length > 0) {
+          // Check if the images from navigation params are different from saved project
+          const savedImages = savedProject.slides.map(
+            slide => slide.image || '',
+          );
+          const imagesChanged =
+            images.length !== savedImages.length ||
+            images.some((img, index) => img !== savedImages[index]);
 
-            if (imagesChanged) {
-              // Images have changed, update slides with new images but keep other properties
-              console.log('Images changed, updating slides with new images');
-              const updatedSlides = savedProject.slides.map((slide, index) => ({
-                ...slide,
-                image: images[index] || '',
-                textEffects: filterSupportedEffects(slide.textEffects),
-              }));
+          if (imagesChanged) {
+            // Images have changed, update slides with new images but keep other properties (including effects)
+            console.log('Images changed, updating slides with new images');
+            const updatedSlides = savedProject.slides.map((slide, index) => ({
+              ...slide,
+              image: images[index] || '',
+              textEffects: filterSupportedEffects(slide.textEffects),
+            }));
 
-              isRestoringFromStorage.current = true;
-              isRestoringFromHistory.current = true;
-              setSlides(updatedSlides);
-              setHistory([updatedSlides]);
-              historyRef.current = [updatedSlides];
-              historyIndexRef.current = 0;
-              setHistoryIndex(0);
-              setCurrentSlideIndex(0);
-              setTimeout(() => {
-                isRestoringFromHistory.current = false;
-              }, 0);
-            } else {
-              // Images are the same, restore normally
-              isRestoringFromStorage.current = true;
-              isRestoringFromHistory.current = true;
-              const sanitizedSlides = savedProject.slides.map(slide => ({
-                ...slide,
-                textEffects: filterSupportedEffects(slide.textEffects),
-              }));
-              setSlides(sanitizedSlides);
-              setHistory([sanitizedSlides]);
-              historyRef.current = [sanitizedSlides];
-              historyIndexRef.current = 0;
-              setHistoryIndex(0);
-              setCurrentSlideIndex(0);
-              setTimeout(() => {
-                isRestoringFromHistory.current = false;
-              }, 0);
-            }
+            isRestoringFromStorage.current = true;
+            isRestoringFromHistory.current = true;
+            setSlides(updatedSlides);
+            setHistory([updatedSlides]);
+            historyRef.current = [updatedSlides];
+            historyIndexRef.current = 0;
+            setHistoryIndex(0);
+            setCurrentSlideIndex(0);
+            setTimeout(() => {
+              isRestoringFromHistory.current = false;
+            }, 0);
+          } else {
+            // Images are the same, restore normally with effects preserved
+            isRestoringFromStorage.current = true;
+            isRestoringFromHistory.current = true;
+            const sanitizedSlides = savedProject.slides.map(slide => ({
+              ...slide,
+              textEffects: filterSupportedEffects(slide.textEffects),
+            }));
+            setSlides(sanitizedSlides);
+            setHistory([sanitizedSlides]);
+            historyRef.current = [sanitizedSlides];
+            historyIndexRef.current = 0;
+            setHistoryIndex(0);
+            setCurrentSlideIndex(0);
+            setTimeout(() => {
+              isRestoringFromHistory.current = false;
+            }, 0);
           }
         } else {
+          // No saved project or completed project - create fresh initial slides
           StorageService.clearCurrentProject();
+          const freshSlides = createInitialSlides();
+          isRestoringFromStorage.current = true;
+          isRestoringFromHistory.current = true;
+          setSlides(freshSlides);
+          setHistory([freshSlides]);
+          historyRef.current = [freshSlides];
+          historyIndexRef.current = 0;
+          setHistoryIndex(0);
+          setCurrentSlideIndex(0);
+          setTimeout(() => {
+            isRestoringFromHistory.current = false;
+          }, 0);
         }
       } catch (error) {
         console.error('Failed to load saved project:', error);
+        // On error, create fresh slides
+        const freshSlides = createInitialSlides();
+        setSlides(freshSlides);
+        setHistory([freshSlides]);
+        historyRef.current = [freshSlides];
+      } finally {
+        setIsLoadingProject(false);
       }
     };
 
     loadSavedProject();
-  }, [images]); // Add images as dependency so it runs when images change
+  }, [images, createInitialSlides]); // Add images as dependency so it runs when images change
 
   // Self-correction for initial 0,0 position if dimensions were not ready during initial load
   useEffect(() => {
@@ -1395,6 +1417,24 @@ const EditorScreen: React.FC = () => {
 
     navigation.navigate('Preview', { slides });
   };
+
+  // Show loading indicator while project is being loaded
+  if (isLoadingProject || slides.length === 0) {
+    return (
+      <View
+        style={[
+          styles.container,
+          {
+            backgroundColor: themeDefinition.colors.background,
+            justifyContent: 'center',
+            alignItems: 'center',
+          },
+        ]}
+      >
+        <ActivityIndicator size="large" color={themeDefinition.colors.primary} />
+      </View>
+    );
+  }
 
   return (
     <View

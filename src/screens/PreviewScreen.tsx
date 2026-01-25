@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -29,9 +29,23 @@ import {
   getSlideFontById,
   resolveFontFamilyForPlatform,
   LEGACY_SYSTEM_FONT_ID,
+  SlideFontId,
 } from '../constants/fonts';
 import { buildPreviewEffects } from '../utils/textEffectsPreview';
 import { useResponsive } from '../hooks/useResponsive';
+import { useFont } from '@shopify/react-native-skia';
+import { EffectPipeline } from '../textfx/render/pipeline';
+import { convertToNewFormat } from '../textfx/utils/effectConverter';
+import type { EffectInstance } from '../textfx/types';
+import { isTextEffectSupported } from '../constants/textEffects';
+
+// Skia font sources for each supported font
+const SKIA_FONT_SOURCES: Record<SlideFontId, number> = {
+  archivo_black_regular: require('../assets/fonts/Archivo_Black/ArchivoBlack-Regular.ttf'),
+  fira_sans_regular: require('../assets/fonts/Fira_Sans/FiraSans-Regular.ttf'),
+  fira_sans_semibold: require('../assets/fonts/Fira_Sans/FiraSans-SemiBold.ttf'),
+  homemade_apple_regular: require('../assets/fonts/Homemade_Apple/HomemadeApple-Regular.ttf'),
+};
 
 type RootStackParamList = {
   Home: undefined;
@@ -41,6 +55,159 @@ type RootStackParamList = {
 
 type PreviewRouteProp = RouteProp<RootStackParamList, 'Preview'>;
 type PreviewNavigationProp = StackNavigationProp<RootStackParamList, 'Home'>;
+
+// Helper to filter supported effects
+const filterSupportedEffects = (effects?: any[]) =>
+  (effects ?? []).filter((effect: any) => isTextEffectSupported(effect.type));
+
+// Separate component to use hooks for Skia font loading
+interface SlideRendererProps {
+  item: any;
+  index: number;
+  slideSize: number;
+  imageContainerHeight: number;
+  themeColors: { card: string };
+  onRef: (index: number, ref: View | null) => void;
+}
+
+const SlideRenderer: React.FC<SlideRendererProps> = ({
+  item,
+  index,
+  slideSize,
+  imageContainerHeight,
+  themeColors,
+  onRef,
+}) => {
+  const fontSize = item.fontSize || 24;
+  const platformKey =
+    Platform.OS === 'ios'
+      ? 'ios'
+      : Platform.OS === 'android'
+      ? 'android'
+      : 'default';
+  const legacyFontId =
+    item.fontId === LEGACY_SYSTEM_FONT_ID
+      ? DEFAULT_SLIDE_FONT_ID
+      : item.fontId;
+  const fontOption = legacyFontId
+    ? getSlideFontById(legacyFontId)
+    : getSlideFontByFamily(item.fontFamily);
+  const resolvedFontFamily = resolveFontFamilyForPlatform(
+    fontOption,
+    platformKey,
+  );
+  const paddingHorizontal = Math.max(12, fontSize * 0.5);
+  const paddingVertical = Math.max(8, fontSize * 0.35);
+  const borderRadius = Math.min(Math.max(12, fontSize * 0.6), 30);
+
+  // Load Skia font for effects rendering
+  const activeFontId = (item.fontId === LEGACY_SYSTEM_FONT_ID ? DEFAULT_SLIDE_FONT_ID : item.fontId) as SlideFontId;
+  const skiaFontSource = useMemo(() => {
+    const fallback = SKIA_FONT_SOURCES[DEFAULT_SLIDE_FONT_ID];
+    if (!activeFontId) {
+      return fallback;
+    }
+    return SKIA_FONT_SOURCES[activeFontId] ?? fallback;
+  }, [activeFontId]);
+  const skiaFont = useFont(skiaFontSource, fontSize);
+
+  // Filter and convert effects
+  const slideEffects = filterSupportedEffects(item.textEffects);
+  const newFormatEffects: EffectInstance[] = useMemo(() => {
+    return slideEffects
+      .map((effect: any) => convertToNewFormat(effect, item.color))
+      .filter((effect: any): effect is EffectInstance => effect !== null);
+  }, [slideEffects, item.color]);
+
+  // Fallback to CSS-based preview effects when no Skia font or effects
+  const previewEffects = buildPreviewEffects(item.textEffects ?? [], {
+    text: item.text ?? '',
+    fontSize,
+    textColor: item.color || '#FFFFFF',
+    fontFamily: resolvedFontFamily,
+    fontWeight: fontOption?.supportsWeightToggle ? item.fontWeight : undefined,
+  });
+
+  const hasSkiaEffects = skiaFont && newFormatEffects.length > 0;
+
+  return (
+    <View
+      ref={ref => onRef(index, ref)}
+      style={[
+        styles.slideContainer,
+        { width: slideSize, height: imageContainerHeight },
+      ]}
+    >
+      {item.image ? (
+        <Image
+          source={{ uri: item.image }}
+          style={styles.imageBackground}
+          resizeMode="contain"
+        />
+      ) : (
+        <View
+          style={[
+            styles.plainBackground,
+            { backgroundColor: themeColors.card },
+          ]}
+        />
+      )}
+
+      <View
+        style={[
+          styles.textOverlay,
+          {
+            left: item.position?.x || 50,
+            top: item.position?.y || 50,
+            backgroundColor: item.backgroundColor || 'rgba(0,0,0,0.5)',
+            paddingHorizontal,
+            paddingVertical,
+            borderRadius,
+            maxWidth: hasSkiaEffects ? undefined : slideSize * 0.9,
+          },
+        ]}
+      >
+        {hasSkiaEffects ? (
+          <EffectPipeline
+            text={item.text}
+            x={0}
+            baselineY={fontSize}
+            font={skiaFont}
+            width={slideSize * 0.9}
+            height={fontSize * 2}
+            textColor={item.color || '#FFFFFF'}
+            effects={newFormatEffects}
+            lineHeight={fontSize * 1.35}
+            background="transparent"
+          />
+        ) : (
+          <>
+            {previewEffects.underlayElements}
+            <Text
+              style={[
+                styles.slideText,
+                {
+                  fontSize,
+                  color: item.color || '#FFFFFF',
+                  textAlign: item.textAlign || 'center',
+                  fontWeight: resolvedFontFamily
+                    ? undefined
+                    : item.fontWeight || 'bold',
+                  fontFamily: resolvedFontFamily,
+                  lineHeight: fontSize * 1.35,
+                },
+                previewEffects.textStyle,
+              ]}
+            >
+              {item.text}
+            </Text>
+            {previewEffects.overlayElements}
+          </>
+        )}
+      </View>
+    </View>
+  );
+};
 
 const PreviewScreen: React.FC = () => {
   const route = useRoute<PreviewRouteProp>();
@@ -105,110 +272,22 @@ const PreviewScreen: React.FC = () => {
     }
   };
 
-  const renderSlide = ({ item, index }: { item: any; index: number }) => {
-    const fontSize = item.fontSize || 24;
-    const platformKey =
-      Platform.OS === 'ios'
-        ? 'ios'
-        : Platform.OS === 'android'
-        ? 'android'
-        : 'default';
-    const legacyFontId =
-      item.fontId === LEGACY_SYSTEM_FONT_ID
-        ? DEFAULT_SLIDE_FONT_ID
-        : item.fontId;
-    const fontOption = legacyFontId
-      ? getSlideFontById(legacyFontId)
-      : getSlideFontByFamily(item.fontFamily);
-    const resolvedFontFamily = resolveFontFamilyForPlatform(
-      fontOption,
-      platformKey,
-    );
-    const paddingHorizontal = Math.max(12, fontSize * 0.5);
-    const paddingVertical = Math.max(8, fontSize * 0.35);
-    const borderRadius = Math.min(Math.max(12, fontSize * 0.6), 30);
-
-    const previewEffects = buildPreviewEffects(item.textEffects ?? [], {
-      text: item.text ?? '',
-      fontSize,
-      textColor: item.color || '#FFFFFF',
-      fontFamily: resolvedFontFamily,
-      fontWeight: fontOption?.supportsWeightToggle
-        ? item.fontWeight
-        : undefined,
-    });
-
-    return (
-      <View
-        ref={ref => {
-          if (ref) slideRefs.current[index] = ref;
-        }}
-        style={[
-          styles.slideContainer,
-          { width: slideSize, height: imageContainerHeight },
-        ]}
-      >
-        {item.image ? (
-          <Image
-            source={{ uri: item.image }}
-            style={styles.imageBackground}
-            resizeMode="contain"
-          />
-        ) : (
-          <View
-            style={[
-              styles.plainBackground,
-              { backgroundColor: themeDefinition.colors.card },
-            ]}
-          />
-        )}
-
-        <View
-          style={[
-            styles.textOverlay,
-            {
-              left: item.position?.x || 50,
-              top: item.position?.y || 50,
-              backgroundColor: item.backgroundColor || 'rgba(0,0,0,0.5)',
-              paddingHorizontal,
-              paddingVertical,
-              borderRadius,
-              // Only apply maxWidth if no effects are active that would create masks
-              maxWidth: (item.textEffects ?? []).some(
-                effect =>
-                  effect.enabled !== false &&
-                  (effect.type === 'neonGlow' || effect.type === 'softShadow'),
-              )
-                ? undefined
-                : slideSize * 0.9,
-            },
-          ]}
-        >
-          {/* Use preview effects for now - Skia effects would need proper font handling */}
-          {previewEffects.underlayElements}
-          <Text
-            style={[
-              styles.slideText,
-              {
-                fontSize,
-                color: item.color || '#FFFFFF',
-                textAlign: item.textAlign || 'center',
-                fontWeight: resolvedFontFamily
-                  ? undefined
-                  : item.fontWeight || 'bold',
-                fontFamily: resolvedFontFamily,
-                lineHeight: fontSize * 1.35,
-              },
-              previewEffects.textStyle,
-            ]}
-          >
-            {item.text}
-          </Text>
-          {previewEffects.overlayElements}
-        </View>
-      </View>
-    );
+  const handleSlideRef = (index: number, ref: View | null) => {
+    if (ref) {
+      slideRefs.current[index] = ref;
+    }
   };
+
+  const renderSlide = ({ item, index }: { item: any; index: number }) => (
+    <SlideRenderer
+      item={item}
+      index={index}
+      slideSize={slideSize}
+      imageContainerHeight={imageContainerHeight}
+      themeColors={{ card: themeDefinition.colors.card }}
+      onRef={handleSlideRef}
+    />
+  );
 
   const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
     if (viewableItems.length > 0) {

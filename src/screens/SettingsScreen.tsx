@@ -5,37 +5,91 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Modal,
-  FlatList,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage, Language } from '../context/LanguageContext';
 import { themes, Theme } from '../context/ThemeContext';
-import { usePreferences } from '../hooks/usePreferences';
 import FeedbackService from '../services/FeedbackService';
 import { useResponsive } from '../hooks/useResponsive';
 
+const languageFlags: Record<Language, any> = {
+  en: require('../assets/icons/flags/en.png'),
+  zh: require('../assets/icons/flags/zh.png'),
+  ja: require('../assets/icons/flags/ja.png'),
+  ko: require('../assets/icons/flags/ko.png'),
+  de: require('../assets/icons/flags/de.png'),
+  fr: require('../assets/icons/flags/fr.png'),
+  es: require('../assets/icons/flags/es.png'),
+  'es-MX': require('../assets/icons/flags/es.png'),
+  pt: require('../assets/icons/flags/pt-BR.png'),
+  'pt-BR': require('../assets/icons/flags/pt-BR.png'),
+  ar: require('../assets/icons/flags/ar.png'),
+  ru: require('../assets/icons/flags/ru.png'),
+  it: require('../assets/icons/flags/it.png'),
+  nl: require('../assets/icons/flags/nl.png'),
+  tr: require('../assets/icons/flags/tr.png'),
+  th: require('../assets/icons/flags/th.png'),
+  vi: require('../assets/icons/flags/vi.png'),
+  id: require('../assets/icons/flags/id.png'),
+  pl: require('../assets/icons/flags/pl.png'),
+  uk: require('../assets/icons/flags/uk.png'),
+  hi: require('../assets/icons/flags/hi.png'),
+  he: require('../assets/icons/flags/he.png'),
+  sv: require('../assets/icons/flags/sv.png'),
+  no: require('../assets/icons/flags/no.png'),
+  da: require('../assets/icons/flags/da.png'),
+  fi: require('../assets/icons/flags/fi.png'),
+  cs: require('../assets/icons/flags/cs.png'),
+  hu: require('../assets/icons/flags/hu.png'),
+  ro: require('../assets/icons/flags/ro.png'),
+  el: require('../assets/icons/flags/el.png'),
+  ms: require('../assets/icons/flags/ms.png'),
+  fil: require('../assets/icons/flags/fil.png'),
+};
+
 const languages: { code: Language; name: string; nativeName: string }[] = [
   { code: 'en', name: 'English', nativeName: 'English' },
-  { code: 'ru', name: 'Russian', nativeName: 'Русский' },
-  { code: 'es', name: 'Spanish', nativeName: 'Español' },
+  { code: 'zh', name: 'Chinese (Simplified)', nativeName: '简体中文' },
+  { code: 'ja', name: 'Japanese', nativeName: '日本語' },
+  { code: 'ko', name: 'Korean', nativeName: '한국어' },
   { code: 'de', name: 'German', nativeName: 'Deutsch' },
   { code: 'fr', name: 'French', nativeName: 'Français' },
+  { code: 'es', name: 'Spanish', nativeName: 'Español' },
+  { code: 'es-MX', name: 'Spanish (Mexico)', nativeName: 'Español (México)' },
   { code: 'pt', name: 'Portuguese', nativeName: 'Português' },
-  { code: 'ja', name: 'Japanese', nativeName: '日本語' },
-  { code: 'zh', name: 'Chinese', nativeName: '中文' },
-  { code: 'ko', name: 'Korean', nativeName: '한국어' },
+  { code: 'pt-BR', name: 'Portuguese (Brazil)', nativeName: 'Português (Brasil)' },
+  { code: 'ar', name: 'Arabic', nativeName: 'العربية' },
+  { code: 'ru', name: 'Russian', nativeName: 'Русский' },
+  { code: 'it', name: 'Italian', nativeName: 'Italiano' },
+  { code: 'nl', name: 'Dutch', nativeName: 'Nederlands' },
+  { code: 'tr', name: 'Turkish', nativeName: 'Türkçe' },
+  { code: 'th', name: 'Thai', nativeName: 'ไทย' },
+  { code: 'vi', name: 'Vietnamese', nativeName: 'Tiếng Việt' },
+  { code: 'id', name: 'Indonesian', nativeName: 'Bahasa Indonesia' },
+  { code: 'pl', name: 'Polish', nativeName: 'Polski' },
   { code: 'uk', name: 'Ukrainian', nativeName: 'Українська' },
+  { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी' },
+  { code: 'he', name: 'Hebrew', nativeName: 'עברית' },
+  { code: 'sv', name: 'Swedish', nativeName: 'Svenska' },
+  { code: 'no', name: 'Norwegian', nativeName: 'Norsk' },
+  { code: 'da', name: 'Danish', nativeName: 'Dansk' },
+  { code: 'fi', name: 'Finnish', nativeName: 'Suomi' },
+  { code: 'cs', name: 'Czech', nativeName: 'Čeština' },
+  { code: 'hu', name: 'Hungarian', nativeName: 'Magyar' },
+  { code: 'ro', name: 'Romanian', nativeName: 'Română' },
+  { code: 'el', name: 'Greek', nativeName: 'Ελληνικά' },
+  { code: 'ms', name: 'Malay', nativeName: 'Bahasa Melayu' },
+  { code: 'fil', name: 'Filipino', nativeName: 'Filipino' },
 ];
 
 const SettingsScreen: React.FC = () => {
   const { currentTheme, setTheme, themeDefinition } = useTheme();
   const { currentLanguage, setLanguage, t } = useLanguage();
-  const { preferences, updatePreferences } = usePreferences();
   const { scale, scaleFont } = useResponsive();
 
-  const [showLanguageModal, setShowLanguageModal] = React.useState(false);
+  const [languageExpanded, setLanguageExpanded] = React.useState(false);
 
   const handleThemeChange = (theme: Theme) => {
     FeedbackService.buttonTap();
@@ -45,7 +99,6 @@ const SettingsScreen: React.FC = () => {
   const handleLanguageChange = (language: Language) => {
     FeedbackService.buttonTap();
     setLanguage(language);
-    setShowLanguageModal(false);
     FeedbackService.success();
   };
 
@@ -83,59 +136,43 @@ const SettingsScreen: React.FC = () => {
         <Text style={[styles.sectionTitle, { color: themeDefinition.colors.text, fontSize: scaleFont(18) }]}>{t('settings_language')}</Text>
         <TouchableOpacity
           style={[styles.settingRow, { borderBottomColor: themeDefinition.colors.border }]}
-          onPress={() => setShowLanguageModal(true)}>
-          <Text style={[styles.settingLabel, { color: themeDefinition.colors.text, fontSize: scaleFont(16) }]}>{t('settings_language')}</Text>
+          onPress={() => setLanguageExpanded(prev => !prev)}>
+          <View style={styles.languageHeaderLeft}>
+            <Image source={languageFlags[currentLanguage]} style={styles.flag} />
+            <Text style={[styles.settingLabel, { color: themeDefinition.colors.text, fontSize: scaleFont(16) }]}>{t('settings_language')}</Text>
+          </View>
           <Text style={[styles.settingValue, { color: themeDefinition.colors.text, fontSize: scaleFont(16) }]}>
-            {currentLanguageName} ›
+            {currentLanguageName} {languageExpanded ? '▾' : '▸'}
           </Text>
         </TouchableOpacity>
+
+        {languageExpanded && (
+          <View style={[styles.languageList, { borderColor: themeDefinition.colors.border, backgroundColor: themeDefinition.colors.card }]}>
+            {languages.map(item => (
+              <TouchableOpacity
+                key={item.code}
+                style={[
+                  styles.languageItem,
+                  { borderBottomColor: themeDefinition.colors.border },
+                  currentLanguage === item.code && styles.selectedLanguage,
+                ]}
+                onPress={() => handleLanguageChange(item.code)}>
+                <View style={styles.languageItemLeft}>
+                  <Image source={languageFlags[item.code]} style={styles.flag} />
+                  <View>
+                    <Text style={[styles.languageName, { color: themeDefinition.colors.text }]}>{item.nativeName}</Text>
+                    <Text style={[styles.languageSubtitle, { color: themeDefinition.colors.text + '99' }]}>{item.name}</Text>
+                  </View>
+                </View>
+                {currentLanguage === item.code && (
+                  <Text style={[styles.selectedCheck, { color: themeDefinition.colors.primary }]}>✓</Text>
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
       </View>
       </ScrollView>
-
-      {/* Language Selection Modal */}
-      <Modal
-        visible={showLanguageModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowLanguageModal(false)}>
-        <View style={styles.modalContainer}>
-          <View style={[styles.modalContent, { backgroundColor: themeDefinition.colors.card }]}>
-            <Text style={[styles.modalTitle, { color: themeDefinition.colors.text }]}>
-              {t('settings_language')}
-            </Text>
-            <FlatList
-              data={languages}
-              keyExtractor={(item) => item.code}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={[
-                    styles.languageItem,
-                    { borderBottomColor: themeDefinition.colors.border },
-                    currentLanguage === item.code && styles.selectedLanguage
-                  ]}
-                  onPress={() => handleLanguageChange(item.code)}>
-                  <View>
-                    <Text style={[styles.languageName, { color: themeDefinition.colors.text }]}>
-                      {item.nativeName}
-                    </Text>
-                    <Text style={[styles.languageSubtitle, { color: themeDefinition.colors.text + '99' }]}>
-                      {item.name}
-                    </Text>
-                  </View>
-                  {currentLanguage === item.code && (
-                    <Text style={{ color: themeDefinition.colors.primary, fontSize: 20 }}>✓</Text>
-                  )}
-                </TouchableOpacity>
-              )}
-            />
-            <TouchableOpacity
-              style={[styles.modalCloseButton, { backgroundColor: themeDefinition.colors.primary }]}
-              onPress={() => setShowLanguageModal(false)}>
-              <Text style={styles.modalCloseButtonText}>{t('cancel')}</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 };
@@ -201,23 +238,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
   },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  languageHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingTop: 20,
-    maxHeight: '70%',
+  languageList: {
+    borderWidth: 1,
+    borderRadius: 12,
+    overflow: 'hidden',
   },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 20,
+  languageItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
   languageItem: {
     flexDirection: 'row',
@@ -230,6 +264,11 @@ const styles = StyleSheet.create({
   selectedLanguage: {
     backgroundColor: 'rgba(0, 122, 255, 0.1)',
   },
+  flag: {
+    width: 26,
+    height: 18,
+    borderRadius: 3,
+  },
   languageName: {
     fontSize: 16,
     fontWeight: '500',
@@ -238,16 +277,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 2,
   },
-  modalCloseButton: {
-    margin: 20,
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  modalCloseButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+  selectedCheck: {
+    fontSize: 20,
   },
 });
 

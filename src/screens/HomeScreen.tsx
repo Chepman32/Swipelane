@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -21,10 +21,31 @@ import { ProjectState } from '../services/StorageService';
 import { buildPreviewEffects } from '../utils/textEffectsPreview';
 import {
   getSlideFontByFamily,
+  getSlideFontById,
   resolveFontFamilyForPlatform,
+  DEFAULT_SLIDE_FONT_ID,
+  LEGACY_SYSTEM_FONT_ID,
+  SlideFontId,
 } from '../constants/fonts';
 import { Platform } from 'react-native';
 import { useResponsive } from '../hooks/useResponsive';
+import { useFont } from '@shopify/react-native-skia';
+import { EffectPipeline } from '../textfx/render/pipeline';
+import { convertToNewFormat } from '../textfx/utils/effectConverter';
+import type { EffectInstance } from '../textfx/types';
+import { isTextEffectSupported } from '../constants/textEffects';
+
+// Skia font sources for each supported font
+const SKIA_FONT_SOURCES: Record<SlideFontId, number> = {
+  archivo_black_regular: require('../assets/fonts/Archivo_Black/ArchivoBlack-Regular.ttf'),
+  fira_sans_regular: require('../assets/fonts/Fira_Sans/FiraSans-Regular.ttf'),
+  fira_sans_semibold: require('../assets/fonts/Fira_Sans/FiraSans-SemiBold.ttf'),
+  homemade_apple_regular: require('../assets/fonts/Homemade_Apple/HomemadeApple-Regular.ttf'),
+};
+
+// Helper to filter supported effects
+const filterSupportedEffects = (effects?: any[]) =>
+  (effects ?? []).filter((effect: any) => isTextEffectSupported(effect.type));
 
 type RootStackParamList = {
   NewProject: undefined;
@@ -56,6 +77,27 @@ const SlidePreview: React.FC<{ slide: any }> = ({ slide }) => {
   const maxPreviewWidth = isPad ? 200 : 150;
   const previewWidth = Math.min(screenWidth - 80, maxPreviewWidth);
   const previewHeight = (previewWidth * 16) / 9; // 16:9 aspect ratio
+  const scaleFactor = 0.4; // Scale down for thumbnail
+
+  // Load Skia font for effects rendering
+  const activeFontId = (slide?.fontId === LEGACY_SYSTEM_FONT_ID ? DEFAULT_SLIDE_FONT_ID : slide?.fontId) as SlideFontId;
+  const skiaFontSource = useMemo(() => {
+    const fallback = SKIA_FONT_SOURCES[DEFAULT_SLIDE_FONT_ID];
+    if (!activeFontId) {
+      return fallback;
+    }
+    return SKIA_FONT_SOURCES[activeFontId] ?? fallback;
+  }, [activeFontId]);
+  const fontSize = Math.max(12, (slide?.fontSize || 24) * scaleFactor);
+  const skiaFont = useFont(skiaFontSource, fontSize);
+
+  // Filter and convert effects
+  const slideEffects = filterSupportedEffects(slide?.textEffects);
+  const newFormatEffects: EffectInstance[] = useMemo(() => {
+    return slideEffects
+      .map((effect: any) => convertToNewFormat(effect, slide?.color))
+      .filter((effect: any): effect is EffectInstance => effect !== null);
+  }, [slideEffects, slide?.color]);
 
   if (!slide) {
     return (
@@ -81,17 +123,20 @@ const SlidePreview: React.FC<{ slide: any }> = ({ slide }) => {
   }
 
   const fontOption = slide.fontId
-    ? getSlideFontByFamily(slide.fontFamily)
+    ? getSlideFontById(slide.fontId)
     : getSlideFontByFamily(slide.fontFamily);
   const fontFamily = resolveFontFamilyForPlatform(fontOption, platformKey);
 
+  // Fallback to CSS-based effects when no Skia font
   const effects = buildPreviewEffects(slide.textEffects || [], {
     text: slide.text,
-    fontSize: Math.max(12, slide.fontSize * 0.4),
+    fontSize,
     textColor: slide.color,
     fontFamily,
     fontWeight: slide.fontWeight,
   });
+
+  const hasSkiaEffects = skiaFont && newFormatEffects.length > 0;
 
   return (
     <View
@@ -113,48 +158,67 @@ const SlidePreview: React.FC<{ slide: any }> = ({ slide }) => {
           resizeMode="cover"
         />
       )}
-      
+
       {/* Text Content */}
       <View
         style={[
           styles.textContainer,
           {
-            left: slide.position?.x * 0.4 || 10,
-            top: slide.position?.y * 0.4 || 20,
+            left: slide.position?.x * scaleFactor || 10,
+            top: slide.position?.y * scaleFactor || 20,
           },
         ]}
       >
-        {/* Underlay Effects */}
-        {effects.underlayElements.map((element, index) => (
-          <View key={`underlay-${index}`} style={styles.effectLayer}>
-            {element}
-          </View>
-        ))}
-        
-        <Text
-          style={[
-            styles.previewText,
-            {
-              color: slide.color,
-              fontSize: Math.max(12, slide.fontSize * 0.4),
-              fontFamily,
-              fontWeight: slide.fontWeight,
-              textAlign: slide.textAlign,
-              ...effects.textStyle,
-            },
-          ]}
-          numberOfLines={3}
-        >
-          {slide.text}
-        </Text>
+        {hasSkiaEffects ? (
+          <EffectPipeline
+            text={slide.text}
+            x={0}
+            baselineY={fontSize}
+            font={skiaFont}
+            width={previewWidth * 0.9}
+            height={fontSize * 2}
+            textColor={slide.color || '#FFFFFF'}
+            effects={newFormatEffects}
+            lineHeight={fontSize * 1.35}
+            background="transparent"
+          />
+        ) : (
+          <>
+            {/* Underlay Effects */}
+            {effects.underlayElements.map((element, index) => (
+              <View key={`underlay-${index}`} style={styles.effectLayer}>
+                {element}
+              </View>
+            ))}
+
+            <Text
+              style={[
+                styles.previewText,
+                {
+                  color: slide.color,
+                  fontSize,
+                  fontFamily,
+                  fontWeight: slide.fontWeight,
+                  textAlign: slide.textAlign,
+                  ...effects.textStyle,
+                },
+              ]}
+              numberOfLines={3}
+            >
+              {slide.text}
+            </Text>
+          </>
+        )}
       </View>
-      
-      {/* Overlay Effects */}
-      <View style={[styles.effectLayer, effects.overlayStyle]}>
-        {effects.overlayElements.map((element, index) => (
-          <View key={`overlay-${index}`}>{element}</View>
-        ))}
-      </View>
+
+      {/* Overlay Effects (only when not using Skia) */}
+      {!hasSkiaEffects && (
+        <View style={[styles.effectLayer, effects.overlayStyle]}>
+          {effects.overlayElements.map((element, index) => (
+            <View key={`overlay-${index}`}>{element}</View>
+          ))}
+        </View>
+      )}
     </View>
   );
 };

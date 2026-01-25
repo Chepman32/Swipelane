@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -33,10 +33,29 @@ type NewProjectScreenNavigationProp = StackNavigationProp<
 
 const NewProjectScreen: React.FC = () => {
   const [text, setText] = useState('');
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const navigation = useNavigation<NewProjectScreenNavigationProp>();
   const { themeDefinition } = useTheme();
   const { t } = useLanguage();
   const { scale, scaleFont } = useResponsive();
+
+  // Track keyboard visibility
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSubscription = Keyboard.addListener(showEvent, () => {
+      setIsKeyboardVisible(true);
+    });
+    const hideSubscription = Keyboard.addListener(hideEvent, () => {
+      setIsKeyboardVisible(false);
+    });
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
 
   const handleGenerateSlides = () => {
     if (text.trim().length === 0) {
@@ -179,19 +198,21 @@ const NewProjectScreen: React.FC = () => {
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.hideKeyboardButton}
-            onPress={handleHideKeyboard}
-          >
-            <Text
-              style={[
-                styles.hideKeyboardText,
-                { color: themeDefinition.colors.text, fontSize: scaleFont(14) },
-              ]}
+          {isKeyboardVisible && (
+            <TouchableOpacity
+              style={styles.hideKeyboardButton}
+              onPress={handleHideKeyboard}
             >
-              {t('hide_keyboard') || 'Hide Keyboard'}
-            </Text>
-          </TouchableOpacity>
+              <Text
+                style={[
+                  styles.hideKeyboardText,
+                  { color: themeDefinition.colors.text, fontSize: scaleFont(14) },
+                ]}
+              >
+                {t('hide_keyboard') || 'Hide Keyboard'}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
