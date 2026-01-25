@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { MicrophoneFAB } from '../components/MicrophoneFAB';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -67,6 +68,16 @@ const NewProjectScreen: React.FC = () => {
     navigation.goBack();
   };
 
+  const handleSpeechResult = useCallback((spokenText: string) => {
+    FeedbackService.success();
+    setText(prevText => {
+      if (prevText.trim().length > 0) {
+        return `${prevText} ${spokenText}`;
+      }
+      return spokenText;
+    });
+  }, []);
+
   const estimatedSlides = estimateSlideCount(text);
 
   return (
@@ -104,24 +115,30 @@ const NewProjectScreen: React.FC = () => {
             {t('home_subtitle')}
           </Text>
 
-          <TextInput
-            style={[
-              styles.textInput,
-              {
-                backgroundColor: themeDefinition.colors.card,
-                color: themeDefinition.colors.text,
-                borderColor: themeDefinition.colors.border,
-                fontSize: scaleFont(16),
-                padding: scale(15),
-              },
-            ]}
-            multiline
-            placeholder={t('home_placeholder')}
-            placeholderTextColor={themeDefinition.colors.text + '66'}
-            value={text}
-            onChangeText={setText}
-            textAlignVertical="top"
-          />
+          <View style={styles.textInputContainer}>
+            <TextInput
+              style={[
+                styles.textInput,
+                {
+                  backgroundColor: themeDefinition.colors.card,
+                  color: themeDefinition.colors.text,
+                  borderColor: themeDefinition.colors.border,
+                  fontSize: scaleFont(16),
+                  padding: scale(15),
+                },
+              ]}
+              multiline
+              placeholder={t('home_placeholder')}
+              placeholderTextColor={themeDefinition.colors.text + '66'}
+              value={text}
+              onChangeText={setText}
+              textAlignVertical="top"
+            />
+            <MicrophoneFAB
+              onTextReceived={handleSpeechResult}
+              style={styles.microphoneFab}
+            />
+          </View>
 
           <View style={styles.infoContainer}>
             <Text
@@ -204,6 +221,10 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: 'center',
   },
+  textInputContainer: {
+    flex: 1,
+    position: 'relative',
+  },
   textInput: {
     flex: 1,
     borderWidth: 1,
@@ -212,6 +233,11 @@ const styles = StyleSheet.create({
     padding: 15,
     fontSize: 16,
     backgroundColor: '#f9f9f9',
+  },
+  microphoneFab: {
+    position: 'absolute',
+    right: 12,
+    bottom: 12,
   },
   infoContainer: {
     marginVertical: 15,

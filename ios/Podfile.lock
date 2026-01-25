@@ -2008,6 +2008,8 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
+  - react-native-voice (3.2.4):
+    - React-Core
   - React-NativeModulesApple (0.81.4):
     - boost
     - DoubleConversion
@@ -2975,6 +2977,7 @@ DEPENDENCIES:
   - "react-native-skia (from `../node_modules/@shopify/react-native-skia`)"
   - "react-native-slider (from `../node_modules/@react-native-community/slider`)"
   - react-native-view-shot (from `../node_modules/react-native-view-shot`)
+  - "react-native-voice (from `../node_modules/@react-native-voice/voice`)"
   - React-NativeModulesApple (from `../node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios`)
   - React-oscompat (from `../node_modules/react-native/ReactCommon/oscompat`)
   - React-perflogger (from `../node_modules/react-native/ReactCommon/reactperflogger`)
@@ -3118,6 +3121,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/@react-native-community/slider"
   react-native-view-shot:
     :path: "../node_modules/react-native-view-shot"
+  react-native-voice:
+    :path: "../node_modules/@react-native-voice/voice"
   React-NativeModulesApple:
     :path: "../node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios"
   React-oscompat:
@@ -3249,6 +3254,7 @@ SPEC CHECKSUMS:
   react-native-skia: 7267799b233f9671ff6ee9e9912f754977aa2a41
   react-native-slider: 663776e5683e257de8df8091abc2d93ff6ec67db
   react-native-view-shot: 6c008e58f4720de58370848201c5d4a082c6d4ca
+  react-native-voice: 908a0eba96c8c3d643e4f98b7232c6557d0a6f9c
   React-NativeModulesApple: 879fbdc5dcff7136abceb7880fe8a2022a1bd7c3
   React-oscompat: 93b5535ea7f7dff46aaee4f78309a70979bdde9d
   React-perflogger: 5536d2df3d18fe0920263466f7b46a56351c0510
@@ -3283,7 +3289,7 @@ SPEC CHECKSUMS:
   RNFS: 89de7d7f4c0f6bafa05343c578f61118c8282ed8
   RNGestureHandler: 3a73f098d74712952870e948b3d9cf7b6cae9961
   RNLocalize: a0ec66afe0980934cfe13f3bc30f476443388a36
-  RNPermissions: 8f5fb276f08fe1ef5db2efe682a0b66b1e1e0558
+  RNPermissions: 74e5aec53419f7111b98b1253e8520412237bb4c
   RNReactNativeHapticFeedback: be4f1b4bf0398c30b59b76ed92ecb0a2ff3a69c6
   RNReanimated: 9de34f0313c4177a34c079ca9fce6f1f278bff24
   RNScreens: 0bbf16c074ae6bb1058a7bf2d1ae017f4306797c
@@ -3292,6 +3298,6 @@ SPEC CHECKSUMS:
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: a3ed390a19db0459bd6839823a6ac6d9c6db198d
 
-PODFILE CHECKSUM: 011656b045372dba283dfc6ffc3cf917686c688a
+PODFILE CHECKSUM: 4a66a973170dd3172949bedab1335c9931983686
 
 COCOAPODS: 1.16.2

@@ -14,8 +14,10 @@ project 'Texora.xcodeproj'
 # iOS permission handlers required by react-native-permissions
 setup_permissions([
   'Camera',
+  'Microphone',
   'PhotoLibrary',
   'PhotoLibraryAddOnly',
+  'SpeechRecognition',
 ])
 
 linkage = ENV['USE_FRAMEWORKS']

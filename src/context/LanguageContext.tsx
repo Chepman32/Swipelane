@@ -21,6 +21,9 @@ const resources = {
       splash_title: 'Text to Slides',
       splash_subtitle: 'Creating beautiful slides from your text',
       
+      // New Project Screen
+      new_project_title: 'New Project',
+
       // Home Screen
       home_title: 'Create Slides',
       home_subtitle: 'Enter your text below to generate slides',
@@ -69,6 +72,13 @@ const resources = {
       settings_language: 'Language',
       settings_sound: 'Sound',
       settings_haptics: 'Haptics',
+
+      // Speech Recognition
+      speech_permission_denied: 'Permission Required',
+      speech_permission_settings: 'Please enable microphone access in Settings.',
+      speech_not_available: 'Not Available',
+      speech_not_available_message: 'Speech recognition is not available on this device.',
+      speech_error: 'Speech recognition error occurred. Please try again.',
     },
   },
   ru: {
@@ -84,6 +94,9 @@ const resources = {
       splash_title: 'Текст в Слайды',
       splash_subtitle: 'Создание красивых слайдов из вашего текста',
       
+      // New Project Screen
+      new_project_title: 'Новый проект',
+
       // Home Screen
       home_title: 'Создать слайды',
       home_subtitle: 'Введите текст ниже, чтобы создать слайды',
@@ -132,6 +145,13 @@ const resources = {
       settings_language: 'Язык',
       settings_sound: 'Звук',
       settings_haptics: 'Вибрация',
+
+      // Speech Recognition
+      speech_permission_denied: 'Требуется разрешение',
+      speech_permission_settings: 'Пожалуйста, включите доступ к микрофону в Настройках.',
+      speech_not_available: 'Недоступно',
+      speech_not_available_message: 'Распознавание речи недоступно на этом устройстве.',
+      speech_error: 'Ошибка распознавания речи. Попробуйте еще раз.',
     },
   },
   de: {
@@ -147,6 +167,9 @@ const resources = {
       splash_title: 'Text zu Folien',
       splash_subtitle: 'Erstellen schöner Folien aus Ihrem Text',
       
+      // New Project Screen
+      new_project_title: 'Neues Projekt',
+
       // Home Screen
       home_title: 'Folien erstellen',
       home_subtitle: 'Geben Sie Ihren Text unten ein, um Folien zu generieren',
@@ -195,6 +218,13 @@ const resources = {
       settings_language: 'Sprache',
       settings_sound: 'Ton',
       settings_haptics: 'Haptik',
+
+      // Speech Recognition
+      speech_permission_denied: 'Berechtigung erforderlich',
+      speech_permission_settings: 'Bitte aktivieren Sie den Mikrofonzugriff in den Einstellungen.',
+      speech_not_available: 'Nicht verfügbar',
+      speech_not_available_message: 'Spracherkennung ist auf diesem Gerät nicht verfügbar.',
+      speech_error: 'Fehler bei der Spracherkennung. Bitte versuchen Sie es erneut.',
     },
   },
   fr: {
@@ -210,6 +240,9 @@ const resources = {
       splash_title: 'Texte en Diapositives',
       splash_subtitle: 'Création de belles diapositives à partir de votre texte',
       
+      // New Project Screen
+      new_project_title: 'Nouveau projet',
+
       // Home Screen
       home_title: 'Créer des diapositives',
       home_subtitle: 'Entrez votre texte ci-dessous pour générer des diapositives',
@@ -258,6 +291,13 @@ const resources = {
       settings_language: 'Langue',
       settings_sound: 'Son',
       settings_haptics: 'Haptique',
+
+      // Speech Recognition
+      speech_permission_denied: 'Autorisation requise',
+      speech_permission_settings: 'Veuillez activer l\'accès au microphone dans les Réglages.',
+      speech_not_available: 'Non disponible',
+      speech_not_available_message: 'La reconnaissance vocale n\'est pas disponible sur cet appareil.',
+      speech_error: 'Erreur de reconnaissance vocale. Veuillez réessayer.',
     },
   },
   pt: {
@@ -273,6 +313,9 @@ const resources = {
       splash_title: 'Texto para Slides',
       splash_subtitle: 'Criando slides bonitos a partir do seu texto',
       
+      // New Project Screen
+      new_project_title: 'Novo Projeto',
+
       // Home Screen
       home_title: 'Criar Slides',
       home_subtitle: 'Digite seu texto abaixo para gerar slides',
@@ -321,6 +364,13 @@ const resources = {
       settings_language: 'Idioma',
       settings_sound: 'Som',
       settings_haptics: 'Háptico',
+
+      // Speech Recognition
+      speech_permission_denied: 'Permissão Necessária',
+      speech_permission_settings: 'Por favor, ative o acesso ao microfone nas Configurações.',
+      speech_not_available: 'Não Disponível',
+      speech_not_available_message: 'O reconhecimento de voz não está disponível neste dispositivo.',
+      speech_error: 'Erro no reconhecimento de voz. Tente novamente.',
     },
   },
   ja: {
@@ -336,6 +386,9 @@ const resources = {
       splash_title: 'テキストをスライドに',
       splash_subtitle: 'テキストから美しいスライドを作成',
       
+      // New Project Screen
+      new_project_title: '新規プロジェクト',
+
       // Home Screen
       home_title: 'スライドを作成',
       home_subtitle: '下にテキストを入力してスライドを生成',
@@ -384,6 +437,13 @@ const resources = {
       settings_language: '言語',
       settings_sound: '音',
       settings_haptics: 'ハプティック',
+
+      // Speech Recognition
+      speech_permission_denied: '許可が必要です',
+      speech_permission_settings: '設定でマイクへのアクセスを有効にしてください。',
+      speech_not_available: '利用不可',
+      speech_not_available_message: 'このデバイスでは音声認識が利用できません。',
+      speech_error: '音声認識エラーが発生しました。もう一度お試しください。',
     },
   },
   zh: {
@@ -399,6 +459,9 @@ const resources = {
       splash_title: '文本转幻灯片',
       splash_subtitle: '从您的文本创建精美的幻灯片',
       
+      // New Project Screen
+      new_project_title: '新项目',
+
       // Home Screen
       home_title: '创建幻灯片',
       home_subtitle: '在下方输入文本以生成幻灯片',
@@ -447,6 +510,13 @@ const resources = {
       settings_language: '语言',
       settings_sound: '声音',
       settings_haptics: '触觉反馈',
+
+      // Speech Recognition
+      speech_permission_denied: '需要权限',
+      speech_permission_settings: '请在设置中启用麦克风访问权限。',
+      speech_not_available: '不可用',
+      speech_not_available_message: '此设备不支持语音识别。',
+      speech_error: '语音识别错误。请重试。',
     },
   },
   ko: {
@@ -462,6 +532,9 @@ const resources = {
       splash_title: '텍스트를 슬라이드로',
       splash_subtitle: '텍스트로 아름다운 슬라이드 만들기',
       
+      // New Project Screen
+      new_project_title: '새 프로젝트',
+
       // Home Screen
       home_title: '슬라이드 만들기',
       home_subtitle: '아래에 텍스트를 입력하여 슬라이드를 생성하세요',
@@ -510,6 +583,13 @@ const resources = {
       settings_language: '언어',
       settings_sound: '소리',
       settings_haptics: '햅틱 피드백',
+
+      // Speech Recognition
+      speech_permission_denied: '권한 필요',
+      speech_permission_settings: '설정에서 마이크 접근을 활성화해 주세요.',
+      speech_not_available: '사용 불가',
+      speech_not_available_message: '이 기기에서는 음성 인식을 사용할 수 없습니다.',
+      speech_error: '음성 인식 오류가 발생했습니다. 다시 시도해 주세요.',
     },
   },
   uk: {
@@ -525,6 +605,9 @@ const resources = {
       splash_title: 'Текст у Слайди',
       splash_subtitle: 'Створення красивих слайдів з вашого тексту',
       
+      // New Project Screen
+      new_project_title: 'Новий проект',
+
       // Home Screen
       home_title: 'Створити слайди',
       home_subtitle: 'Введіть текст нижче, щоб створити слайди',
@@ -573,6 +656,13 @@ const resources = {
       settings_language: 'Мова',
       settings_sound: 'Звук',
       settings_haptics: 'Вібрація',
+
+      // Speech Recognition
+      speech_permission_denied: 'Потрібен дозвіл',
+      speech_permission_settings: 'Будь ласка, увімкніть доступ до мікрофона в Налаштуваннях.',
+      speech_not_available: 'Недоступно',
+      speech_not_available_message: 'Розпізнавання мовлення недоступне на цьому пристрої.',
+      speech_error: 'Помилка розпізнавання мовлення. Спробуйте ще раз.',
     },
   },
   es: {
@@ -584,6 +674,9 @@ const resources = {
       export: 'Exportar',
       splash_title: 'Texto a Diapositivas',
       splash_subtitle: 'Creando diapositivas hermosas a partir de tu texto',
+      // New Project Screen
+      new_project_title: 'Nuevo Proyecto',
+
       home_title: 'Crear Diapositivas',
       home_subtitle: 'Ingresa tu texto abajo para generar diapositivas',
       home_placeholder: 'Ingresa tu texto aquí...',
@@ -623,6 +716,13 @@ const resources = {
       settings_language: 'Idioma',
       settings_sound: 'Sonido',
       settings_haptics: 'Hápticos',
+
+      // Speech Recognition
+      speech_permission_denied: 'Permiso Requerido',
+      speech_permission_settings: 'Por favor, habilita el acceso al micrófono en Configuración.',
+      speech_not_available: 'No Disponible',
+      speech_not_available_message: 'El reconocimiento de voz no está disponible en este dispositivo.',
+      speech_error: 'Error de reconocimiento de voz. Inténtalo de nuevo.',
     },
   },
 };
