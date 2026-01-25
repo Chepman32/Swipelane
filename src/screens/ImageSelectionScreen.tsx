@@ -397,20 +397,8 @@ const ImageSelectionScreen: React.FC = () => {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#1a1a2e" />
-      
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.backIcon}>{t('back')}</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('select_image')}</Text>
-        <View style={styles.headerSpacer} />
-      </View>
 
       {/* Subtitle */}
       <Text style={styles.subtitle}>

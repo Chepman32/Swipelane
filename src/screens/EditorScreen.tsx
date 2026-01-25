@@ -458,16 +458,6 @@ const EditorScreen: React.FC = () => {
     }
   }, [text, slides, images, projectId]);
 
-  // Navigation handlers for custom header
-  const handleBackToHome = useCallback(async () => {
-    FeedbackService.buttonTap();
-    await saveProject();
-    navigation.reset({
-      index: 0,
-      routes: [{ name: 'Home' }],
-    });
-  }, [navigation, saveProject]);
-
   const handleOpenImageSelection = useCallback(async () => {
     FeedbackService.buttonTap();
     await saveProject();
@@ -524,14 +514,6 @@ const EditorScreen: React.FC = () => {
   // Set up custom header with folder button and undo/redo
   useLayoutEffect(() => {
     navigation.setOptions({
-      headerLeft: () => (
-        <TouchableOpacity
-          onPress={handleBackToHome}
-          style={{ paddingHorizontal: 15 }}
-        >
-          <Text style={{ fontSize: 17, color: '#007AFF' }}>{t('back')}</Text>
-        </TouchableOpacity>
-      ),
       headerRight: () => (
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <TouchableOpacity
@@ -555,7 +537,15 @@ const EditorScreen: React.FC = () => {
         </View>
       ),
     });
-  }, [navigation, handleBackToHome, handleOpenImageSelection, handleUndo, handleRedo, headerUpdateTrigger, t]);
+  }, [navigation, handleOpenImageSelection, handleUndo, handleRedo, headerUpdateTrigger]);
+
+  // Save project before navigating away
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', async () => {
+      await saveProject();
+    });
+    return unsubscribe;
+  }, [navigation, saveProject]);
 
   // Set up auto-save
   useEffect(() => {

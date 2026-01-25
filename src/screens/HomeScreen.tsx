@@ -28,6 +28,7 @@ import {
   SlideFontId,
 } from '../constants/fonts';
 import { Platform } from 'react-native';
+import settingsIcon from '../assets/icons/settings.png';
 import { useResponsive } from '../hooks/useResponsive';
 import { useFont } from '@shopify/react-native-skia';
 import { EffectPipeline } from '../textfx/render/pipeline';
@@ -431,7 +432,11 @@ const HomeScreen: React.FC = () => {
           onPress={() => navigation.navigate('Settings')}
           style={[styles.settingsButton, { padding: scale(10) }]}
         >
-          <Text style={[styles.settingsButtonText, { fontSize: scaleFont(24) }]}>⚙️</Text>
+          <Image 
+            source={settingsIcon} 
+            style={[styles.settingsButtonIcon, { width: scale(24), height: scale(24) }]}
+            resizeMode="contain"
+          />
         </TouchableOpacity>
       </View>
 
@@ -475,6 +480,9 @@ const styles = StyleSheet.create({
   },
   settingsButtonText: {
     fontSize: 24,
+  },
+  settingsButtonIcon: {
+    tintColor: '#000000',
   },
   gridContainer: {
     padding: 16,

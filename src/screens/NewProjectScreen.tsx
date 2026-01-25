@@ -84,11 +84,6 @@ const NewProjectScreen: React.FC = () => {
     });
   };
 
-  const handleBack = () => {
-    FeedbackService.buttonTap();
-    navigation.goBack();
-  };
-
   const handleHideKeyboard = () => {
     Keyboard.dismiss();
   };
@@ -116,23 +111,6 @@ const NewProjectScreen: React.FC = () => {
         style={styles.keyboardContainer}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <View
-          style={[
-            styles.header,
-            { borderBottomColor: themeDefinition.colors.border, paddingHorizontal: scale(20) },
-          ]}
-        >
-          <TouchableOpacity onPress={handleBack} style={[styles.backButton, { padding: scale(10) }]}>
-            <Text style={[styles.backButtonText, { color: themeDefinition.colors.text, fontSize: scaleFont(24) }]}>
-              {t('back')}
-            </Text>
-          </TouchableOpacity>
-          <Text style={[styles.title, { color: themeDefinition.colors.text, fontSize: scaleFont(24) }]}>
-            {t('new_project_title') || 'New Project'}
-          </Text>
-          <View style={styles.placeholder} />
-        </View>
-
         <View style={[styles.content, { padding: scale(20) }]}>
           <Text
             style={[styles.subtitle, { color: themeDefinition.colors.text, fontSize: scaleFont(16) }]}

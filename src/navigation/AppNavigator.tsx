@@ -59,12 +59,20 @@ const AppNavigator: React.FC = () => {
           }}
         />
         <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="NewProject" component={NewProjectScreen} />
+        <Stack.Screen
+          name="NewProject"
+          component={NewProjectScreen}
+          options={{
+            headerShown: true,
+            title: 'New Project',
+            headerBackTitle: 'Back',
+          }}
+        />
         <Stack.Screen
           name="ImageSelection"
           component={ImageSelectionScreen}
           options={{
-            headerShown: false,
+            headerShown: true,
             title: 'Select Images',
             headerBackTitle: 'Back',
           }}
