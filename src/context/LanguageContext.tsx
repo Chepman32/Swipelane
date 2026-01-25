@@ -11,7 +11,7 @@ const resources = {
   en: {
     translation: {
       // Common
-      app_name: 'Text to Slides',
+      app_name: 'Texora',
       continue: 'Continue',
       cancel: 'Cancel',
       save: 'Save',
@@ -84,7 +84,7 @@ const resources = {
   ru: {
     translation: {
       // Common
-      app_name: 'Текст в Слайды',
+      app_name: 'Texora',
       continue: 'Продолжить',
       cancel: 'Отмена',
       save: 'Сохранить',
@@ -157,7 +157,7 @@ const resources = {
   de: {
     translation: {
       // Common
-      app_name: 'Text zu Folien',
+      app_name: 'Texora',
       continue: 'Weiter',
       cancel: 'Abbrechen',
       save: 'Speichern',
@@ -230,7 +230,7 @@ const resources = {
   fr: {
     translation: {
       // Common
-      app_name: 'Texte en Diapositives',
+      app_name: 'Texora',
       continue: 'Continuer',
       cancel: 'Annuler',
       save: 'Enregistrer',
@@ -303,7 +303,7 @@ const resources = {
   pt: {
     translation: {
       // Common
-      app_name: 'Texto para Slides',
+      app_name: 'Texora',
       continue: 'Continuar',
       cancel: 'Cancelar',
       save: 'Salvar',
@@ -376,7 +376,7 @@ const resources = {
   ja: {
     translation: {
       // Common
-      app_name: 'テキストをスライドに',
+      app_name: 'Texora',
       continue: '続行',
       cancel: 'キャンセル',
       save: '保存',
@@ -449,7 +449,7 @@ const resources = {
   zh: {
     translation: {
       // Common
-      app_name: '文本转幻灯片',
+      app_name: 'Texora',
       continue: '继续',
       cancel: '取消',
       save: '保存',
@@ -522,7 +522,7 @@ const resources = {
   ko: {
     translation: {
       // Common
-      app_name: '텍스트를 슬라이드로',
+      app_name: 'Texora',
       continue: '계속',
       cancel: '취소',
       save: '저장',
@@ -595,7 +595,7 @@ const resources = {
   uk: {
     translation: {
       // Common
-      app_name: 'Текст у Слайди',
+      app_name: 'Texora',
       continue: 'Продовжити',
       cancel: 'Скасувати',
       save: 'Зберегти',
@@ -667,7 +667,7 @@ const resources = {
   },
   es: {
     translation: {
-      app_name: 'Texto a Diapositivas',
+      app_name: 'Texora',
       continue: 'Continuar',
       cancel: 'Cancelar',
       save: 'Guardar',

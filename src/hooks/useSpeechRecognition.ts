@@ -35,6 +35,7 @@ export function useSpeechRecognition(
   const { t } = useLanguage();
   const onResultRef = useRef(onResult);
   const availabilityCheckedRef = useRef(false);
+  const hasDeliveredResult = useRef(false);
 
   // Keep the callback ref updated
   useEffect(() => {
@@ -88,7 +89,10 @@ export function useSpeechRecognition(
       if (e.value && e.value.length > 0) {
         const recognizedText = e.value[0];
         setPartialResults(recognizedText);
-        onResultRef.current(recognizedText);
+        if (!hasDeliveredResult.current) {
+          hasDeliveredResult.current = true;
+          onResultRef.current(recognizedText);
+        }
       }
     };
 
@@ -122,6 +126,7 @@ export function useSpeechRecognition(
   const startListening = useCallback(async () => {
     setError(null);
     setPartialResults('');
+    hasDeliveredResult.current = false;
 
     // Check availability lazily (only on first use)
     if (!availabilityCheckedRef.current) {

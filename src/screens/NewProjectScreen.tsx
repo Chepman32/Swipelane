@@ -8,6 +8,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Keyboard,
 } from 'react-native';
 import { MicrophoneFAB } from '../components/MicrophoneFAB';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -66,6 +67,10 @@ const NewProjectScreen: React.FC = () => {
   const handleBack = () => {
     FeedbackService.buttonTap();
     navigation.goBack();
+  };
+
+  const handleHideKeyboard = () => {
+    Keyboard.dismiss();
   };
 
   const handleSpeechResult = useCallback((spokenText: string) => {
@@ -173,6 +178,20 @@ const NewProjectScreen: React.FC = () => {
               {t('home_generate_button')}
             </Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.hideKeyboardButton}
+            onPress={handleHideKeyboard}
+          >
+            <Text
+              style={[
+                styles.hideKeyboardText,
+                { color: themeDefinition.colors.text, fontSize: scaleFont(14) },
+              ]}
+            >
+              {t('hide_keyboard') || 'Hide Keyboard'}
+            </Text>
+          </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -258,6 +277,14 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  hideKeyboardButton: {
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  hideKeyboardText: {
+    fontSize: 14,
+    opacity: 0.7,
   },
 });
 
