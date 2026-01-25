@@ -1,4 +1,5 @@
 import React from 'react';
+import { View } from 'react-native';
 import { Canvas, Group, useCanvasRef } from '@shopify/react-native-skia';
 import type { EffectInstance } from '../types';
 import { NeonPass } from './passes/neon';
@@ -151,15 +152,16 @@ export const EffectPipeline = React.forwardRef<
    const canvasBackgroundColor = background ?? 'transparent';
 
   return (
-    <Canvas
-      ref={canvasRef}
-      style={{ width, height: computedHeight, backgroundColor: canvasBackgroundColor }}
-    >
-      <Group>
-        {effects.flatMap(effect => {
-          if (!effect.enabled) {
-            return [];
-          }
+    <View style={{ width, height: computedHeight }} pointerEvents="none">
+      <Canvas
+        ref={canvasRef}
+        style={{ width, height: computedHeight, backgroundColor: canvasBackgroundColor }}
+      >
+        <Group>
+          {effects.flatMap(effect => {
+            if (!effect.enabled) {
+              return [];
+            }
 
           return lines.map((line, index) => {
             const lineBaselineY = baselineY + index * effectiveLineHeight;
@@ -274,5 +276,6 @@ export const EffectPipeline = React.forwardRef<
         })}
       </Group>
     </Canvas>
+    </View>
   );
 });

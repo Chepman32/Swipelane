@@ -79,7 +79,7 @@ export const buildPreviewEffects = (
         const spread = typeof params.spread === 'number' ? params.spread : 12;
 
         // Create a single strong glow effect using text shadow
-        textStyle.color = '#FFFFFF'; // Keep core text white
+        // textStyle.color = '#FFFFFF'; // Keep core text white - Removed to respect user color
         textStyle.textShadowColor = glowColor;
         textStyle.textShadowOffset = { width: 0, height: 0 };
         textStyle.textShadowRadius = Math.max(8, spread);
@@ -158,7 +158,7 @@ export const buildPreviewEffects = (
         const bloomColors = ['#FF6B35', '#F7931E', '#FF1493', '#00BFFF'];
 
         // Main text gets white color with glow
-        textStyle.color = '#FFFFFF';
+        // textStyle.color = '#FFFFFF'; // Removed to respect user color
         textStyle.textShadowColor = '#FFFFFF';
         textStyle.textShadowOffset = { width: 0, height: 0 };
         textStyle.textShadowRadius = Math.max(4, radius * 0.3);

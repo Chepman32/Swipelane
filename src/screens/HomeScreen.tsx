@@ -29,6 +29,7 @@ import { useResponsive } from '../hooks/useResponsive';
 type RootStackParamList = {
   NewProject: undefined;
   ImageSelection: { text: string; projectId: string; images?: string[] };
+  Editor: { text: string; images: string[]; projectId: string };
   Settings: undefined;
 };
 
@@ -113,13 +114,6 @@ const SlidePreview: React.FC<{ slide: any }> = ({ slide }) => {
         />
       )}
       
-      {/* Underlay Effects */}
-      {effects.underlayElements.map((element, index) => (
-        <View key={`underlay-${index}`} style={styles.effectLayer}>
-          {element}
-        </View>
-      ))}
-      
       {/* Text Content */}
       <View
         style={[
@@ -130,6 +124,13 @@ const SlidePreview: React.FC<{ slide: any }> = ({ slide }) => {
           },
         ]}
       >
+        {/* Underlay Effects */}
+        {effects.underlayElements.map((element, index) => (
+          <View key={`underlay-${index}`} style={styles.effectLayer}>
+            {element}
+          </View>
+        ))}
+        
         <Text
           style={[
             styles.previewText,
@@ -194,11 +195,11 @@ const HomeScreen: React.FC = () => {
 
   const handleOpenProject = (project: ProjectState) => {
     FeedbackService.buttonTap();
-    // Load the project as current and navigate to image selection
+    // Load the project as current and navigate directly to editor
     StorageService.saveCurrentProject(project).then(() => {
-      // Extract images from slides to pass to ImageSelectionScreen
+      // Extract images from slides to pass to EditorScreen
       const images = project.slides.map(slide => slide.image || '');
-      navigation.navigate('ImageSelection', { text: project.text, projectId: project.id, images });
+      navigation.navigate('Editor', { text: project.text, images, projectId: project.id });
     });
   };
 

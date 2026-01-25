@@ -57,9 +57,7 @@ import {
   TextEffectCategory,
   TextEffectInstance,
   TextEffectType,
-  TEXT_EFFECT_CATEGORIES,
   TEXT_EFFECT_DEFINITIONS,
-  getDefaultSupportedTextEffectCategory,
   isTextEffectSupported,
   createTextEffectInstance,
 } from '../constants/textEffects';
@@ -307,6 +305,12 @@ const EditorScreen: React.FC = () => {
       ? currentSlide?.fontWeight
       : undefined,
   });
+  const previewUnderlayElements = previewEffects.underlayElements.filter(
+    React.isValidElement,
+  ) as React.ReactElement[];
+  const previewOverlayElements = previewEffects.overlayElements.filter(
+    React.isValidElement,
+  ) as React.ReactElement[];
 
   // Load Skia font for text effects rendering
   const skiaFontSource = useMemo(() => {
@@ -864,6 +868,40 @@ const EditorScreen: React.FC = () => {
     [currentSlideIndex, addToHistory, currentFontSize, sliderTranslateY, SLIDER_HEIGHT],
   );
 
+
+
+  // Text editing functions
+  const handleStartEditingText = () => {
+    if (currentSlide) {
+      setEditingText(currentSlide.text);
+      setIsEditingText(true);
+      FeedbackService.buttonTap();
+    }
+  };
+
+  const handleFinishEditingText = () => {
+    if (currentSlide && editingText.trim() !== currentSlide.text) {
+      setSlides(prevSlides => {
+        const newSlides = [...prevSlides];
+        const slide = { ...newSlides[currentSlideIndex] };
+        slide.text = editingText.trim();
+        newSlides[currentSlideIndex] = slide;
+        addToHistory(newSlides);
+        return newSlides;
+      });
+      setHasUnsavedChanges(true);
+    }
+    setIsEditingText(false);
+    setEditingText('');
+    FeedbackService.buttonTap();
+  };
+
+  const handleCancelEditingText = () => {
+    setIsEditingText(false);
+    setEditingText('');
+    FeedbackService.buttonTap();
+  };
+
   const panGesture = Gesture.Pan()
     .onStart(_ => {
       // Don't start dragging if we're in text editing mode
@@ -993,7 +1031,7 @@ const EditorScreen: React.FC = () => {
   const tapGesture = Gesture.Tap()
     .numberOfTaps(1)
     .onEnd(() => {
-      runOnJS(handleStartEditingText)();
+      handleStartEditingText();
     })
     .runOnJS(true);
 
@@ -1187,7 +1225,7 @@ const EditorScreen: React.FC = () => {
       );
       return;
     }
-    let createdEffect: TextEffectInstance | null = null;
+    let createdEffectId: string | null = null;
     setSlides(prevSlides => {
       const newSlides = [...prevSlides];
       const slide = newSlides[currentSlideIndex];
@@ -1202,14 +1240,14 @@ const EditorScreen: React.FC = () => {
         // Set transparent background for bloom effects
         backgroundColor: effectType === 'bloom' ? 'rgba(0,0,0,0)' : slide.backgroundColor,
       };
-      createdEffect = instance;
+      createdEffectId = instance.instanceId;
       newSlides[currentSlideIndex] = updatedSlide;
       addToHistory(newSlides);
       return newSlides;
     });
     setHasUnsavedChanges(true);
-    if (createdEffect) {
-      setSelectedTextEffectId(createdEffect.instanceId);
+    if (createdEffectId) {
+      setSelectedTextEffectId(createdEffectId);
       setTextEffectsPanelVisible(true);
     }
   };
@@ -1358,38 +1396,6 @@ const EditorScreen: React.FC = () => {
     navigation.navigate('Preview', { slides });
   };
 
-  // Text editing functions
-  const handleStartEditingText = () => {
-    if (currentSlide) {
-      setEditingText(currentSlide.text);
-      setIsEditingText(true);
-      FeedbackService.buttonTap();
-    }
-  };
-
-  const handleFinishEditingText = () => {
-    if (currentSlide && editingText.trim() !== currentSlide.text) {
-      setSlides(prevSlides => {
-        const newSlides = [...prevSlides];
-        const slide = { ...newSlides[currentSlideIndex] };
-        slide.text = editingText.trim();
-        newSlides[currentSlideIndex] = slide;
-        addToHistory(newSlides);
-        return newSlides;
-      });
-      setHasUnsavedChanges(true);
-    }
-    setIsEditingText(false);
-    setEditingText('');
-    FeedbackService.buttonTap();
-  };
-
-  const handleCancelEditingText = () => {
-    setIsEditingText(false);
-    setEditingText('');
-    FeedbackService.buttonTap();
-  };
-
   return (
     <View
       style={[
@@ -1453,7 +1459,7 @@ const EditorScreen: React.FC = () => {
               ]}
             >
               {/* Render text effects using Skia if font is loaded and effects exist */}
-              {skiaFont && newFormatEffects.length > 0 ? (
+              {skiaFont && newFormatEffects.length > 0 && !isEditingText ? (
                 <EffectPipeline
                   text={currentSlide.text}
                   x={0}
@@ -1514,11 +1520,12 @@ const EditorScreen: React.FC = () => {
                       <View
                         style={styles.textEditTrigger}
                       >
-                        {previewEffects.underlayElements.map((element, index) =>
-                          React.cloneElement(element as React.ReactElement, {
-                            key: `${activeFontId}-${index}-${element.key}`,
-                          }),
-                        )}
+                        {previewUnderlayElements.map((element, index) => {
+                          const elementKey = element.key ?? `${activeFontId}-${index}`;
+                          return React.cloneElement(element, {
+                            key: elementKey,
+                          });
+                        })}
                         <Text
                           style={[
                             styles.slideText,
@@ -1538,11 +1545,13 @@ const EditorScreen: React.FC = () => {
                         >
                           {currentSlide.text}
                         </Text>
-                        {previewEffects.overlayElements.map((element, index) =>
-                          React.cloneElement(element as React.ReactElement, {
-                            key: `${activeFontId}-overlay-${index}-${element.key}`,
-                          }),
-                        )}
+                        {previewOverlayElements.map((element, index) => {
+                          const elementKey =
+                            element.key ?? `${activeFontId}-overlay-${index}`;
+                          return React.cloneElement(element, {
+                            key: elementKey,
+                          });
+                        })}
                       </View>
                     </View>
                   )}
