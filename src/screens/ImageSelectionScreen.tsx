@@ -285,7 +285,7 @@ const ImageSelectionScreen: React.FC = () => {
 
     try {
       // First try to get permission by directly calling pickFromGallery
-      const imageUri = await ImageService.pickFromGallery();
+      const imageUri = await ImageService.pickFromGallery(t);
 
       if (imageUri) {
         console.log('Selected image URI:', imageUri);
@@ -406,22 +406,22 @@ const ImageSelectionScreen: React.FC = () => {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Text style={styles.backIcon}>‹</Text>
+          <Text style={styles.backIcon}>{t('back')}</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Select Images</Text>
+        <Text style={styles.headerTitle}>{t('select_image')}</Text>
         <View style={styles.headerSpacer} />
       </View>
 
       {/* Subtitle */}
       <Text style={styles.subtitle}>
-        Choose background images for your {requiredImages} slide{requiredImages > 1 ? 's' : ''}
+        {t('image_selection_subtitle', { count: requiredImages, plural: requiredImages > 1 ? 's' : '' })}
       </Text>
 
       <ScrollView style={styles.content}>
         {slides.map((slideText, index) => (
           <View key={index} style={styles.slideCard}>
             <View style={styles.slideHeader}>
-              <Text style={styles.slideNumber}>Slide {index + 1}</Text>
+              <Text style={styles.slideNumber}>{t('slide_number', { number: index + 1 })}</Text>
               <Text style={styles.slideLocation} numberOfLines={2} ellipsizeMode="tail">
                 {slideText}
               </Text>
@@ -433,7 +433,7 @@ const ImageSelectionScreen: React.FC = () => {
                 onPress={() => handleSelectImage(index)}
               >
                 <Text style={styles.buttonIcon}>📷</Text>
-                <Text style={styles.selectImageText}>Select Image</Text>
+                <Text style={styles.selectImageText}>{t('select_image')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -441,7 +441,7 @@ const ImageSelectionScreen: React.FC = () => {
                 onPress={() => handleUsePlainBackground(index)}
               >
                 <Text style={styles.buttonIcon}>+</Text>
-                <Text style={styles.plainBackgroundText}>Plain Background</Text>
+                <Text style={styles.plainBackgroundText}>{t('plain_background')}</Text>
               </TouchableOpacity>
             </View>
 
@@ -464,7 +464,7 @@ const ImageSelectionScreen: React.FC = () => {
                   style={styles.emptyImageContainer}
                   onPress={() => handleSelectImage(index)}
                 >
-                  <Text style={styles.emptyImageText}>No image selected</Text>
+                  <Text style={styles.emptyImageText}>{t('no_image_selected')}</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -483,7 +483,7 @@ const ImageSelectionScreen: React.FC = () => {
           hasUserMadeChoice.filter(choice => choice).length !== requiredImages
         }
       >
-        <Text style={styles.continueButtonText}>Continue to Editor</Text>
+        <Text style={styles.continueButtonText}>{t('continue_to_editor')}</Text>
       </TouchableOpacity>
     </View>
   );

@@ -250,22 +250,22 @@ const PreviewScreen: React.FC = () => {
 
       if (result.success && result.savedPaths.length > 0) {
         FeedbackService.success();
-        ExportService.showExportSuccess(result.savedPaths.length);
+        ExportService.showExportSuccess(result.savedPaths.length, t);
       } else {
         FeedbackService.error();
         Alert.alert(
-          t('preview_export') + ' Failed',
-          result.error || 'Failed to export slides. Please try again.',
-          [{ text: 'OK' }],
+          t('export_failed'),
+          result.error || t('export_failed_message'),
+          [{ text: t('ok') }],
         );
       }
     } catch (error) {
       console.error('Export error:', error);
       FeedbackService.error();
       Alert.alert(
-        t('preview_export') + ' Failed',
-        'An unexpected error occurred. Please try again.',
-        [{ text: 'OK' }],
+        t('export_failed'),
+        t('export_unexpected_error'),
+        [{ text: t('ok') }],
       );
     } finally {
       setIsExporting(false);
@@ -372,11 +372,11 @@ const PreviewScreen: React.FC = () => {
           <View style={styles.exportingContainer}>
             <ActivityIndicator size="small" color="#fff" />
             <Text style={[styles.exportButtonText, { marginLeft: scale(10), fontSize: scaleFont(18) }]}>
-              Exporting...
+              {t('exporting')}
             </Text>
           </View>
         ) : (
-          <Text style={[styles.exportButtonText, { fontSize: scaleFont(18) }]}>{t('preview_export')}</Text>
+          <Text style={[styles.exportButtonText, { fontSize: scaleFont(18) }]}>{t('export')}</Text>
         )}
       </TouchableOpacity>
     </View>

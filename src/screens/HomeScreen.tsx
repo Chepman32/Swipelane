@@ -71,6 +71,7 @@ const platformKey: 'ios' | 'android' | 'default' =
 
 const SlidePreview: React.FC<{ slide: any }> = ({ slide }) => {
   const { themeDefinition } = useTheme();
+  const { t } = useLanguage();
   const { isPad, scaleFont } = useResponsive();
   const { width: screenWidth } = Dimensions.get('window');
   // Increase preview width cap for iPad
@@ -116,7 +117,7 @@ const SlidePreview: React.FC<{ slide: any }> = ({ slide }) => {
             { color: themeDefinition.colors.text + '66', fontSize: scaleFont(14) },
           ]}
         >
-          No slides yet
+          {t('no_slides_yet')}
         </Text>
       </View>
     );
@@ -269,12 +270,12 @@ const HomeScreen: React.FC = () => {
 
   const handleDeleteProject = (projectId: string) => {
     Alert.alert(
-      'Delete Project',
-      'Are you sure you want to delete this project?',
+      t('delete_project_title'),
+      t('delete_project_confirm'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('delete'),
           style: 'destructive',
           onPress: async () => {
             try {
@@ -341,7 +342,7 @@ const HomeScreen: React.FC = () => {
             ]}
             numberOfLines={1}
           >
-            {item.text.trim().split('\n')[0] || 'Untitled Project'}
+            {item.text.trim().split('\n')[0] || t('untitled_project')}
           </Text>
           <View style={styles.projectFooter}>
             <Text
@@ -358,7 +359,7 @@ const HomeScreen: React.FC = () => {
                 { color: themeDefinition.colors.text + '66', fontSize: scaleFont(12) },
               ]}
             >
-              {item.slides.length} slides
+              {item.slides.length} {t('slides_count', { count: item.slides.length })}
             </Text>
           </View>
         </View>
@@ -383,7 +384,7 @@ const HomeScreen: React.FC = () => {
         +
       </Text>
       <Text style={[styles.createButtonLabel, { color: themeDefinition.colors.text, fontSize: scaleFont(16) }]}>
-        New Project
+        {t('new_project')}
       </Text>
     </TouchableOpacity>
   );

@@ -135,7 +135,7 @@ const EditorScreen: React.FC = () => {
   const { text, images, projectId } = route.params;
   const insets = useSafeAreaInsets();
   const { themeDefinition } = useTheme();
-  const {} = useLanguage();
+  const { t } = useLanguage();
   const {
     sliderHeight: SLIDER_HEIGHT,
     scale: scaleSize,
@@ -173,7 +173,7 @@ const EditorScreen: React.FC = () => {
       return [
         {
           id: 0,
-          text: 'No text provided',
+          text: t('no_content_provided') || 'No text provided',
           image: '',
           position: { x: (slideSize - 200) / 2, y: (imageContainerHeight - 50) / 2 },
           fontSize: 24,
@@ -223,7 +223,7 @@ const EditorScreen: React.FC = () => {
         textEffects: [],
       };
     });
-  }, [text, images, slideSize, imageContainerHeight]);
+  }, [text, images, slideSize, imageContainerHeight, t]);
 
   // Loading state for project initialization
   const [isLoadingProject, setIsLoadingProject] = useState(true);
@@ -529,7 +529,7 @@ const EditorScreen: React.FC = () => {
           onPress={handleBackToHome}
           style={{ paddingHorizontal: 15 }}
         >
-          <Text style={{ fontSize: 17, color: '#007AFF' }}>‹ Back</Text>
+          <Text style={{ fontSize: 17, color: '#007AFF' }}>{t('back')}</Text>
         </TouchableOpacity>
       ),
       headerRight: () => (
@@ -538,13 +538,13 @@ const EditorScreen: React.FC = () => {
             onPress={handleUndo}
             style={{ paddingHorizontal: 8, opacity: historyIndexRef.current > 0 ? 1 : 0.3 }}
           >
-            <Text style={{ fontSize: 20 }}>↩️</Text>
+            <Image source={require('../assets/icons/undo.png')} style={{ width: 24, height: 24 }} />
           </TouchableOpacity>
           <TouchableOpacity
             onPress={handleRedo}
             style={{ paddingHorizontal: 8, opacity: historyIndexRef.current < historyRef.current.length - 1 ? 1 : 0.3 }}
           >
-            <Text style={{ fontSize: 20 }}>↪️</Text>
+            <Image source={require('../assets/icons/redo.png')} style={{ width: 24, height: 24 }} />
           </TouchableOpacity>
           <TouchableOpacity
             onPress={handleOpenImageSelection}
@@ -555,7 +555,7 @@ const EditorScreen: React.FC = () => {
         </View>
       ),
     });
-  }, [navigation, handleBackToHome, handleOpenImageSelection, handleUndo, handleRedo, headerUpdateTrigger]);
+  }, [navigation, handleBackToHome, handleOpenImageSelection, handleUndo, handleRedo, headerUpdateTrigger, t]);
 
   // Set up auto-save
   useEffect(() => {
@@ -1242,8 +1242,8 @@ const EditorScreen: React.FC = () => {
     FeedbackService.buttonTap();
     if (!isTextEffectSupported(effectType)) {
       Alert.alert(
-        'Coming soon',
-        'This effect will be available in a future update.',
+        t('coming_soon'),
+        t('effect_coming_soon'),
       );
       return;
     }
@@ -1279,8 +1279,8 @@ const EditorScreen: React.FC = () => {
     FeedbackService.buttonTap();
     if (!isTextEffectSupported(effectType)) {
       Alert.alert(
-        'Coming soon',
-        'This effect will be available in a future update.',
+        t('coming_soon'),
+        t('effect_coming_soon'),
       );
       return;
     }

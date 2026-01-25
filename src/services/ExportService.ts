@@ -605,20 +605,20 @@ class ExportService {
     }
   }
 
-  public showExportSuccess(count: number) {
+  public showExportSuccess(count: number, t: (key: string, options?: any) => string) {
     Alert.alert(
-      'Success!',
-      `${count} slide${count > 1 ? 's' : ''} exported to your Photos`,
+      t('success'),
+      t('export_success', { count: count, plural: count > 1 ? 's' : '' }),
       [
         {
-          text: 'View in Photos',
+          text: t('view_in_photos'),
           onPress: () => {
             if (Platform.OS === 'ios') {
               Linking.openURL('photos-redirect://');
             }
           },
         },
-        { text: 'OK', style: 'default' },
+        { text: t('ok'), style: 'default' },
       ],
     );
   }

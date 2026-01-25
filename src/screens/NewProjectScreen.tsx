@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Keyboard,
+  Image,
 } from 'react-native';
 import { MicrophoneFAB } from '../components/MicrophoneFAB';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -123,7 +124,7 @@ const NewProjectScreen: React.FC = () => {
         >
           <TouchableOpacity onPress={handleBack} style={[styles.backButton, { padding: scale(10) }]}>
             <Text style={[styles.backButtonText, { color: themeDefinition.colors.text, fontSize: scaleFont(24) }]}>
-              ←
+              {t('back')}
             </Text>
           </TouchableOpacity>
           <Text style={[styles.title, { color: themeDefinition.colors.text, fontSize: scaleFont(24) }]}>
@@ -203,14 +204,7 @@ const NewProjectScreen: React.FC = () => {
               style={styles.hideKeyboardButton}
               onPress={handleHideKeyboard}
             >
-              <Text
-                style={[
-                  styles.hideKeyboardText,
-                  { color: themeDefinition.colors.text, fontSize: scaleFont(14) },
-                ]}
-              >
-                {t('hide_keyboard') || 'Hide Keyboard'}
-              </Text>
+              <Image source={require('../assets/icons/hideKeyboard.png')} style={{ width: 24, height: 24, opacity: 0.7 }} />
             </TouchableOpacity>
           )}
         </View>
@@ -300,8 +294,9 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   hideKeyboardButton: {
-    alignItems: 'center',
-    paddingVertical: 12,
+    alignSelf: 'flex-end',
+    paddingVertical: 4,
+    paddingHorizontal: 16,
   },
   hideKeyboardText: {
     fontSize: 14,

@@ -19,7 +19,7 @@ import {
   RESULTS,
   Permission,
 } from 'react-native-permissions';
-import { Platform, Alert } from 'react-native';
+import { Alert, Platform, Linking } from 'react-native';
 
 export interface ImagePickerOptions {
   mediaType?: MediaType;
@@ -130,16 +130,16 @@ class ImageService {
   /**
    * Show image picker options (camera or gallery)
    */
-  public async showImagePickerOptions(): Promise<string | null> {
+  public async showImagePickerOptions(t: (key: string, options?: any) => string): Promise<string | null> {
     return new Promise(resolve => {
-      Alert.alert('Select Image', 'Choose an option', [
+      Alert.alert(t('select_image_title'), t('select_image_message'), [
         {
-          text: 'Camera',
-          onPress: () => this.pickFromCamera().then(resolve),
+          text: t('camera'),
+          onPress: () => this.pickFromCamera(t).then(resolve),
         },
         {
-          text: 'Photo Library',
-          onPress: () => this.pickFromGallery().then(resolve),
+          text: t('photo_library'),
+          onPress: () => this.pickFromGallery(t).then(resolve),
         },
         {
           text: 'Cancel',
@@ -153,14 +153,14 @@ class ImageService {
   /**
    * Pick image from camera
    */
-  public async pickFromCamera(): Promise<string | null> {
+  public async pickFromCamera(t: (key: string, options?: any) => string): Promise<string | null> {
     const hasPermission = await this.checkCameraPermission();
 
     if (!hasPermission) {
       Alert.alert(
-        'Permission Required',
-        'Camera permission is required to take photos. Please enable it in Settings.',
-        [{ text: 'OK' }],
+        t('camera_permission_required'),
+        t('camera_permission_message'),
+        [{ text: t('ok') }],
       );
       return null;
     }
@@ -189,23 +189,19 @@ class ImageService {
   /**
    * Pick image from gallery
    */
-  public async pickFromGallery(): Promise<string | null> {
+  public async pickFromGallery(t: (key: string, options?: any) => string): Promise<string | null> {
     try {
       const hasPermission = await this.checkPhotoLibraryPermission();
 
       if (!hasPermission) {
         Alert.alert(
-          'Permission Required',
-          'Photo library permission is required to select images. Please enable it in Settings.',
+          t('photo_library_permission_required'),
+          t('photo_library_permission_message'),
           [
-            { text: 'Cancel', style: 'cancel' },
+            { text: t('ok') },
             {
-              text: 'Open Settings',
-              onPress: () => {
-                // On iOS, this will open the app settings
-                // On Android, this will open the system settings
-                console.log('Opening settings...');
-              },
+              text: t('settings'),
+              onPress: () => Linking.openSettings(),
             },
           ],
         );
@@ -240,9 +236,9 @@ class ImageService {
     } catch (error) {
       console.error('Error in pickFromGallery:', error);
       Alert.alert(
-        'Error',
-        'Failed to access photo library. Please try again.',
-        [{ text: 'OK' }],
+        t('error'),
+        t('photo_library_access_failed'),
+        [{ text: t('ok') }],
       );
       return null;
     }
