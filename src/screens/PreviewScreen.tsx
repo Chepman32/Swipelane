@@ -159,7 +159,7 @@ const SlideRenderer: React.FC<SlideRendererProps> = ({
           {
             left: item.position?.x || 50,
             top: item.position?.y || 50,
-            backgroundColor: item.backgroundColor || 'rgba(0,0,0,0.5)',
+            backgroundColor: item.backgroundColor || 'rgba(0,0,0,0.4)',
             paddingHorizontal,
             paddingVertical,
             borderRadius,
