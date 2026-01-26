@@ -1,7 +1,43 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { getEffectDisplayName } from '../registry';
+import { useLanguage } from '../../context/LanguageContext';
 import type { EffectInstance } from '../types';
+
+// Map effect IDs to translation keys
+const EFFECT_TRANSLATION_MAP: Record<string, string> = {
+  'neon': 'effect_neon_glow',
+  'soft-shadow': 'effect_soft_shadow',
+  'long-shadow': 'effect_long_shadow',
+  'bloom': 'effect_bloom',
+  'glassmorphism': 'effect_glassmorphism',
+  'gradient-stroke': 'effect_gradient_stroke',
+  'multi-stroke': 'effect_multi_stroke',
+  'dashed-stroke': 'effect_dashed_stroke',
+  'animated-gradient': 'effect_animated_gradient',
+  'texture-fill': 'effect_texture_fill',
+  'procedural-shader': 'effect_procedural_shader',
+  'knockout': 'effect_knockout',
+  'blend-mode': 'effect_blend_mode',
+  'media-mask': 'effect_media_mask',
+  'clip-path': 'effect_clip_path',
+  'progress-fill': 'effect_progress_fill',
+  'wave-distortion': 'effect_wave_distortion',
+  'chromatic-aberration': 'effect_chromatic_aberration',
+  'glitch': 'effect_glitch',
+  'crt-vhs': 'effect_crt_vhs',
+  'fisheye': 'effect_fisheye',
+  'specular-highlight': 'effect_specular_highlight',
+  'volumetric-light': 'effect_volumetric_light',
+  'cmyk-misprint': 'effect_cmyk_misprint',
+  'letterpress': 'effect_letterpress',
+  'texture-overlay': 'effect_texture_overlay',
+  'chalk-marker': 'effect_chalk_marker',
+  'shine-sweep': 'effect_shine_sweep',
+  'particles': 'effect_particles',
+  'glossy-3d': 'effect_glossy_3d',
+  'chrome-3d': 'effect_chrome_3d',
+};
 
 interface EffectListItemProps {
   effect: EffectInstance;
@@ -18,7 +54,9 @@ export const EffectListItem: React.FC<EffectListItemProps> = ({
   onEdit,
   onRemove,
 }) => {
-  const displayName = getEffectDisplayName(effect.id);
+  const { t } = useLanguage();
+  const translationKey = EFFECT_TRANSLATION_MAP[effect.id];
+  const displayName = translationKey ? t(translationKey) : getEffectDisplayName(effect.id);
 
   return (
     <View style={[styles.container, isSelected && styles.containerSelected]}>
@@ -35,13 +73,13 @@ export const EffectListItem: React.FC<EffectListItemProps> = ({
             effect.enabled && styles.toggleTextEnabled,
           ]}
         >
-          {effect.enabled ? 'On' : 'Off'}
+          {effect.enabled ? t('effect_toggle_on') : t('effect_toggle_off')}
         </Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.content} onPress={onEdit}>
         <Text style={styles.name}>{displayName}</Text>
-        {isSelected && <Text style={styles.editingBadge}>Editing</Text>}
+        {isSelected && <Text style={styles.editingBadge}>{t('text_effects_editing')}</Text>}
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.removeButton} onPress={onRemove}>

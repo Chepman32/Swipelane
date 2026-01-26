@@ -1073,9 +1073,9 @@ const EditorScreen: React.FC = () => {
   if (!currentSlide) {
     return (
       <View style={styles.container}>
-        <Text style={styles.navButtonText}>No slides available</Text>
+        <Text style={styles.navButtonText}>{t('editor_no_slides')}</Text>
         <Text style={styles.navButtonSubtext}>
-          Please check your input text.
+          {t('editor_check_input')}
         </Text>
       </View>
     );
@@ -2069,7 +2069,7 @@ const EditorScreen: React.FC = () => {
 
       {/* Preview button */}
       <TouchableOpacity style={[styles.previewButton, { paddingVertical: scaleSize(15), marginHorizontal: responsivePadding }]} onPress={handlePreview}>
-        <Text style={[styles.previewButtonText, { fontSize: scaleFont(18) }]}>Preview Slides</Text>
+        <Text style={[styles.previewButtonText, { fontSize: scaleFont(18) }]}>{t('editor_preview')}</Text>
       </TouchableOpacity>
     </View>
   );

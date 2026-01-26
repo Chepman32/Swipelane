@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { useLanguage } from '../context/LanguageContext';
 
 type RootStackParamList = {
   Home: undefined;
@@ -12,6 +13,7 @@ type SplashScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Home'
 
 const SplashScreen: React.FC = () => {
   const navigation = useNavigation<SplashScreenNavigationProp>();
+  const { t } = useLanguage();
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
   const scaleAnim = React.useRef(new Animated.Value(0.8)).current;
 
@@ -49,8 +51,8 @@ const SplashScreen: React.FC = () => {
             transform: [{ scale: scaleAnim }],
           },
         ]}>
-        <Text style={styles.title}>Text to Slides</Text>
-        <Text style={styles.subtitle}>Creating beautiful slides from your text</Text>
+        <Text style={styles.title}>{t('splash_title')}</Text>
+        <Text style={styles.subtitle}>{t('splash_subtitle')}</Text>
         </Animated.View>
     </SafeAreaView>
   );

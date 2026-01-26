@@ -124,7 +124,7 @@ const SettingsScreen: React.FC = () => {
               ]}
               onPress={() => handleThemeChange(theme.name as Theme)}>
               <Text style={[styles.themeText, { color: theme.colors.text, fontSize: scaleFont(16) }]}>
-                {theme.name.charAt(0).toUpperCase() + theme.name.slice(1)}
+                {t(`theme_${theme.name}`)}
               </Text>
             </TouchableOpacity>
           ))}

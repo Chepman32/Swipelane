@@ -16,6 +16,54 @@ import {
 } from '../constants/textEffects';
 import { getEffectDisplayName } from '../textfx/registry';
 import { useResponsive } from '../hooks/useResponsive';
+import { useLanguage } from '../context/LanguageContext';
+
+// Map category IDs to translation keys
+const CATEGORY_TRANSLATION_MAP: Record<string, string> = {
+  'fill': 'effect_category_fill',
+  'stroke': 'effect_category_stroke',
+  'glow': 'effect_category_glow',
+  'texture': 'effect_category_texture',
+  'masking': 'effect_category_masking',
+  'distortion': 'effect_category_distortion',
+  'compositing': 'effect_category_compositing',
+  'special': 'effect_category_special',
+};
+
+// Map effect types to translation keys
+const EFFECT_TRANSLATION_MAP: Record<string, string> = {
+  'neonGlow': 'effect_neon_glow',
+  'softShadow': 'effect_soft_shadow',
+  'longShadow': 'effect_long_shadow',
+  'bloom': 'effect_bloom',
+  'glassmorphism': 'effect_glassmorphism',
+  'gradientStroke': 'effect_gradient_stroke',
+  'multiStroke': 'effect_multi_stroke',
+  'dashedStroke': 'effect_dashed_stroke',
+  'animatedGradient': 'effect_animated_gradient',
+  'textureFill': 'effect_texture_fill',
+  'proceduralShader': 'effect_procedural_shader',
+  'knockout': 'effect_knockout',
+  'blendMode': 'effect_blend_mode',
+  'mediaMask': 'effect_media_mask',
+  'clipPath': 'effect_clip_path',
+  'progressFill': 'effect_progress_fill',
+  'waveDistortion': 'effect_wave_distortion',
+  'chromaticAberration': 'effect_chromatic_aberration',
+  'glitch': 'effect_glitch',
+  'crtVhs': 'effect_crt_vhs',
+  'fisheye': 'effect_fisheye',
+  'specularHighlight': 'effect_specular_highlight',
+  'volumetricLight': 'effect_volumetric_light',
+  'cmykMisprint': 'effect_cmyk_misprint',
+  'letterpress': 'effect_letterpress',
+  'textureOverlay': 'effect_texture_overlay',
+  'chalkMarker': 'effect_chalk_marker',
+  'shineSweep': 'effect_shine_sweep',
+  'particles': 'effect_particles',
+  'glossy3d': 'effect_glossy_3d',
+  'chrome3d': 'effect_chrome_3d',
+};
 
 interface TextEffectsPanelProps {
   activeCategory: TextEffectCategory;
@@ -39,6 +87,7 @@ const TextEffectsPanel: React.FC<TextEffectsPanelProps> = ({
   selectedEffectId,
 }) => {
   const { scale, scaleFont, maxPanelHeight, smallButtonSize } = useResponsive();
+  const { t } = useLanguage();
 
   const availableEffects = useMemo(
     () =>
@@ -59,9 +108,9 @@ const TextEffectsPanel: React.FC<TextEffectsPanelProps> = ({
   return (
     <View style={[styles.panelContainer, { maxHeight: maxPanelHeight }]}>
       <View style={styles.headerRow}>
-        <Text style={[styles.panelTitle, { fontSize: scaleFont(16) }]}>Text Effects</Text>
+        <Text style={[styles.panelTitle, { fontSize: scaleFont(16) }]}>{t('text_effects_title')}</Text>
         <Text style={[styles.panelSubtitle, { fontSize: scaleFont(12) }]}>
-          Stack multiple looks for each slide
+          {t('text_effects_subtitle')}
         </Text>
       </View>
 
@@ -85,7 +134,7 @@ const TextEffectsPanel: React.FC<TextEffectsPanelProps> = ({
                   isActive && styles.activeCategoryTabLabel,
                 ]}
               >
-                {category.label}
+                {CATEGORY_TRANSLATION_MAP[category.id] ? t(CATEGORY_TRANSLATION_MAP[category.id]) : category.label}
               </Text>
             </TouchableOpacity>
           );
@@ -93,9 +142,9 @@ const TextEffectsPanel: React.FC<TextEffectsPanelProps> = ({
       </ScrollView>
 
       <View style={styles.activeEffectsContainer}>
-        <Text style={styles.sectionTitle}>Active</Text>
+        <Text style={styles.sectionTitle}>{t('text_effects_active')}</Text>
         {currentEffects.length === 0 ? (
-          <Text style={styles.emptyStateText}>No effects applied yet</Text>
+          <Text style={styles.emptyStateText}>{t('text_effects_no_effects')}</Text>
         ) : (
           currentEffects.map(effect => {
             const definition = TEXT_EFFECT_DEFINITIONS[effect.type];
@@ -123,7 +172,7 @@ const TextEffectsPanel: React.FC<TextEffectsPanelProps> = ({
                       effect.enabled && styles.toggleButtonTextEnabled,
                     ]}
                   >
-                    {effect.enabled ? 'On' : 'Off'}
+                    {effect.enabled ? t('effect_toggle_on') : t('effect_toggle_off')}
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -135,7 +184,7 @@ const TextEffectsPanel: React.FC<TextEffectsPanelProps> = ({
                 >
                   <View style={styles.activeEffectDetails}>
                     <Text style={[styles.activeEffectName, { fontSize: scaleFont(13) }]}>
-                      {definition?.name ?? getEffectDisplayName(effect.type)}
+                      {EFFECT_TRANSLATION_MAP[effect.type] ? t(EFFECT_TRANSLATION_MAP[effect.type]) : (definition?.name ?? getEffectDisplayName(effect.type))}
                     </Text>
                     {definition?.description ? (
                       <Text
@@ -147,7 +196,7 @@ const TextEffectsPanel: React.FC<TextEffectsPanelProps> = ({
                     ) : null}
                     {isSelected ? (
                       <Text style={[styles.activeEffectSelectedBadge, { fontSize: scaleFont(10) }]}>
-                        Editing
+                        {t('text_effects_editing')}
                       </Text>
                     ) : null}
                   </View>
@@ -171,7 +220,7 @@ const TextEffectsPanel: React.FC<TextEffectsPanelProps> = ({
       >
         {availableEffects.length === 0 ? (
           <Text style={styles.emptyStateText}>
-            Effects coming soon for this category
+            {t('text_effects_coming_soon')}
           </Text>
         ) : (
           availableEffects.map(definition => (
@@ -181,9 +230,9 @@ const TextEffectsPanel: React.FC<TextEffectsPanelProps> = ({
               onPress={() => onAddEffect(definition.id)}
             >
               <View style={styles.effectCardHeader}>
-                <Text style={styles.effectName}>{definition.name}</Text>
+                <Text style={styles.effectName}>{EFFECT_TRANSLATION_MAP[definition.id] ? t(EFFECT_TRANSLATION_MAP[definition.id]) : definition.name}</Text>
                 {definition.supportsAnimation ? (
-                  <Text style={styles.pill}>Animated</Text>
+                  <Text style={styles.pill}>{t('effect_animated')}</Text>
                 ) : null}
               </View>
               <Text style={styles.effectDescription} numberOfLines={3}>
