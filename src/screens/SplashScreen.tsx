@@ -15,7 +15,7 @@ type SplashScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Home'
 
 const SplashScreen: React.FC = () => {
   const navigation = useNavigation<SplashScreenNavigationProp>();
-  const { t } = useLanguage();
+  const { t, ensureLanguageReady } = useLanguage();
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
   const scaleAnim = React.useRef(new Animated.Value(0.8)).current;
 
@@ -37,6 +37,7 @@ const SplashScreen: React.FC = () => {
 
     // Navigate to home screen after delay
     const timer = setTimeout(async () => {
+      await ensureLanguageReady();
       const isFirstLaunch = await StorageService.isFirstLaunch();
       if (isFirstLaunch) {
         navigation.replace('Onboarding');
@@ -46,7 +47,7 @@ const SplashScreen: React.FC = () => {
     }, 2000);
 
     return () => clearTimeout(timer);
-  }, [fadeAnim, scaleAnim, navigation]);
+  }, [fadeAnim, scaleAnim, navigation, ensureLanguageReady]);
 
   return (
     <SafeAreaView style={styles.container}>

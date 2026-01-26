@@ -19,6 +19,7 @@ import Animated, {
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { onboardingSlides } from '../constants/onboarding';
 import StorageService from '../services/StorageService';
+import { useLanguage } from '../context/LanguageContext';
 
 // Import animation components
 import TextTransformAnimation from '../components/onboarding/TextTransformAnimation';
@@ -69,6 +70,7 @@ const OnboardingScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const buttonScale = useSharedValue(1);
   const titleOpacity = useSharedValue(1);
   const animationOpacity = useSharedValue(1);
+  const { t } = useLanguage();
   
   const flatListRef = useRef<any>(null);
 
@@ -143,8 +145,8 @@ const OnboardingScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         </Animated.View>
         
         <Animated.View style={[styles.textContainer, { opacity: titleOpacity }]}>
-          <Text style={styles.title}>{item.title}</Text>
-          <Text style={styles.description}>{item.description}</Text>
+          <Text style={styles.title}>{t(item.titleKey)}</Text>
+          <Text style={styles.description}>{t(item.descriptionKey)}</Text>
         </Animated.View>
       </View>
     );
@@ -174,7 +176,7 @@ const OnboardingScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             onPress={handleSkip}
             activeOpacity={0.7}
           >
-            <Text style={styles.skipText}>Skip</Text>
+            <Text style={styles.skipText}>{t('onboarding_skip')}</Text>
           </TouchableOpacity>
 
           {/* Slides */}
@@ -213,7 +215,9 @@ const OnboardingScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
               }}
             >
               <Animated.Text style={[styles.nextButtonText, nextButtonStyle]}>
-                {currentIndex === onboardingSlides.length - 1 ? 'Get Started' : 'Next'}
+                {currentIndex === onboardingSlides.length - 1
+                  ? t('onboarding_get_started')
+                  : t('onboarding_next')}
               </Animated.Text>
             </TouchableOpacity>
           </View>
