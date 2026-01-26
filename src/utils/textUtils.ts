@@ -398,45 +398,44 @@ export const getReadingTime = (text: string, wordsPerMinute: number = 200): numb
   return Math.ceil(words / wordsPerMinute);
 };
 
+const estimateSlideCountBase = (text: string, charsPerSlide: number): number => {
+  const cleanText = text.replace(/\s+/g, ' ').trim();
+
+  if (!cleanText) {
+    return 1;
+  }
+
+  const wordCount = cleanText.split(' ').filter(Boolean).length;
+  const listItemCount = text
+    .split('\n')
+    .filter(line => /^\s*(?:[-*•]|\d+\.)\s+/.test(line)).length;
+  const paragraphCount = text
+    .split(/\n{2,}/)
+    .filter(p => p.trim().length > 0).length;
+
+  // Keep very short inputs stable unless structure suggests multiple slides.
+  if (wordCount <= 12 && listItemCount <= 1 && paragraphCount <= 1) {
+    return 1;
+  }
+
+  const sentenceCount = splitIntoSentences(cleanText).length;
+
+  const wordsPerSlide = Math.max(20, Math.floor(charsPerSlide / 10));
+  const wordBased = Math.ceil(wordCount / wordsPerSlide);
+  const listBased = listItemCount > 0 ? Math.ceil(listItemCount / 4) : 0;
+  const paragraphBased = paragraphCount > 1 ? paragraphCount : 0;
+  const sentenceBased = sentenceCount > 4 ? Math.ceil(sentenceCount / 3) : 1;
+
+  const estimate = Math.max(1, wordBased, listBased, paragraphBased, sentenceBased);
+
+  return Math.min(estimate, 12);
+};
+
 /**
  * Get optimal slide count based on text characteristics
  */
 export const getOptimalSlideCount = (text: string): number => {
-  const textLength = text.trim().length;
-
-  // For very short text, always return 1
-  if (textLength < 50) {
-    return 1;
-  }
-
-  const contentType = detectContentType(text);
-  const readingTime = getReadingTime(text);
-
-  let optimalCount = 3; // Default
-  
-  switch (contentType) {
-    case 'list':
-      optimalCount = Math.min(5, Math.max(2, Math.ceil(textLength / 150)));
-      break;
-    case 'story':
-      optimalCount = Math.min(6, Math.max(3, Math.ceil(textLength / 200)));
-      break;
-    case 'technical':
-      optimalCount = Math.min(8, Math.max(2, Math.ceil(textLength / 100)));
-      break;
-    case 'quote':
-      optimalCount = 1;
-      break;
-    default:
-      optimalCount = Math.min(5, Math.max(2, Math.ceil(textLength / 180)));
-  }
-  
-  // Adjust based on reading time
-  if (readingTime > 2) {
-    optimalCount = Math.min(optimalCount + 1, 8);
-  }
-  
-  return optimalCount;
+  return estimateSlideCountBase(text, 200);
 };
 
 /**
@@ -446,18 +445,7 @@ export const getOptimalSlideCount = (text: string): number => {
  * @returns Estimated number of slides
  */
 export const estimateSlideCount = (text: string, charsPerSlide: number = 200): number => {
-  const cleanText = text.replace(/\s+/g, ' ').trim();
-
-  if (!cleanText) {
-    return 1;
-  }
-
-  const optimized = optimizeForSlides(cleanText);
-  const targetSlides = getOptimalSlideCount(optimized);
-  const chunks = smartSplit(optimized, targetSlides);
-  const lengthEstimate = Math.max(1, Math.ceil(optimized.length / charsPerSlide));
-
-  return Math.max(chunks.length, lengthEstimate);
+  return estimateSlideCountBase(text, charsPerSlide);
 };
 
 /**
