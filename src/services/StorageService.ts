@@ -319,6 +319,28 @@ class StorageService {
     );
   }
 
+  // Set onboarding completed
+  async setOnboardingCompleted(): Promise<void> {
+    return StorageInitializer.safeStorageOperation(
+      async () => {
+        await AsyncStorage.setItem(this.STORAGE_KEYS.FIRST_LAUNCH, 'false');
+      },
+      undefined,
+      'setOnboardingCompleted'
+    );
+  }
+
+  // Reset onboarding state
+  async resetOnboarding(): Promise<void> {
+    return StorageInitializer.safeStorageOperation(
+      async () => {
+        await AsyncStorage.removeItem(this.STORAGE_KEYS.FIRST_LAUNCH);
+      },
+      undefined,
+      'resetOnboarding'
+    );
+  }
+
   // Clear all storage
   async clearAllStorage(): Promise<void> {
     try {

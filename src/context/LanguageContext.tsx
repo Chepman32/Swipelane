@@ -1,5 +1,6 @@
 import React, { createContext, useContext, ReactNode, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import StorageInitializer from '../utils/storageInit';
 import * as RNLocalize from 'react-native-localize';
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
@@ -262,6 +263,7 @@ const resources = {
       settings_language: 'Language',
       settings_sound: 'Sound',
       settings_haptics: 'Haptics',
+      settings_reset_onboarding: 'Reset Onboarding',
 
       // Speech Recognition
       speech_permission_denied: 'Permission Required',
@@ -397,6 +399,7 @@ const resources = {
       settings_language: 'Язык',
       settings_sound: 'Звук',
       settings_haptics: 'Вибрация',
+      settings_reset_onboarding: 'Сбросить онбординг',
 
       // Speech Recognition
       speech_permission_denied: 'Требуется разрешение',
@@ -623,6 +626,7 @@ const resources = {
       settings_language: 'Sprache',
       settings_sound: 'Ton',
       settings_haptics: 'Haptik',
+      settings_reset_onboarding: 'Onboarding zurücksetzen',
 
       // Speech Recognition
       speech_permission_denied: 'Berechtigung erforderlich',
@@ -849,6 +853,7 @@ const resources = {
       settings_language: 'Langue',
       settings_sound: 'Son',
       settings_haptics: 'Haptique',
+      settings_reset_onboarding: 'Réinitialiser l’onboarding',
 
       // Speech Recognition
       speech_permission_denied: 'Autorisation requise',
@@ -1075,6 +1080,7 @@ const resources = {
       settings_language: 'Idioma',
       settings_sound: 'Som',
       settings_haptics: 'Háptico',
+      settings_reset_onboarding: 'Redefinir onboarding',
 
       // Speech Recognition
       speech_permission_denied: 'Permissão Necessária',
@@ -1301,6 +1307,7 @@ const resources = {
       settings_language: '言語',
       settings_sound: '音',
       settings_haptics: 'ハプティック',
+      settings_reset_onboarding: 'オンボーディングをリセット',
 
       // Speech Recognition
       speech_permission_denied: '許可が必要です',
@@ -1527,6 +1534,7 @@ const resources = {
       settings_language: '语言',
       settings_sound: '声音',
       settings_haptics: '触觉反馈',
+      settings_reset_onboarding: '重置新手引导',
 
       // Speech Recognition
       speech_permission_denied: '需要权限',
@@ -1753,6 +1761,7 @@ const resources = {
       settings_language: '언어',
       settings_sound: '소리',
       settings_haptics: '햅틱 피드백',
+      settings_reset_onboarding: '온보딩 재설정',
 
       // Speech Recognition
       speech_permission_denied: '권한 필요',
@@ -1888,6 +1897,7 @@ const resources = {
       settings_language: 'Мова',
       settings_sound: 'Звук',
       settings_haptics: 'Вібрація',
+      settings_reset_onboarding: 'Скинути онбординг',
 
       // Speech Recognition
       speech_permission_denied: 'Потрібен дозвіл',
@@ -2010,6 +2020,7 @@ const resources = {
       settings_language: 'Idioma',
       settings_sound: 'Sonido',
       settings_haptics: 'Hápticos',
+      settings_reset_onboarding: 'Restablecer onboarding',
 
       // Speech Recognition
       speech_permission_denied: 'Permiso Requerido',
@@ -2130,6 +2141,7 @@ const resources = {
       settings_language: 'Idioma',
       settings_sound: 'Sonido',
       settings_haptics: 'Hápticos',
+      settings_reset_onboarding: 'Restablecer onboarding',
       speech_permission_denied: 'Se requiere permiso',
       speech_permission_settings: 'Activa el acceso al micrófono en Ajustes.',
       speech_not_available: 'No disponible',
@@ -2248,6 +2260,7 @@ const resources = {
       settings_language: 'Idioma',
       settings_sound: 'Som',
       settings_haptics: 'Háptico',
+      settings_reset_onboarding: 'Redefinir onboarding',
       speech_permission_denied: 'Permissão necessária',
       speech_permission_settings: 'Ative o acesso ao microfone em Ajustes.',
       speech_not_available: 'Indisponível',
@@ -2366,6 +2379,7 @@ const resources = {
       settings_language: 'اللغة',
       settings_sound: 'الصوت',
       settings_haptics: 'الاهتزاز',
+      settings_reset_onboarding: 'إعادة تعيين الإعداد الأولي',
       speech_permission_denied: 'يتطلب إذنًا',
       speech_permission_settings: 'يرجى تفعيل إذن الميكروفون من الإعدادات.',
       speech_not_available: 'غير متاح',
@@ -2484,6 +2498,7 @@ const resources = {
       settings_language: 'Lingua',
       settings_sound: 'Audio',
       settings_haptics: 'Feedback aptico',
+      settings_reset_onboarding: 'Reimposta onboarding',
       speech_permission_denied: 'Autorizzazione necessaria',
       speech_permission_settings: "Abilita l'accesso al microfono nelle Impostazioni.",
       speech_not_available: 'Non disponibile',
@@ -2602,6 +2617,7 @@ const resources = {
       settings_language: 'Taal',
       settings_sound: 'Geluid',
       settings_haptics: 'Haptiek',
+      settings_reset_onboarding: 'Onboarding resetten',
       speech_permission_denied: 'Toestemming vereist',
       speech_permission_settings: 'Schakel microfoontoegang in via Instellingen.',
       speech_not_available: 'Niet beschikbaar',
@@ -2720,6 +2736,7 @@ const resources = {
       settings_language: 'Dil',
       settings_sound: 'Ses',
       settings_haptics: 'Titreşim',
+      settings_reset_onboarding: 'Onboarding’i sıfırla',
       speech_permission_denied: 'İzin gerekli',
       speech_permission_settings: "Lütfen Ayarlar'dan mikrofon erişimini etkinleştir.",
       speech_not_available: 'Kullanılamıyor',
@@ -2838,6 +2855,7 @@ const resources = {
       settings_language: 'ภาษา',
       settings_sound: 'เสียง',
       settings_haptics: 'การสั่น',
+      settings_reset_onboarding: 'รีเซ็ตการเริ่มต้นใช้งาน',
       speech_permission_denied: 'ต้องการสิทธิ์',
       speech_permission_settings: 'โปรดอนุญาตการเข้าถึงไมโครโฟนในการตั้งค่า',
       speech_not_available: 'ไม่พร้อมใช้งาน',
@@ -2956,6 +2974,7 @@ const resources = {
       settings_language: 'Ngôn ngữ',
       settings_sound: 'Âm thanh',
       settings_haptics: 'Rung',
+      settings_reset_onboarding: 'Đặt lại hướng dẫn ban đầu',
       speech_permission_denied: 'Cần quyền',
       speech_permission_settings: 'Vui lòng bật quyền micro trong Cài đặt.',
       speech_not_available: 'Không khả dụng',
@@ -3074,6 +3093,7 @@ const resources = {
       settings_language: 'Bahasa',
       settings_sound: 'Suara',
       settings_haptics: 'Haptik',
+      settings_reset_onboarding: 'Setel ulang onboarding',
       speech_permission_denied: 'Izin diperlukan',
       speech_permission_settings: 'Aktifkan akses mikrofon di Pengaturan.',
       speech_not_available: 'Tidak tersedia',
@@ -3192,6 +3212,7 @@ const resources = {
       settings_language: 'Język',
       settings_sound: 'Dźwięk',
       settings_haptics: 'Haptyka',
+      settings_reset_onboarding: 'Zresetuj onboarding',
       speech_permission_denied: 'Wymagane uprawnienie',
       speech_permission_settings: 'Włącz dostęp do mikrofonu w Ustawieniach.',
       speech_not_available: 'Niedostępne',
@@ -3310,6 +3331,7 @@ const resources = {
       settings_language: 'שפה',
       settings_sound: 'צליל',
       settings_haptics: 'הפטיקה',
+      settings_reset_onboarding: 'איפוס האונבורדינג',
       speech_permission_denied: 'נדרש אישור',
       speech_permission_settings: 'אנא אפשר גישה למיקרופון בהגדרות.',
       speech_not_available: 'לא זמין',
@@ -3428,6 +3450,7 @@ const resources = {
       settings_language: 'भाषा',
       settings_sound: 'आवाज़',
       settings_haptics: 'हैप्टिक्स',
+      settings_reset_onboarding: 'ऑनबोर्डिंग रीसेट करें',
       speech_permission_denied: 'अनुमति आवश्यक',
       speech_permission_settings: 'कृपया सेटिंग्स में माइक्रोफ़ोन एक्सेस सक्षम करें।',
       speech_not_available: 'उपलब्ध नहीं',
@@ -3546,6 +3569,7 @@ const resources = {
       settings_language: 'Språk',
       settings_sound: 'Ljud',
       settings_haptics: 'Haptik',
+      settings_reset_onboarding: 'Återställ onboarding',
       speech_permission_denied: 'Behörighet krävs',
       speech_permission_settings: 'Aktivera mikrofonåtkomst i Inställningar.',
       speech_not_available: 'Inte tillgängligt',
@@ -3664,6 +3688,7 @@ const resources = {
       settings_language: 'Språk',
       settings_sound: 'Lyd',
       settings_haptics: 'Haptikk',
+      settings_reset_onboarding: 'Tilbakestill onboarding',
       speech_permission_denied: 'Tillatelse kreves',
       speech_permission_settings: 'Aktiver mikrofontilgang i Innstillinger.',
       speech_not_available: 'Ikke tilgjengelig',
@@ -3782,6 +3807,7 @@ const resources = {
       settings_language: 'Sprog',
       settings_sound: 'Lyd',
       settings_haptics: 'Haptik',
+      settings_reset_onboarding: 'Nulstil onboarding',
       speech_permission_denied: 'Tilladelse kræves',
       speech_permission_settings: 'Aktivér mikrofonadgang i Indstillinger.',
       speech_not_available: 'Ikke tilgængelig',
@@ -3900,6 +3926,7 @@ const resources = {
       settings_language: 'Kieli',
       settings_sound: 'Ääni',
       settings_haptics: 'Haptinen palaute',
+      settings_reset_onboarding: 'Nollaa onboarding',
       speech_permission_denied: 'Lupa vaaditaan',
       speech_permission_settings: 'Ota mikrofonin käyttö käyttöön Asetuksissa.',
       speech_not_available: 'Ei saatavilla',
@@ -4018,6 +4045,7 @@ const resources = {
       settings_language: 'Jazyk',
       settings_sound: 'Zvuk',
       settings_haptics: 'Haptika',
+      settings_reset_onboarding: 'Resetovat onboarding',
       speech_permission_denied: 'Vyžadováno oprávnění',
       speech_permission_settings: 'Povolte přístup k mikrofonu v Nastavení.',
       speech_not_available: 'Není k dispozici',
@@ -4136,6 +4164,7 @@ const resources = {
       settings_language: 'Nyelv',
       settings_sound: 'Hang',
       settings_haptics: 'Haptika',
+      settings_reset_onboarding: 'Onboarding visszaállítása',
       speech_permission_denied: 'Engedély szükséges',
       speech_permission_settings: 'Engedélyezd a mikrofon hozzáférést a Beállításokban.',
       speech_not_available: 'Nem elérhető',
@@ -4254,6 +4283,7 @@ const resources = {
       settings_language: 'Limbă',
       settings_sound: 'Sunet',
       settings_haptics: 'Haptică',
+      settings_reset_onboarding: 'Resetează onboarding',
       speech_permission_denied: 'Permisiune necesară',
       speech_permission_settings: 'Activează accesul la microfon în Setări.',
       speech_not_available: 'Indisponibil',
@@ -4372,6 +4402,7 @@ const resources = {
       settings_language: 'Γλώσσα',
       settings_sound: 'Ήχος',
       settings_haptics: 'Απτική ανάδραση',
+      settings_reset_onboarding: 'Επαναφορά onboarding',
       speech_permission_denied: 'Απαιτείται άδεια',
       speech_permission_settings: 'Ενεργοποιήστε την πρόσβαση στο μικρόφωνο στις Ρυθμίσεις.',
       speech_not_available: 'Μη διαθέσιμο',
@@ -4490,6 +4521,7 @@ const resources = {
       settings_language: 'Bahasa',
       settings_sound: 'Bunyi',
       settings_haptics: 'Haptik',
+      settings_reset_onboarding: 'Tetapkan semula onboarding',
       speech_permission_denied: 'Kebenaran diperlukan',
       speech_permission_settings: 'Sila benarkan akses mikrofon dalam Tetapan.',
       speech_not_available: 'Tidak tersedia',
@@ -4608,6 +4640,7 @@ const resources = {
       settings_language: 'Wika',
       settings_sound: 'Tunog',
       settings_haptics: 'Haptics',
+      settings_reset_onboarding: 'I-reset ang onboarding',
       speech_permission_denied: 'Kailangan ng pahintulot',
       speech_permission_settings: 'I-enable ang microphone access sa Settings.',
       speech_not_available: 'Hindi available',
@@ -4705,6 +4738,7 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
    useEffect(() => {
      const applyDeviceLanguageOnFirstLaunch = async () => {
        try {
+         await StorageInitializer.initialize();
          const stored = await AsyncStorage.getItem('userPreferences');
          if (stored !== null) {
            return;

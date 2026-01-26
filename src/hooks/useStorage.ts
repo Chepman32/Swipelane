@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import StorageInitializer from '../utils/storageInit';
 
 export const useStorage = <T>(key: string, initialValue: T) => {
   const [storedValue, setStoredValue] = useState<T>(initialValue);
@@ -7,6 +8,7 @@ export const useStorage = <T>(key: string, initialValue: T) => {
   useEffect(() => {
     const getItem = async () => {
       try {
+        await StorageInitializer.initialize();
         const item = await AsyncStorage.getItem(key);
         if (item !== null) {
           setStoredValue(JSON.parse(item));
@@ -24,6 +26,7 @@ export const useStorage = <T>(key: string, initialValue: T) => {
       const valueToStore =
         value instanceof Function ? value(storedValue) : value;
       setStoredValue(valueToStore);
+      await StorageInitializer.initialize();
       await AsyncStorage.setItem(key, JSON.stringify(valueToStore));
     } catch (error) {
       console.error(`Error setting ${key} in storage`, error);
@@ -32,6 +35,7 @@ export const useStorage = <T>(key: string, initialValue: T) => {
 
   const removeValue = async () => {
     try {
+      await StorageInitializer.initialize();
       await AsyncStorage.removeItem(key);
       setStoredValue(initialValue);
     } catch (error) {

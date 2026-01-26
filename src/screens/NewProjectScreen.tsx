@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useLayoutEffect } from 'react';
 import {
   View,
   Text,
@@ -39,6 +39,14 @@ const NewProjectScreen: React.FC = () => {
   const { themeDefinition } = useTheme();
   const { t } = useLanguage();
   const { scale, scaleFont } = useResponsive();
+
+  // Set translated navigation title
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      title: t('new_project_title'),
+      headerBackTitle: t('back'),
+    });
+  }, [navigation, t]);
 
   // Track keyboard visibility
   useEffect(() => {

@@ -3,6 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import AnimatedSplashScreen from '../screens/AnimatedSplashScreen';
 import SplashScreen from '../screens/SplashScreen';
+import OnboardingScreen from '../screens/OnboardingScreen';
 import HomeScreen from '../screens/HomeScreen';
 import NewProjectScreen from '../screens/NewProjectScreen';
 import StorageService from '../services/StorageService';
@@ -13,6 +14,7 @@ import SettingsScreen from '../screens/SettingsScreen';
 
 export type RootStackParamList = {
   Splash: undefined;
+  Onboarding: undefined;
   Home: undefined;
   NewProject: undefined;
   ImageSelection: { text: string; projectId: string; images?: string[] };
@@ -26,6 +28,7 @@ const Stack = createStackNavigator<RootStackParamList>();
 const AppNavigator: React.FC = () => {
   const [showAdvancedSplash, setShowAdvancedSplash] = useState(true);
   const [hasRestoredProject, setHasRestoredProject] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     // Check if there's a saved project to restore
@@ -38,6 +41,7 @@ const AppNavigator: React.FC = () => {
     // Determine which splash screen to show based on first launch
     StorageService.isFirstLaunch().then(isFirst => {
       setShowAdvancedSplash(isFirst);
+      setShowOnboarding(isFirst);
     });
   }, []);
 
@@ -54,6 +58,13 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen
           name="Splash"
           component={SplashScreen}
+          options={{
+            animationTypeForReplace: 'push',
+          }}
+        />
+        <Stack.Screen 
+          name="Onboarding" 
+          component={OnboardingScreen} 
           options={{
             animationTypeForReplace: 'push',
           }}

@@ -14,6 +14,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
   ) -> Bool {
+    ensureAsyncStorageDirectory()
     let delegate = ReactNativeDelegate()
     let factory = RCTReactNativeFactory(delegate: delegate)
     delegate.dependencyProvider = RCTAppDependencyProvider()
@@ -30,6 +31,23 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     )
 
     return true
+  }
+
+  private func ensureAsyncStorageDirectory() {
+    guard let appSupportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+      return
+    }
+
+    let bundleId = Bundle.main.bundleIdentifier ?? "com.texora.app"
+    let storageURL = appSupportURL
+      .appendingPathComponent(bundleId, isDirectory: true)
+      .appendingPathComponent("RCTAsyncLocalStorage_V1", isDirectory: true)
+
+    do {
+      try FileManager.default.createDirectory(at: storageURL, withIntermediateDirectories: true, attributes: nil)
+    } catch {
+      NSLog("AsyncStorage directory creation failed: \(error)")
+    }
   }
 }
 

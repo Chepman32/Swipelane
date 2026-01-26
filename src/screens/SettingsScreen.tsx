@@ -8,11 +8,15 @@ import {
   Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import type { StackNavigationProp } from '@react-navigation/stack';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage, Language } from '../context/LanguageContext';
 import { themes, Theme } from '../context/ThemeContext';
 import FeedbackService from '../services/FeedbackService';
+import StorageService from '../services/StorageService';
 import { useResponsive } from '../hooks/useResponsive';
+import type { RootStackParamList } from '../navigation/AppNavigator';
 
 const languageFlags: Record<Language, any> = {
   en: require('../assets/icons/flags/en.png'),
@@ -88,6 +92,7 @@ const SettingsScreen: React.FC = () => {
   const { currentTheme, setTheme, themeDefinition } = useTheme();
   const { currentLanguage, setLanguage, t } = useLanguage();
   const { scale, scaleFont } = useResponsive();
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'Settings'>>();
 
   const [languageExpanded, setLanguageExpanded] = React.useState(false);
 
@@ -100,6 +105,18 @@ const SettingsScreen: React.FC = () => {
     FeedbackService.buttonTap();
     setLanguage(language);
     FeedbackService.success();
+  };
+
+  const handleResetOnboarding = async () => {
+    FeedbackService.buttonTap();
+    try {
+      await StorageService.resetOnboarding();
+      FeedbackService.success();
+      navigation.replace('Onboarding');
+    } catch (error) {
+      FeedbackService.error();
+      console.error('Error resetting onboarding:', error);
+    }
   };
 
   const currentLanguageName = languages.find(l => l.code === currentLanguage)?.nativeName || currentLanguage;
@@ -171,6 +188,30 @@ const SettingsScreen: React.FC = () => {
             ))}
           </View>
         )}
+      </View>
+
+      {/* Reset Onboarding */}
+      <View style={[styles.section, { paddingHorizontal: scale(20) }]}>
+        <TouchableOpacity
+          style={[
+            styles.resetButton,
+            {
+              backgroundColor: themeDefinition.colors.card,
+              borderColor: themeDefinition.colors.border,
+              paddingVertical: scale(14),
+            },
+          ]}
+          onPress={handleResetOnboarding}
+        >
+          <Text
+            style={[
+              styles.resetButtonText,
+              { color: themeDefinition.colors.notification, fontSize: scaleFont(16) },
+            ]}
+          >
+            {t('settings_reset_onboarding')}
+          </Text>
+        </TouchableOpacity>
       </View>
       </ScrollView>
     </SafeAreaView>
@@ -279,6 +320,14 @@ const styles = StyleSheet.create({
   },
   selectedCheck: {
     fontSize: 20,
+  },
+  resetButton: {
+    borderWidth: 1,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  resetButtonText: {
+    fontWeight: '600',
   },
 });
 

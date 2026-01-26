@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useLayoutEffect } from 'react';
 import {
   View,
   Text,
@@ -119,6 +119,14 @@ const ImageSelectionScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const { t } = useLanguage();
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+
+  // Set translated navigation title
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      title: t('image_selection_title'),
+      headerBackTitle: t('back'),
+    });
+  }, [navigation, t]);
   // Ensure we have non-zero dimensions
   const validWidth = screenWidth || Dimensions.get('window').width || 360;
   const validHeight = screenHeight || Dimensions.get('window').height || 800;
