@@ -36,6 +36,9 @@ import StorageService, {
   ProjectState,
   SlideBackgroundGradient,
 } from '../services/StorageService';
+import ColorAnalysisService, {
+  AiStyleSuggestion,
+} from '../services/ColorAnalysisService';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import {
@@ -75,6 +78,8 @@ import GradientBackground from '../components/GradientBackground';
 
 const MIN_FONT_SIZE = 12;
 const MAX_FONT_SIZE = 72;
+const DEFAULT_TEXT_COLOR = '#FFFFFF';
+const DEFAULT_BACKGROUND_COLOR = 'rgba(0,0,0,0.4)';
 const COLOR_OPTIONS = [
   '#FFFFFF',
   '#000000',
@@ -127,6 +132,9 @@ type Slide = {
   fontId?: SlideFontId;
   textEffects: TextEffectInstance[];
   backgroundGradient?: SlideBackgroundGradient | null;
+  aiSuggestedForImageUri?: string;
+  aiEffectInstanceId?: string;
+  aiDominantColor?: string;
 };
 
 type SlideStyleSnapshot = Pick<
@@ -219,14 +227,17 @@ const EditorScreen: React.FC = () => {
           image: '',
           position: { x: (slideSize - 200) / 2, y: (imageContainerHeight - 50) / 2 },
           fontSize: 24,
-          color: '#FFFFFF',
-          backgroundColor: 'rgba(0,0,0,0.4)',
+          color: DEFAULT_TEXT_COLOR,
+          backgroundColor: DEFAULT_BACKGROUND_COLOR,
           textAlign: 'center',
           fontWeight: 'bold',
           fontFamily: undefined,
           fontId: DEFAULT_SLIDE_FONT_ID,
           textEffects: [],
           backgroundGradient: null,
+          aiSuggestedForImageUri: undefined,
+          aiEffectInstanceId: undefined,
+          aiDominantColor: undefined,
         },
       ];
     }
@@ -257,14 +268,17 @@ const EditorScreen: React.FC = () => {
         image: images[index] || '',
         position: { x: centerX, y: centerY },
         fontSize: fontSize,
-        color: '#FFFFFF',
-        backgroundColor: 'rgba(0,0,0,0.4)',
+        color: DEFAULT_TEXT_COLOR,
+        backgroundColor: DEFAULT_BACKGROUND_COLOR,
         textAlign: 'center',
         fontWeight: 'bold',
         fontFamily: undefined,
         fontId: DEFAULT_SLIDE_FONT_ID,
         textEffects: [],
         backgroundGradient: null,
+        aiSuggestedForImageUri: undefined,
+        aiEffectInstanceId: undefined,
+        aiDominantColor: undefined,
       };
     });
   }, [text, images, slideSize, imageContainerHeight, t]);
@@ -287,6 +301,14 @@ const EditorScreen: React.FC = () => {
   const [editingText, setEditingText] = useState('');
   const [isStyleMenuVisible, setStyleMenuVisible] = useState(false);
   const [copiedStyle, setCopiedStyle] = useState<SlideStyleSnapshot | null>(null);
+  const [isAiApplying, setAiApplying] = useState(false);
+
+  const slidesRef = useRef<Slide[]>(slides);
+  const isAutoAiRunningRef = useRef(false);
+
+  useEffect(() => {
+    slidesRef.current = slides;
+  }, [slides]);
 
   // Undo/Redo history management
   const [_history, setHistory] = useState<Slide[][]>([]);
@@ -297,6 +319,8 @@ const EditorScreen: React.FC = () => {
   const isRestoringFromHistory = useRef(false);
 
   const currentSlide = slides[currentSlideIndex];
+  const isAiButtonActive = isAiApplying;
+  const isAiButtonDisabled = isAiApplying;
   const currentSlideEffects = useMemo(
     () => filterSupportedEffects(currentSlide?.textEffects),
     [currentSlide?.textEffects],
@@ -1115,18 +1139,6 @@ const EditorScreen: React.FC = () => {
     transform: [{ translateY: sliderTranslateY.value - 12 }], // Adjusted for larger thumb
   }));
 
-  // Safety check for currentSlide
-  if (!currentSlide) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.navButtonText}>{t('editor_no_slides')}</Text>
-        <Text style={styles.navButtonSubtext}>
-          {t('editor_check_input')}
-        </Text>
-      </View>
-    );
-  }
-
   const captureSlideStyle = (slide: Slide): SlideStyleSnapshot => ({
     fontSize: slide.fontSize,
     color: slide.color,
@@ -1200,6 +1212,344 @@ const EditorScreen: React.FC = () => {
     setStyleMenuVisible(false);
   };
 
+  const updateNeonGlowEffects = useCallback(
+    (
+      effects: TextEffectInstance[] | undefined,
+      oldTextColor: string,
+      newTextColor: string,
+    ): TextEffectInstance[] => {
+      if (!effects?.length) {
+        return effects ?? [];
+      }
+
+      return effects.map(effect => {
+        if (effect.type !== 'neonGlow') {
+          return effect;
+        }
+        const currentGlowColor = effect.parameters?.glowColor;
+        const shouldUpdate =
+          !currentGlowColor ||
+          currentGlowColor === '#00FFFF' ||
+          currentGlowColor === oldTextColor;
+
+        if (!shouldUpdate) {
+          return effect;
+        }
+
+        return {
+          ...effect,
+          parameters: {
+            ...effect.parameters,
+            glowColor: newTextColor,
+          },
+        };
+      });
+    },
+    [],
+  );
+
+  const isSlideEligibleForAutoAi = useCallback(
+    (slide: Slide): boolean =>
+      Boolean(slide.image) &&
+      slide.aiSuggestedForImageUri !== slide.image &&
+      slide.color === DEFAULT_TEXT_COLOR,
+    [],
+  );
+
+  const pickRandomFontOption = useCallback((currentFontId: SlideFontId): SlideFontOption => {
+    const candidates = SLIDE_FONT_OPTIONS.filter(option => option.id !== currentFontId);
+    if (candidates.length === 0) {
+      return getSlideFontById(DEFAULT_SLIDE_FONT_ID);
+    }
+    const randomIndex = Math.floor(Math.random() * candidates.length);
+    return candidates[randomIndex];
+  }, []);
+
+  const applyAiNeonGlowEffect = useCallback(
+    (
+      slide: Slide,
+      suggestion: AiStyleSuggestion,
+    ): { effects: TextEffectInstance[]; aiEffectInstanceId?: string; changed: boolean } => {
+      const baseEffects = slide.textEffects ?? [];
+      const neonParams = suggestion.effect.parameters;
+      let changed = false;
+
+      if (slide.aiEffectInstanceId) {
+        let foundById = false;
+        const updatedById = baseEffects.map(effect => {
+          if (effect.instanceId !== slide.aiEffectInstanceId) {
+            return effect;
+          }
+          foundById = true;
+          changed = true;
+          return {
+            ...effect,
+            enabled: true,
+            parameters: {
+              ...effect.parameters,
+              ...neonParams,
+            },
+          };
+        });
+        if (foundById) {
+          return {
+            effects: updatedById,
+            aiEffectInstanceId: slide.aiEffectInstanceId,
+            changed,
+          };
+        }
+      }
+
+      const fallbackNeonEffect = baseEffects.find(
+        effect =>
+          effect.type === 'neonGlow' &&
+          (effect.parameters?.glowColor === '#00FFFF' ||
+            effect.parameters?.glowColor === slide.aiDominantColor),
+      );
+
+      if (fallbackNeonEffect) {
+        changed = true;
+        const updatedFallback = baseEffects.map(effect =>
+          effect.instanceId === fallbackNeonEffect.instanceId
+            ? {
+                ...effect,
+                enabled: true,
+                parameters: {
+                  ...effect.parameters,
+                  ...neonParams,
+                },
+              }
+            : effect,
+        );
+        return {
+          effects: updatedFallback,
+          aiEffectInstanceId: fallbackNeonEffect.instanceId,
+          changed,
+        };
+      }
+
+      const newEffect = createTextEffectInstance('neonGlow', neonParams);
+      changed = true;
+      return {
+        effects: [...baseEffects, newEffect],
+        aiEffectInstanceId: newEffect.instanceId,
+        changed,
+      };
+    },
+    [],
+  );
+
+  const applyAiSuggestionsFromMap = useCallback(
+    (
+      suggestions: Map<number, AiStyleSuggestion>,
+      mode: 'auto' | 'manual',
+      randomFontOption?: SlideFontOption,
+    ) => {
+      if (suggestions.size === 0) {
+        return;
+      }
+
+      setSlides(prevSlides => {
+        let changed = false;
+        const nextSlides = prevSlides.map((slide, index) => {
+          const suggestion = suggestions.get(index);
+          if (!suggestion || !slide.image) {
+            return slide;
+          }
+          if (slide.image !== suggestion.sourceImageUri) {
+            return slide;
+          }
+          if (mode === 'auto' && !isSlideEligibleForAutoAi(slide)) {
+            return slide;
+          }
+
+          const nextColor = suggestion.textColor;
+          if (mode === 'auto') {
+            const autoUpdatedSlide: Slide = {
+              ...slide,
+              color: nextColor,
+              aiSuggestedForImageUri: slide.image,
+            };
+
+            if (
+              autoUpdatedSlide.color !== slide.color ||
+              autoUpdatedSlide.aiSuggestedForImageUri !== slide.aiSuggestedForImageUri
+            ) {
+              changed = true;
+              return autoUpdatedSlide;
+            }
+
+            return slide;
+          }
+
+          const aiEffectResult = applyAiNeonGlowEffect(slide, suggestion);
+          const syncedEffects = updateNeonGlowEffects(
+            aiEffectResult.effects,
+            slide.color,
+            nextColor,
+          );
+          const nextFontFamily = randomFontOption
+            ? resolveFontFamilyForPlatform(randomFontOption, platformKey)
+            : slide.fontFamily;
+          const nextFontWeight = randomFontOption
+            ? randomFontOption.supportsWeightToggle
+              ? slide.fontWeight
+              : 'normal'
+            : slide.fontWeight;
+          const manualUpdatedSlide: Slide = {
+            ...slide,
+            color: nextColor,
+            backgroundColor: suggestion.backgroundColor,
+            textEffects: syncedEffects,
+            aiSuggestedForImageUri: slide.image,
+            aiEffectInstanceId: aiEffectResult.aiEffectInstanceId,
+            aiDominantColor: suggestion.dominantColor,
+            fontId: randomFontOption?.id ?? slide.fontId,
+            fontFamily: nextFontFamily,
+            fontWeight: nextFontWeight,
+          };
+
+          if (
+            manualUpdatedSlide.color !== slide.color ||
+            manualUpdatedSlide.backgroundColor !== slide.backgroundColor ||
+            manualUpdatedSlide.aiSuggestedForImageUri !== slide.aiSuggestedForImageUri ||
+            manualUpdatedSlide.aiEffectInstanceId !== slide.aiEffectInstanceId ||
+            manualUpdatedSlide.aiDominantColor !== slide.aiDominantColor ||
+            manualUpdatedSlide.fontId !== slide.fontId ||
+            manualUpdatedSlide.fontFamily !== slide.fontFamily ||
+            manualUpdatedSlide.fontWeight !== slide.fontWeight ||
+            aiEffectResult.changed
+          ) {
+            changed = true;
+            return manualUpdatedSlide;
+          }
+
+          return slide;
+        });
+
+        if (!changed) {
+          return prevSlides;
+        }
+
+        addToHistory(nextSlides);
+        return nextSlides;
+      });
+
+      setHasUnsavedChanges(true);
+    },
+    [
+      addToHistory,
+      applyAiNeonGlowEffect,
+      updateNeonGlowEffects,
+      isSlideEligibleForAutoAi,
+      platformKey,
+    ],
+  );
+
+  const handleApplyAiSuggestions = useCallback(async () => {
+    FeedbackService.buttonTap();
+    const slide = slidesRef.current[currentSlideIndex];
+    if (!slide?.image) {
+      Alert.alert(
+        t('ai_no_image_title', { defaultValue: 'Add an Image' }),
+        t('ai_no_image_body', {
+          defaultValue: 'Upload an image first so AI can analyze it.',
+        }),
+      );
+      return;
+    }
+
+    setAiApplying(true);
+    try {
+      const suggestion = await ColorAnalysisService.suggestStylesForImage(
+        slide.image,
+      );
+      if (!suggestion) {
+        Alert.alert(
+          t('ai_failed_title', { defaultValue: 'AI Suggestion Failed' }),
+          t('ai_failed_body', {
+            defaultValue:
+              'I could not analyze this image. Try a different image or try again.',
+          }),
+        );
+        return;
+      }
+
+      const currentFontIdForRandom =
+        slide.fontId === LEGACY_SYSTEM_FONT_ID
+          ? DEFAULT_SLIDE_FONT_ID
+          : slide.fontId ?? getSlideFontByFamily(slide.fontFamily).id;
+      const randomFontOption = pickRandomFontOption(currentFontIdForRandom);
+      const suggestions = new Map<number, AiStyleSuggestion>();
+      suggestions.set(currentSlideIndex, suggestion);
+      applyAiSuggestionsFromMap(suggestions, 'manual', randomFontOption);
+
+      setStyleMenuVisible(false);
+      setColorPaletteVisible(false);
+      setOpacityPaletteVisible(false);
+      setFontPaletteVisible(false);
+      setEffectsPaletteVisible(false);
+      setTextEffectsPanelVisible(false);
+      setSelectedTextEffectId(null);
+    } finally {
+      setAiApplying(false);
+    }
+  }, [applyAiSuggestionsFromMap, currentSlideIndex, pickRandomFontOption, t]);
+
+  useEffect(() => {
+    if (isLoadingProject || isAutoAiRunningRef.current) {
+      return;
+    }
+
+    const snapshot = slidesRef.current;
+    const pending = snapshot
+      .map((slide, index) => ({ slide, index }))
+      .filter(({ slide }) => isSlideEligibleForAutoAi(slide));
+
+    if (pending.length === 0) {
+      return;
+    }
+
+    isAutoAiRunningRef.current = true;
+
+    const runAutoAi = async () => {
+      const suggestions = new Map<number, AiStyleSuggestion>();
+      for (const { slide, index } of pending) {
+        if (!slide.image) {
+          continue;
+        }
+        const suggestion = await ColorAnalysisService.suggestStylesForImage(
+          slide.image,
+        );
+        if (suggestion) {
+          suggestions.set(index, suggestion);
+        }
+      }
+
+      applyAiSuggestionsFromMap(suggestions, 'auto');
+    };
+
+    runAutoAi()
+      .catch(error => {
+        console.error('Auto AI suggestions failed:', error);
+      })
+      .finally(() => {
+        isAutoAiRunningRef.current = false;
+      });
+  }, [slides, isLoadingProject, applyAiSuggestionsFromMap, isSlideEligibleForAutoAi]);
+
+  // Safety check for currentSlide (must come after hooks)
+  if (!currentSlide) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.navButtonText}>{t('editor_no_slides')}</Text>
+        <Text style={styles.navButtonSubtext}>
+          {t('editor_check_input')}
+        </Text>
+      </View>
+    );
+  }
+
   const handleTextColorChange = (color: string) => {
     FeedbackService.buttonTap();
     setSlides(prevSlides => {
@@ -1208,36 +1558,17 @@ const EditorScreen: React.FC = () => {
       const oldTextColor = slide.color; // Store the old text color before we change it
 
       slide.color = color;
-
-      // Update neon glow effects to use the new text color unless they have a custom glow color
-      if (slide.textEffects) {
-        slide.textEffects = slide.textEffects.map(effect => {
-          if (effect.type === 'neonGlow') {
-            const currentGlowColor = effect.parameters?.glowColor;
-
-            // Update if: no glow color set, glow color is default cyan, or glow color matches the old text color
-            const shouldUpdate = !currentGlowColor ||
-                               currentGlowColor === '#00FFFF' ||
-                               currentGlowColor === oldTextColor;
-
-            if (shouldUpdate) {
-              return {
-                ...effect,
-                parameters: {
-                  ...effect.parameters,
-                  glowColor: color,
-                },
-              };
-            }
-          }
-          return effect;
-        });
-      }
+      slide.textEffects = updateNeonGlowEffects(
+        slide.textEffects,
+        oldTextColor,
+        color,
+      );
 
       newSlides[currentSlideIndex] = slide;
       addToHistory(newSlides);
       return newSlides;
     });
+    setHasUnsavedChanges(true);
     // Color picker closes after selection (single selection behavior)
     setColorPaletteVisible(false);
     setFontPaletteVisible(false);
@@ -2006,6 +2337,30 @@ const EditorScreen: React.FC = () => {
               )}
             </View>
 
+            {/* AI suggestions */}
+            <TouchableOpacity
+              style={[
+                styles.aiButton,
+                {
+                  width: largeButtonSize,
+                  height: largeButtonSize,
+                  borderRadius: largeButtonSize / 2,
+                },
+                isAiButtonActive && styles.activeAiButton,
+                isAiButtonDisabled && styles.disabledAiButton,
+              ]}
+              onPress={handleApplyAiSuggestions}
+              disabled={isAiButtonDisabled}
+            >
+              {isAiApplying ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Text style={[styles.aiButtonText, { fontSize: scaleFont(14) }]}>
+                  AI
+                </Text>
+              )}
+            </TouchableOpacity>
+
             {/* Color picker */}
             <TouchableOpacity
               style={[
@@ -2391,6 +2746,30 @@ const styles = StyleSheet.create({
     height: StyleSheet.hairlineWidth,
     backgroundColor: 'rgba(255,255,255,0.2)',
     marginVertical: 4,
+  },
+
+  // AI button
+  aiButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
+  activeAiButton: {
+    borderColor: '#34C759',
+    borderWidth: 2,
+  },
+  disabledAiButton: {
+    opacity: 0.7,
+  },
+  aiButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    letterSpacing: 0.3,
   },
 
   // Color picker

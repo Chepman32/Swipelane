@@ -42,6 +42,9 @@ export interface ProjectState {
     fontId?: SlideFontId;
     textEffects?: TextEffectInstance[];
     backgroundGradient?: SlideBackgroundGradient | null;
+    aiSuggestedForImageUri?: string;
+    aiEffectInstanceId?: string;
+    aiDominantColor?: string;
   }>;
   images: string[];
   lastModified: string;
