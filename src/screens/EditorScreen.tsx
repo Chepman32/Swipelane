@@ -1545,6 +1545,7 @@ const EditorScreen: React.FC = () => {
                   paddingVertical: overlayPaddingVertical,
                   borderRadius: overlayBorderRadius,
                 },
+                isEditingText && styles.textOverlayEditing,
               ]}
             >
               {/* Render text effects using Skia if font is loaded and effects exist */}
@@ -1671,7 +1672,7 @@ const EditorScreen: React.FC = () => {
           {/* Backdrop to close text editing when tapping outside */}
           {isEditingText && (
             <Pressable
-              style={[StyleSheet.absoluteFill, { zIndex: 999 }]}
+              style={[StyleSheet.absoluteFill, styles.textEditingBackdrop]}
               onPress={handleFinishEditingText}
             />
           )}
@@ -2171,6 +2172,13 @@ const styles = StyleSheet.create({
     maxWidth: '90%',
     overflow: 'visible',
     zIndex: 2,
+  },
+  textOverlayEditing: {
+    zIndex: 1001,
+    elevation: 1001,
+  },
+  textEditingBackdrop: {
+    zIndex: 1000,
   },
   slideText: {
     color: '#fff',
