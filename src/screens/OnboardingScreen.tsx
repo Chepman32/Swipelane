@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   Dimensions,
   StatusBar,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -120,6 +122,15 @@ const OnboardingScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     setCurrentIndex(index);
   };
 
+  const handleScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const nextIndex = Math.round(event.nativeEvent.contentOffset.x / width);
+    const clampedIndex = Math.max(0, Math.min(onboardingSlides.length - 1, nextIndex));
+
+    if (clampedIndex !== currentIndex) {
+      setCurrentIndex(clampedIndex);
+    }
+  };
+
   const nextButtonStyle = useAnimatedStyle(() => ({
     transform: [{ scale: buttonScale.value }],
   }));
@@ -189,6 +200,8 @@ const OnboardingScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             showsHorizontalScrollIndicator={false}
             pagingEnabled
             onScroll={handleScroll}
+            onMomentumScrollEnd={handleScrollEnd}
+            onScrollEndDrag={handleScrollEnd}
             scrollEventThrottle={16}
             bounces={false}
           />

@@ -13,12 +13,6 @@ export const onboardingSlides: OnboardingSlide[] = [
     svgComponent: 'TextTransformAnimation'
   },
   {
-    id: '2', 
-    titleKey: 'onboarding_slide_2_title',
-    descriptionKey: 'onboarding_slide_2_description',
-    svgComponent: 'AIDesignAnimation'
-  },
-  {
     id: '3',
     titleKey: 'onboarding_slide_3_title',
     descriptionKey: 'onboarding_slide_3_description',
@@ -41,17 +35,5 @@ export const onboardingSlides: OnboardingSlide[] = [
     titleKey: 'onboarding_slide_6_title',
     descriptionKey: 'onboarding_slide_6_description',
     svgComponent: 'PocketDesignerAnimation'
-  },
-  {
-    id: '7',
-    titleKey: 'onboarding_slide_7_title',
-    descriptionKey: 'onboarding_slide_7_description',
-    svgComponent: 'DesignTeamAnimation'
-  },
-  {
-    id: '8',
-    titleKey: 'onboarding_slide_8_title',
-    descriptionKey: 'onboarding_slide_8_description',
-    svgComponent: 'UniqueDesignAnimation'
   }
 ];
