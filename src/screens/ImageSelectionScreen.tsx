@@ -146,14 +146,21 @@ const ImageSelectionScreen: React.FC = () => {
   const availableHeight = validHeight - headerHeight - previewButtonHeight;
   const imageContainerHeight = availableHeight;
 
-  const optimizedText = optimizeForSlides(text);
-  const optimalSlideCount = getOptimalSlideCount(optimizedText);
-  const computedSlides = smartSplit(optimizedText, optimalSlideCount);
-  const slides = useMemo(() => 
-    computedSlides && computedSlides.length > 0
-      ? computedSlides
-      : [optimizedText || text || 'No content'],
-    [computedSlides, optimizedText, text]
+  const optimizedText = useMemo(() => optimizeForSlides(text), [text]);
+  const optimalSlideCount = useMemo(
+    () => getOptimalSlideCount(optimizedText),
+    [optimizedText],
+  );
+  const computedSlides = useMemo(
+    () => smartSplit(optimizedText, optimalSlideCount),
+    [optimalSlideCount, optimizedText],
+  );
+  const slides = useMemo(
+    () =>
+      computedSlides && computedSlides.length > 0
+        ? computedSlides
+        : [optimizedText || text || 'No content'],
+    [computedSlides, optimizedText, text],
   );
 
   const requiredImages = slides.length;
@@ -251,11 +258,26 @@ const ImageSelectionScreen: React.FC = () => {
     selectedGradientsRef.current = selectedGradients;
   }, [selectedGradients]);
 
+  const arraysEqual = <T,>(a: T[], b: T[]): boolean =>
+    a.length === b.length && a.every((value, index) => Object.is(value, b[index]));
+
   useEffect(() => {
-    setSelectedImages(prev => ensureCapacity(prev));
-    setHasUserMadeChoice(prev => ensureChoiceCapacity(prev));
-    setSlideTexts(prev => ensureTextCapacity(prev));
-    setSelectedGradients(prev => ensureGradientCapacity(prev));
+    setSelectedImages(prev => {
+      const next = ensureCapacity(prev);
+      return arraysEqual(prev, next) ? prev : next;
+    });
+    setHasUserMadeChoice(prev => {
+      const next = ensureChoiceCapacity(prev);
+      return arraysEqual(prev, next) ? prev : next;
+    });
+    setSlideTexts(prev => {
+      const next = ensureTextCapacity(prev);
+      return arraysEqual(prev, next) ? prev : next;
+    });
+    setSelectedGradients(prev => {
+      const next = ensureGradientCapacity(prev);
+      return arraysEqual(prev, next) ? prev : next;
+    });
   }, [
     ensureCapacity,
     ensureChoiceCapacity,

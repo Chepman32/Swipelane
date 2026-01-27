@@ -36,6 +36,7 @@ const GradientBackground: React.FC<GradientBackgroundProps> = ({
     <View
       style={[styles.container, style]}
       onLayout={handleLayout}
+      pointerEvents="none"
     >
       {size.width > 0 && size.height > 0 ? (
         <Canvas style={{ width: size.width, height: size.height }}>
