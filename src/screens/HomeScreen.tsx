@@ -280,12 +280,15 @@ const HomeScreen: React.FC = () => {
           style: 'destructive',
           onPress: async () => {
             try {
-              // Check if it's the current project
-              if (currentProject && currentProject.id === projectId) {
+              const isDeletingCurrentProject = currentProject?.id === projectId;
+
+              // Always remove from recent projects.
+              await StorageService.deleteRecentProject(projectId);
+
+              // Also clear current project if it matches.
+              if (isDeletingCurrentProject) {
                 await StorageService.clearCurrentProject();
                 setCurrentProject(null);
-              } else {
-                await StorageService.deleteRecentProject(projectId);
               }
               await loadProjects();
               FeedbackService.buttonTap();

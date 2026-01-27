@@ -440,7 +440,10 @@ class ExportService {
         if (slide.image) {
           try {
             // Load image from URI
-            const imageData = await RNFS.readFile(slide.image, 'base64');
+            const imagePath = slide.image.startsWith('file://')
+              ? slide.image.slice('file://'.length)
+              : slide.image;
+            const imageData = await RNFS.readFile(imagePath, 'base64');
             const image = Skia.Image.MakeImageFromEncoded(
               Skia.Data.fromBase64(imageData),
             );

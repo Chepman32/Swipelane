@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import StorageInitializer from '../utils/storageInit';
+import ProjectImageStore from './ProjectImageStore';
 import {
   DEFAULT_SLIDE_FONT_ID,
   getSlideFontByFamily,
@@ -85,6 +86,74 @@ class StorageService {
     return StorageService.instance;
   }
 
+  /**
+   * Move project images into Documents storage so they survive app updates.
+   * Returns the migrated project and whether it changed.
+   */
+  private async migrateProjectImages(project: ProjectState): Promise<{
+    project: ProjectState;
+    changed: boolean;
+  }> {
+    if (!project?.slides?.length) {
+      return { project, changed: false };
+    }
+
+    let changed = false;
+
+    const migratedSlides = await Promise.all(
+      project.slides.map(async (slide, index) => {
+        const imageUri = slide.image;
+        if (!imageUri) {
+          return slide;
+        }
+
+        // Skip if already persistent.
+        if (ProjectImageStore.isPersistentProjectImageUri(imageUri, project.id)) {
+          return slide;
+        }
+
+        const persistedUri = await ProjectImageStore.persistImageForProject({
+          uri: imageUri,
+          projectId: project.id,
+          slideIndex: index,
+        });
+
+        if (!persistedUri || persistedUri === imageUri) {
+          return slide;
+        }
+
+        changed = true;
+        return {
+          ...slide,
+          image: persistedUri,
+        };
+      }),
+    );
+
+    const migratedImages = migratedSlides.map(slide => slide.image || '');
+    const imagesChanged =
+      !project.images ||
+      project.images.length !== migratedImages.length ||
+      project.images.some((img, idx) => img !== migratedImages[idx]);
+
+    if (imagesChanged) {
+      changed = true;
+    }
+
+    if (!changed) {
+      return { project, changed: false };
+    }
+
+    return {
+      project: {
+        ...project,
+        slides: migratedSlides,
+        images: migratedImages,
+      },
+      changed: true,
+    };
+  }
+
   // Save current project state
   async saveCurrentProject(project: ProjectState): Promise<void> {
     return StorageInitializer.safeStorageOperation(
@@ -147,7 +216,15 @@ class StorageService {
             });
           }
 
-          return parsed;
+          const migration = await this.migrateProjectImages(parsed);
+          if (migration.changed) {
+            await AsyncStorage.setItem(
+              this.STORAGE_KEYS.CURRENT_PROJECT,
+              JSON.stringify(migration.project),
+            );
+          }
+
+          return migration.project;
         }
         return null;
       },
@@ -196,7 +273,7 @@ class StorageService {
       const projectsData = await AsyncStorage.getItem(this.STORAGE_KEYS.RECENT_PROJECTS);
       if (projectsData) {
         const parsed: ProjectState[] = JSON.parse(projectsData);
-        return parsed.map(project => ({
+        const hydratedProjects = parsed.map(project => ({
           ...project,
           slides: project.slides?.map(slide => {
             const legacyFontId =
@@ -219,6 +296,21 @@ class StorageService {
             };
           }) || [],
         }));
+
+        const migrations = await Promise.all(
+          hydratedProjects.map(project => this.migrateProjectImages(project)),
+        );
+        const migratedProjects = migrations.map(m => m.project);
+        const anyChanged = migrations.some(m => m.changed);
+
+        if (anyChanged) {
+          await AsyncStorage.setItem(
+            this.STORAGE_KEYS.RECENT_PROJECTS,
+            JSON.stringify(migratedProjects),
+          );
+        }
+
+        return migratedProjects;
       }
       return [];
     } catch (error) {

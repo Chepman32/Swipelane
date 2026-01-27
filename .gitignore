@@ -2,13 +2,15 @@
 #
 .DS_Store
 
-# Xcode
-#
-
 # fastlane
 #
 fastlane/
 fastlane_example/
+#
+
+# Xcode
+#
+
 build/
 *.pbxuser
 !default.pbxuser

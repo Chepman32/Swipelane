@@ -3123,6 +3123,8 @@ __metadata:
     eslint: "npm:^8.19.0"
     i18next: "npm:^25.5.2"
     jest: "npm:^29.6.3"
+    lottie-ios: "npm:4.5.0"
+    lottie-react-native: "npm:^7.3.5"
     prettier: "npm:2.8.8"
     react: "npm:19.1.0"
     react-i18next: "npm:^15.7.3"
@@ -6996,6 +6998,30 @@ __metadata:
   bin:
     loose-envify: cli.js
   checksum: 10c0/655d110220983c1a4b9c0c679a2e8016d4b67f6e9c7b5435ff5979ecdb20d0813f4dec0a08674fcbdd4846a3f07edbb50a36811fd37930b94aaa0d9daceb017e
+  languageName: node
+  linkType: hard
+
+"lottie-ios@npm:4.5.0":
+  version: 4.5.0
+  resolution: "lottie-ios@npm:4.5.0"
+  checksum: 10c0/5952324ea68303500dd9e79e04c25284f372a226b85a5bea09f96df0c136453c22ed0c3fa04a2ac9bce24dea125b69ec9328f75d7e79ea7dbe38652c230f1c23
+  languageName: node
+  linkType: hard
+
+"lottie-react-native@npm:^7.3.5":
+  version: 7.3.5
+  resolution: "lottie-react-native@npm:7.3.5"
+  peerDependencies:
+    "@lottiefiles/dotlottie-react": ^0.13.5
+    react: "*"
+    react-native: ">=0.46"
+    react-native-windows: ">=0.63.x"
+  peerDependenciesMeta:
+    "@lottiefiles/dotlottie-react":
+      optional: true
+    react-native-windows:
+      optional: true
+  checksum: 10c0/db84e188b25d15c7b92b15104e18b7f925e31ac0a0293d2e3ad9ee70a4834220e57e7e4535a493cd89ba9a008e41a555b40d9f88fccd8216d22c106b76d71174
   languageName: node
   linkType: hard
 

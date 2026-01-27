@@ -20,6 +20,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import ImageService from '../services/ImageService';
 import StorageService from '../services/StorageService';
 import FeedbackService from '../services/FeedbackService';
+import ProjectImageStore from '../services/ProjectImageStore';
 import {
   smartSplit,
   getOptimalSlideCount,
@@ -473,6 +474,7 @@ const ImageSelectionScreen: React.FC = () => {
         console.log('Selected image URI:', imageUri);
         const currentImages = ensureCapacity(selectedImagesRef.current);
         const currentChoices = ensureChoiceCapacity(hasUserMadeChoiceRef.current);
+        const previousUri = currentImages[index];
 
         const nextImages = [...currentImages];
         nextImages[index] = imageUri;
@@ -489,30 +491,46 @@ const ImageSelectionScreen: React.FC = () => {
           await saveProjectState(nextImages);
         }
 
-        ImageService.processImage(imageUri, {
-          width: 1080,
-          height: 1920,
-          quality: 0.8,
-        })
-          .then(processedUri => {
-            if (!processedUri) {
+        const finalizeSelection = async () => {
+          try {
+            const processedUri =
+              (await ImageService.processImage(imageUri, {
+                width: 1080,
+                height: 1920,
+                quality: 0.8,
+              })) ?? imageUri;
+
+            // If the user re-selected the image before processing finished,
+            // do not overwrite the newer choice.
+            const latestImages = ensureCapacity(selectedImagesRef.current);
+            if (latestImages[index] !== imageUri) {
               return;
             }
-            console.log('Processed image URI:', processedUri);
-            setSelectedImages(prevImages => {
-              const normalized = ensureCapacity(prevImages);
-              if (normalized[index] !== imageUri) {
-                return prevImages;
-              }
-              const next = [...normalized];
-              next[index] = processedUri;
-              selectedImagesRef.current = next;
-              return next;
+
+            const persistentUri = await ProjectImageStore.persistImageForProject({
+              uri: processedUri,
+              projectId,
+              slideIndex: index,
+              previousUri,
             });
-          })
-          .catch(err => {
-            console.log('Image processing failed, using original:', err);
-          });
+
+            const finalUri = persistentUri ?? processedUri;
+            console.log('Final image URI (persistent if possible):', finalUri);
+
+            const nextPersistedImages = [...latestImages];
+            nextPersistedImages[index] = finalUri;
+            selectedImagesRef.current = nextPersistedImages;
+            setSelectedImages(nextPersistedImages);
+
+            if (countChoices(hasUserMadeChoiceRef.current) === requiredImages) {
+              await saveProjectState(nextPersistedImages);
+            }
+          } catch (err) {
+            console.log('Image finalize failed, keeping original:', err);
+          }
+        };
+
+        finalizeSelection();
       }
     } catch (error) {
       console.error('Error selecting image:', error);
