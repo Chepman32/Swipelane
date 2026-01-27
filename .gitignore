@@ -4,6 +4,11 @@
 
 # Xcode
 #
+
+# fastlane
+#
+fastlane/
+fastlane_example/
 build/
 *.pbxuser
 !default.pbxuser

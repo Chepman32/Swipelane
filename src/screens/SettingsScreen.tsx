@@ -6,6 +6,9 @@ import {
   TouchableOpacity,
   ScrollView,
   Image,
+  LayoutAnimation,
+  Platform,
+  UIManager,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -96,6 +99,17 @@ const SettingsScreen: React.FC = () => {
 
   const [languageExpanded, setLanguageExpanded] = React.useState(false);
 
+  React.useEffect(() => {
+    if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+      UIManager.setLayoutAnimationEnabledExperimental(true);
+    }
+  }, []);
+
+  const toggleLanguageExpanded = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setLanguageExpanded(prev => !prev);
+  };
+
   const handleThemeChange = (theme: Theme) => {
     FeedbackService.buttonTap();
     setTheme(theme);
@@ -105,6 +119,11 @@ const SettingsScreen: React.FC = () => {
     FeedbackService.buttonTap();
     setLanguage(language);
     FeedbackService.success();
+  };
+
+  const handleOpenAbout = () => {
+    FeedbackService.buttonTap();
+    navigation.navigate('About');
   };
 
   const handleResetOnboarding = async () => {
@@ -124,95 +143,118 @@ const SettingsScreen: React.FC = () => {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: themeDefinition.colors.background }]}>
       <ScrollView style={styles.scrollContainer}>
-      <Text style={[styles.title, { color: themeDefinition.colors.text, fontSize: scaleFont(24), paddingHorizontal: scale(20) }]}>{t('settings_title')}</Text>
-
-      {/* Theme Selection */}
-      <View style={[styles.section, { paddingHorizontal: scale(20) }]}>
-        <Text style={[styles.sectionTitle, { color: themeDefinition.colors.text, fontSize: scaleFont(18) }]}>{t('settings_theme')}</Text>
-        <View style={styles.themeOptions}>
-          {Object.values(themes).map((theme) => (
-            <TouchableOpacity
-              key={theme.name}
-              style={[
-                styles.themeOption,
-                { padding: scale(15) },
-                currentTheme === theme.name && styles.selectedTheme,
-                { backgroundColor: theme.colors.card }
-              ]}
-              onPress={() => handleThemeChange(theme.name as Theme)}>
-              <Text style={[styles.themeText, { color: theme.colors.text, fontSize: scaleFont(16) }]}>
-                {t(`theme_${theme.name}`)}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-
-      {/* Language Selection */}
-      <View style={[styles.section, { paddingHorizontal: scale(20) }]}>
-        <Text style={[styles.sectionTitle, { color: themeDefinition.colors.text, fontSize: scaleFont(18) }]}>{t('settings_language')}</Text>
-        <TouchableOpacity
-          style={[styles.settingRow, { borderBottomColor: themeDefinition.colors.border }]}
-          onPress={() => setLanguageExpanded(prev => !prev)}>
-          <View style={styles.languageHeaderLeft}>
-            <Image source={languageFlags[currentLanguage]} style={styles.flag} />
-            <Text style={[styles.settingLabel, { color: themeDefinition.colors.text, fontSize: scaleFont(16) }]}>{t('settings_language')}</Text>
-          </View>
-          <Text style={[styles.settingValue, { color: themeDefinition.colors.text, fontSize: scaleFont(16) }]}>
-            {currentLanguageName} {languageExpanded ? '▾' : '▸'}
-          </Text>
-        </TouchableOpacity>
-
-        {languageExpanded && (
-          <View style={[styles.languageList, { borderColor: themeDefinition.colors.border, backgroundColor: themeDefinition.colors.card }]}>
-            {languages.map(item => (
+        {/* Theme Selection */}
+        <View style={[styles.section, { paddingHorizontal: scale(20) }]}>
+          <Text style={[styles.sectionTitle, { color: themeDefinition.colors.text, fontSize: scaleFont(18) }]}>{t('settings_theme')}</Text>
+          <View style={styles.themeOptions}>
+            {Object.values(themes).map((theme) => (
               <TouchableOpacity
-                key={item.code}
+                key={theme.name}
                 style={[
-                  styles.languageItem,
-                  { borderBottomColor: themeDefinition.colors.border },
-                  currentLanguage === item.code && styles.selectedLanguage,
+                  styles.themeOption,
+                  { padding: scale(15) },
+                  currentTheme === theme.name && styles.selectedTheme,
+                  { backgroundColor: theme.colors.card },
                 ]}
-                onPress={() => handleLanguageChange(item.code)}>
-                <View style={styles.languageItemLeft}>
-                  <Image source={languageFlags[item.code]} style={styles.flag} />
-                  <View>
-                    <Text style={[styles.languageName, { color: themeDefinition.colors.text }]}>{item.nativeName}</Text>
-                    <Text style={[styles.languageSubtitle, { color: themeDefinition.colors.text + '99' }]}>{item.name}</Text>
-                  </View>
-                </View>
-                {currentLanguage === item.code && (
-                  <Text style={[styles.selectedCheck, { color: themeDefinition.colors.primary }]}>✓</Text>
-                )}
+                onPress={() => handleThemeChange(theme.name as Theme)}
+              >
+                <Text style={[styles.themeText, { color: theme.colors.text, fontSize: scaleFont(16) }]}>
+                  {t(`theme_${theme.name}`)}
+                </Text>
               </TouchableOpacity>
             ))}
           </View>
-        )}
-      </View>
+        </View>
 
-      {/* Reset Onboarding */}
-      <View style={[styles.section, { paddingHorizontal: scale(20) }]}>
-        <TouchableOpacity
-          style={[
-            styles.resetButton,
-            {
-              backgroundColor: themeDefinition.colors.card,
-              borderColor: themeDefinition.colors.border,
-              paddingVertical: scale(14),
-            },
-          ]}
-          onPress={handleResetOnboarding}
-        >
-          <Text
-            style={[
-              styles.resetButtonText,
-              { color: themeDefinition.colors.notification, fontSize: scaleFont(16) },
-            ]}
+        {/* Language Selection */}
+        <View style={[styles.section, { paddingHorizontal: scale(20) }]}>
+          <Text style={[styles.sectionTitle, { color: themeDefinition.colors.text, fontSize: scaleFont(18) }]}>{t('settings_language')}</Text>
+          <TouchableOpacity
+            style={[styles.settingRow, { borderBottomColor: themeDefinition.colors.border }]}
+            onPress={toggleLanguageExpanded}
           >
-            {t('settings_reset_onboarding')}
-          </Text>
-        </TouchableOpacity>
-      </View>
+            <View style={styles.languageHeaderLeft}>
+              <Image source={languageFlags[currentLanguage]} style={styles.flag} />
+              <Text style={[styles.settingLabel, { color: themeDefinition.colors.text, fontSize: scaleFont(16) }]}>
+                {t('settings_language')}
+              </Text>
+            </View>
+            <Text style={[styles.settingValue, { color: themeDefinition.colors.text, fontSize: scaleFont(16) }]}>
+              {currentLanguageName} {languageExpanded ? '▾' : '▸'}
+            </Text>
+          </TouchableOpacity>
+
+          {languageExpanded && (
+            <View style={[styles.languageList, { borderColor: themeDefinition.colors.border, backgroundColor: themeDefinition.colors.card }]}>
+              {languages.map(item => (
+                <TouchableOpacity
+                  key={item.code}
+                  style={[
+                    styles.languageItem,
+                    { borderBottomColor: themeDefinition.colors.border },
+                    currentLanguage === item.code && styles.selectedLanguage,
+                  ]}
+                  onPress={() => handleLanguageChange(item.code)}
+                >
+                  <View style={styles.languageItemLeft}>
+                    <Image source={languageFlags[item.code]} style={styles.flag} />
+                    <View>
+                      <Text style={[styles.languageName, { color: themeDefinition.colors.text }]}>{item.nativeName}</Text>
+                      <Text style={[styles.languageSubtitle, { color: themeDefinition.colors.text + '99' }]}>{item.name}</Text>
+                    </View>
+                  </View>
+                  {currentLanguage === item.code && (
+                    <Text style={[styles.selectedCheck, { color: themeDefinition.colors.primary }]}>✓</Text>
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </View>
+
+        {/* About */}
+        <View style={[styles.section, { paddingHorizontal: scale(20) }]}>
+          <Text style={[styles.sectionTitle, { color: themeDefinition.colors.text, fontSize: scaleFont(18) }]}>About</Text>
+          <TouchableOpacity
+            style={[
+              styles.aboutRow,
+              {
+                borderColor: themeDefinition.colors.border,
+                backgroundColor: themeDefinition.colors.card,
+                paddingVertical: scale(14),
+                paddingHorizontal: scale(16),
+                borderRadius: scale(12),
+              },
+            ]}
+            onPress={handleOpenAbout}
+          >
+            <Text style={[styles.aboutLabel, { color: themeDefinition.colors.text, fontSize: scaleFont(16) }]}>
+              About Texora
+            </Text>
+            <Text style={[styles.aboutChevron, { color: themeDefinition.colors.text + '99', fontSize: scaleFont(18) }]}>
+              ›
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Reset Onboarding */}
+        <View style={[styles.section, { paddingHorizontal: scale(20) }]}>
+          <TouchableOpacity
+            style={[
+              styles.resetButton,
+              {
+                backgroundColor: themeDefinition.colors.card,
+                borderColor: themeDefinition.colors.border,
+                paddingVertical: scale(14),
+              },
+            ]}
+            onPress={handleResetOnboarding}
+          >
+            <Text style={[styles.resetButtonText, { color: themeDefinition.colors.notification, fontSize: scaleFont(16) }]}>
+              {t('settings_reset_onboarding')}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -226,12 +268,6 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flex: 1,
     padding: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
   },
   section: {
     marginBottom: 30,
@@ -278,6 +314,18 @@ const styles = StyleSheet.create({
   settingValue: {
     fontSize: 16,
     color: '#666',
+  },
+  aboutRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+  },
+  aboutLabel: {
+    fontWeight: '700',
+  },
+  aboutChevron: {
+    fontWeight: '800',
   },
   languageHeaderLeft: {
     flexDirection: 'row',

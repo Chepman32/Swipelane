@@ -3139,6 +3139,7 @@ __metadata:
     react-native-screens: "npm:^4.16.0"
     react-native-sound: "npm:^0.12.0"
     react-native-view-shot: "npm:^4.0.3"
+    react-native-webview: "npm:^13.16.0"
     react-native-worklets: "npm:^0.5.1"
     react-test-renderer: "npm:19.1.0"
     typescript: "npm:^5.8.3"
@@ -5796,7 +5797,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"invariant@npm:^2.2.4":
+"invariant@npm:2.2.4, invariant@npm:^2.2.4":
   version: 2.2.4
   resolution: "invariant@npm:2.2.4"
   dependencies:
@@ -8376,6 +8377,19 @@ __metadata:
     react: "*"
     react-native: "*"
   checksum: 10c0/e172507eb7de8760a8a557a5e8632bdc248b60b89770cc941690c8fe6c788d28be1efd8259236fbc768eba3b33aaec8b7a833476b566dfef5b754618060edbec
+  languageName: node
+  linkType: hard
+
+"react-native-webview@npm:^13.16.0":
+  version: 13.16.0
+  resolution: "react-native-webview@npm:13.16.0"
+  dependencies:
+    escape-string-regexp: "npm:^4.0.0"
+    invariant: "npm:2.2.4"
+  peerDependencies:
+    react: "*"
+    react-native: "*"
+  checksum: 10c0/813c3cb176effd65f8d9b45eb00732ac87bfab2d0b1c4016f0d43e95f9a287e495913540ebe4f47da868c804f6fdcb2246a2156d6e31712bd426b43bcecc8e7f
   languageName: node
   linkType: hard
 

@@ -11,6 +11,8 @@ import ImageSelectionScreen from '../screens/ImageSelectionScreen';
 import EditorScreen from '../screens/EditorScreen';
 import PreviewScreen from '../screens/PreviewScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import AboutScreen from '../screens/AboutScreen';
+import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
 
 export type RootStackParamList = {
   Splash: undefined;
@@ -21,6 +23,8 @@ export type RootStackParamList = {
   Editor: { text: string; images: string[]; projectId: string };
   Preview: { slides: any[] };
   Settings: undefined;
+  About: undefined;
+  PrivacyPolicy: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -112,6 +116,24 @@ const AppNavigator: React.FC = () => {
           options={{
             headerShown: true,
             title: 'Settings',
+            headerBackTitle: 'Back',
+          }}
+        />
+        <Stack.Screen
+          name="About"
+          component={AboutScreen}
+          options={{
+            headerShown: true,
+            title: 'About',
+            headerBackTitle: 'Back',
+          }}
+        />
+        <Stack.Screen
+          name="PrivacyPolicy"
+          component={PrivacyPolicyScreen}
+          options={{
+            headerShown: true,
+            title: 'Privacy Policy',
             headerBackTitle: 'Back',
           }}
         />
