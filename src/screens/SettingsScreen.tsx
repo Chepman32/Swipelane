@@ -9,6 +9,7 @@ import {
   LayoutAnimation,
   Platform,
   UIManager,
+  Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -98,11 +99,34 @@ const SettingsScreen: React.FC = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'Settings'>>();
 
   const [languageExpanded, setLanguageExpanded] = React.useState(false);
+  const [hapticsEnabled, setHapticsEnabled] = React.useState(true);
 
   React.useEffect(() => {
     if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
       UIManager.setLayoutAnimationEnabledExperimental(true);
     }
+  }, []);
+
+  React.useEffect(() => {
+    let isMounted = true;
+
+    const loadHapticsPreference = async () => {
+      try {
+        const prefs = await StorageService.getPreferences();
+        if (isMounted) {
+          setHapticsEnabled(prefs.hapticsEnabled);
+        }
+        FeedbackService.setHapticEnabled(prefs.hapticsEnabled);
+      } catch (error) {
+        console.error('Error loading haptics preference:', error);
+      }
+    };
+
+    loadHapticsPreference();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const toggleLanguageExpanded = () => {
@@ -124,6 +148,25 @@ const SettingsScreen: React.FC = () => {
   const handleOpenAbout = () => {
     FeedbackService.buttonTap();
     navigation.navigate('About');
+  };
+
+  const handleHapticsToggle = async (nextValue: boolean) => {
+    // If haptics are currently enabled, trigger feedback before disabling.
+    if (hapticsEnabled) {
+      FeedbackService.buttonTap();
+    }
+    FeedbackService.setHapticEnabled(nextValue);
+    // If enabling haptics, provide a light confirmation.
+    if (nextValue) {
+      FeedbackService.triggerHaptic('impactLight');
+    }
+    setHapticsEnabled(nextValue);
+
+    try {
+      await StorageService.savePreferences({ hapticsEnabled: nextValue });
+    } catch (error) {
+      console.error('Error saving haptics preference:', error);
+    }
   };
 
   const handleResetOnboarding = async () => {
@@ -210,6 +253,37 @@ const SettingsScreen: React.FC = () => {
               ))}
             </View>
           )}
+        </View>
+
+        {/* Haptics */}
+        <View style={[styles.section, { paddingHorizontal: scale(20) }]}>
+          <Text style={[styles.sectionTitle, { color: themeDefinition.colors.text, fontSize: scaleFont(18) }]}>
+            {t('settings_haptics')}
+          </Text>
+          <View
+            style={[
+              styles.settingRow,
+              {
+                borderBottomColor: themeDefinition.colors.border,
+                backgroundColor: themeDefinition.colors.card,
+                borderRadius: scale(12),
+                paddingHorizontal: scale(16),
+              },
+            ]}
+          >
+            <Text style={[styles.settingLabel, { color: themeDefinition.colors.text, fontSize: scaleFont(16) }]}>
+              {t('settings_haptics')}
+            </Text>
+            <Switch
+              value={hapticsEnabled}
+              onValueChange={handleHapticsToggle}
+              trackColor={{
+                false: themeDefinition.colors.border,
+                true: themeDefinition.colors.primary,
+              }}
+              ios_backgroundColor={themeDefinition.colors.border}
+            />
+          </View>
         </View>
 
         {/* About */}

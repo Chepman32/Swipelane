@@ -22,6 +22,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { onboardingSlides } from '../constants/onboarding';
 import StorageService from '../services/StorageService';
 import { useLanguage } from '../context/LanguageContext';
+import FeedbackService from '../services/FeedbackService';
 
 // Import animation components
 import TextTransformAnimation from '../components/onboarding/TextTransformAnimation';
@@ -99,6 +100,7 @@ const OnboardingScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   });
 
   const handleNext = () => {
+    FeedbackService.buttonTap();
     if (currentIndex < onboardingSlides.length - 1) {
       const nextIndex = currentIndex + 1;
       flatListRef.current?.scrollToIndex({ index: nextIndex, animated: true });
@@ -109,6 +111,7 @@ const OnboardingScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   };
 
   const handleSkip = () => {
+    FeedbackService.buttonTap();
     handleComplete();
   };
 
@@ -118,6 +121,7 @@ const OnboardingScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   };
 
   const handleDotPress = (index: number) => {
+    FeedbackService.buttonTap();
     flatListRef.current?.scrollToIndex({ index, animated: true });
     setCurrentIndex(index);
   };

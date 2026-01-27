@@ -3,7 +3,8 @@
  */
 
 import Sound from 'react-native-sound';
-import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
+import ReactNativeHapticFeedback, { HapticFeedbackTypes } from 'react-native-haptic-feedback';
+import StorageService from './StorageService';
 
 // Configure haptic feedback options
 const hapticOptions = {
@@ -26,6 +27,7 @@ class FeedbackService {
 
   constructor() {
     this.initializeSounds();
+    this.initializePreferences();
   }
 
   private initializeSounds() {
@@ -39,6 +41,16 @@ class FeedbackService {
       console.log('Sound system initialized (using system sounds)');
     } catch (error) {
       console.log('Error initializing sounds:', error);
+    }
+  }
+
+  private async initializePreferences() {
+    try {
+      const prefs = await StorageService.getPreferences();
+      this.setSoundEnabled(prefs.soundEnabled);
+      this.setHapticEnabled(prefs.hapticsEnabled);
+    } catch (error) {
+      console.log('Error initializing feedback preferences:', error);
     }
   }
 
@@ -65,7 +77,7 @@ class FeedbackService {
   /**
    * Trigger haptic feedback
    */
-  public triggerHaptic(type: 'light' | 'medium' | 'heavy' | 'selection' | 'impact' | 'notification'): void {
+  public triggerHaptic(type: HapticFeedbackTypes): void {
     if (!this.hapticEnabled) return;
 
     try {
@@ -80,7 +92,7 @@ class FeedbackService {
    */
   public buttonTap(): void {
     this.playSound('tap');
-    this.triggerHaptic('light');
+    this.triggerHaptic('impactLight');
   }
 
   /**
@@ -88,7 +100,7 @@ class FeedbackService {
    */
   public success(): void {
     this.playSound('success');
-    this.triggerHaptic('notification');
+    this.triggerHaptic('notificationSuccess');
   }
 
   /**
@@ -96,7 +108,7 @@ class FeedbackService {
    */
   public error(): void {
     this.playSound('error');
-    this.triggerHaptic('heavy');
+    this.triggerHaptic('notificationError');
   }
 
   /**
@@ -111,14 +123,14 @@ class FeedbackService {
    * Haptic feedback for text dragging
    */
   public textDrag(): void {
-    this.triggerHaptic('light');
+    this.triggerHaptic('selection');
   }
 
   /**
    * Haptic feedback for text resize
    */
   public textResize(): void {
-    this.triggerHaptic('medium');
+    this.triggerHaptic('impactMedium');
   }
 
   /**

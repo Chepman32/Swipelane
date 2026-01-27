@@ -409,12 +409,8 @@ class StorageService {
     return StorageInitializer.safeStorageOperation(
       async () => {
         const firstLaunch = await AsyncStorage.getItem(this.STORAGE_KEYS.FIRST_LAUNCH);
-        if (firstLaunch === null) {
-          // Try to set the first launch flag
-          await AsyncStorage.setItem(this.STORAGE_KEYS.FIRST_LAUNCH, 'false');
-          return true;
-        }
-        return false;
+        // Treat anything other than an explicit "false" as "onboarding not completed".
+        return firstLaunch !== 'false';
       },
       false,
       'isFirstLaunch'
