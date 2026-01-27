@@ -124,10 +124,47 @@ type Slide = {
   textEffects: TextEffectInstance[];
 };
 
+type SlideStyleSnapshot = Pick<
+  Slide,
+  | 'fontSize'
+  | 'color'
+  | 'backgroundColor'
+  | 'textAlign'
+  | 'fontWeight'
+  | 'fontFamily'
+  | 'fontId'
+  | 'textEffects'
+>;
+
 const filterSupportedEffects = (
   effects?: TextEffectInstance[],
 ): TextEffectInstance[] =>
   (effects ?? []).filter(effect => isTextEffectSupported(effect.type));
+
+const cloneEffectParameters = (
+  parameters?: Record<string, any>,
+): Record<string, any> => {
+  if (!parameters) {
+    return {};
+  }
+  try {
+    return JSON.parse(JSON.stringify(parameters));
+  } catch (error) {
+    return { ...parameters };
+  }
+};
+
+const cloneTextEffects = (
+  effects?: TextEffectInstance[],
+): TextEffectInstance[] =>
+  (effects ?? []).map(effect => {
+    const clonedParameters = cloneEffectParameters(effect.parameters);
+    const instance = createTextEffectInstance(effect.type, clonedParameters);
+    return {
+      ...instance,
+      enabled: effect.enabled,
+    };
+  });
 
 const EditorScreen: React.FC = () => {
   const route = useRoute<EditorRouteProp>();
@@ -142,7 +179,6 @@ const EditorScreen: React.FC = () => {
     scaleFont,
     controlGap,
     paddingHorizontal: responsivePadding,
-    mediumButtonSize,
     largeButtonSize,
     navArrowSize,
     colorSwatchSize,
@@ -241,6 +277,8 @@ const EditorScreen: React.FC = () => {
   const [selectedTextEffectId, setSelectedTextEffectId] = useState<string | null>(null);
   const [isEditingText, setIsEditingText] = useState(false);
   const [editingText, setEditingText] = useState('');
+  const [isStyleMenuVisible, setStyleMenuVisible] = useState(false);
+  const [copiedStyle, setCopiedStyle] = useState<SlideStyleSnapshot | null>(null);
 
   // Undo/Redo history management
   const [_history, setHistory] = useState<Slide[][]>([]);
@@ -1081,56 +1119,77 @@ const EditorScreen: React.FC = () => {
     );
   }
 
-  const handleTextAlignChange = (align: 'left' | 'center' | 'right') => {
+  const captureSlideStyle = (slide: Slide): SlideStyleSnapshot => ({
+    fontSize: slide.fontSize,
+    color: slide.color,
+    backgroundColor: slide.backgroundColor,
+    textAlign: slide.textAlign,
+    fontWeight: slide.fontWeight,
+    fontFamily: slide.fontFamily,
+    fontId:
+      slide.fontId === LEGACY_SYSTEM_FONT_ID
+        ? DEFAULT_SLIDE_FONT_ID
+        : slide.fontId,
+    textEffects: filterSupportedEffects(slide.textEffects),
+  });
+
+  const applyStyleToSlide = (
+    slide: Slide,
+    style: SlideStyleSnapshot,
+  ): Slide => ({
+    ...slide,
+    fontSize: style.fontSize,
+    color: style.color,
+    backgroundColor: style.backgroundColor,
+    textAlign: style.textAlign,
+    fontWeight: style.fontWeight,
+    fontFamily: style.fontFamily,
+    fontId: style.fontId,
+    textEffects: cloneTextEffects(style.textEffects),
+  });
+
+  const handleCopyStyle = () => {
     FeedbackService.buttonTap();
+    setCopiedStyle(captureSlideStyle(currentSlide));
+    setStyleMenuVisible(false);
+  };
+
+  const handleCopyStyleToAllSlides = () => {
+    FeedbackService.buttonTap();
+    const styleSnapshot = captureSlideStyle(currentSlide);
+    setCopiedStyle(styleSnapshot);
     setSlides(prevSlides => {
-      const newSlides = [...prevSlides];
-      const existingSlide = newSlides[currentSlideIndex];
-      if (!existingSlide) {
-        return prevSlides;
-      }
-
-      const slide = { ...existingSlide };
-      slide.textAlign = align;
-
-      const fontSize = slide.fontSize;
-      const textLength = slide.text.length;
-      const textPadding = 20;
-      const charsPerLine = Math.max(
-        1,
-        Math.floor((slideSize * 0.9) / (fontSize * 0.6)),
+      const newSlides = prevSlides.map(slide =>
+        applyStyleToSlide(slide, styleSnapshot),
       );
-      const numberOfLines = Math.ceil(textLength / charsPerLine);
-      const estimatedTextWidth = Math.min(
-        slideSize * 0.9,
-        textLength < charsPerLine
-          ? textLength * fontSize * 0.6
-          : slideSize * 0.9,
-      );
-      const estimatedTextHeight = numberOfLines * fontSize * 1.2 + textPadding;
-
-      let newX = slide.position.x;
-      if (align === 'left') {
-        newX = 0;
-      } else if (align === 'center') {
-        newX = Math.max(0, (slideSize - estimatedTextWidth) / 2);
-      } else {
-        newX = Math.max(0, slideSize - estimatedTextWidth);
-      }
-
-      const maxY = Math.max(0, imageContainerHeight - estimatedTextHeight);
-      const newY = Math.max(0, Math.min(maxY, slide.position.y));
-
-      slide.position = { x: newX, y: newY };
-      newSlides[currentSlideIndex] = slide;
-
-      translateX.value = withSpring(newX);
-      translateY.value = withSpring(newY);
-
       addToHistory(newSlides);
       return newSlides;
     });
     setHasUnsavedChanges(true);
+    setTextEffectsPanelVisible(false);
+    setSelectedTextEffectId(null);
+    setStyleMenuVisible(false);
+  };
+
+  const handleApplyCopiedStyle = () => {
+    if (!copiedStyle) {
+      return;
+    }
+    FeedbackService.buttonTap();
+    setSlides(prevSlides => {
+      const newSlides = [...prevSlides];
+      const slide = newSlides[currentSlideIndex];
+      if (!slide) {
+        return prevSlides;
+      }
+      newSlides[currentSlideIndex] = applyStyleToSlide(slide, copiedStyle);
+      addToHistory(newSlides);
+      return newSlides;
+    });
+    setHasUnsavedChanges(true);
+    setTextEffectsPanelVisible(false);
+    setSelectedTextEffectId(null);
+    setStyleMenuVisible(false);
   };
 
   const handleTextColorChange = (color: string) => {
@@ -1511,7 +1570,7 @@ const EditorScreen: React.FC = () => {
                           styles.textInput,
                           {
                             fontSize: currentSlide.fontSize,
-                            color: currentSlide.color,
+                            color: '#000000',
                             textAlign: currentSlide.textAlign,
                             fontWeight: activeFontOption?.supportsWeightToggle
                               ? currentSlide.fontWeight
@@ -1865,79 +1924,70 @@ const EditorScreen: React.FC = () => {
         {/* Always show main toolbar buttons */}
         {
           <>
-            {/* Text alignment controls */}
-            <View style={[styles.alignmentControls, { paddingHorizontal: scaleSize(4), paddingVertical: scaleSize(4) }]}>
+            {/* Style menu */}
+            <View style={[styles.styleMenuWrapper, { width: largeButtonSize, height: largeButtonSize }]}>
               <TouchableOpacity
                 style={[
-                  styles.alignmentButton,
-                  { width: mediumButtonSize, height: mediumButtonSize, borderRadius: mediumButtonSize / 2 },
-                  currentSlide.textAlign === 'left' &&
-                    styles.activeAlignmentButton,
+                  styles.styleMenuButton,
+                  { width: largeButtonSize, height: largeButtonSize, borderRadius: largeButtonSize / 2 },
+                  isStyleMenuVisible && styles.activeStyleMenuButton,
                 ]}
                 onPress={() => {
                   FeedbackService.buttonTap();
-                  handleTextAlignChange('left');
+                  const willShow = !isStyleMenuVisible;
+                  setStyleMenuVisible(willShow);
+                  if (willShow) {
+                    setColorPaletteVisible(false);
+                    setOpacityPaletteVisible(false);
+                    setFontPaletteVisible(false);
+                    setEffectsPaletteVisible(false);
+                    setTextEffectsPanelVisible(false);
+                    setSelectedTextEffectId(null);
+                  }
                 }}
               >
-                <Text
-                  style={[
-                    styles.alignmentIcon,
-                    { fontSize: scaleFont(16) },
-                    currentSlide.textAlign === 'left' &&
-                      styles.activeAlignmentIcon,
-                  ]}
-                >
-                  ≡
+                <Text style={[styles.styleMenuIcon, { fontSize: scaleFont(12) }]}>
+                  {copiedStyle ? 'Style*' : 'Style'}
                 </Text>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[
-                  styles.alignmentButton,
-                  { width: mediumButtonSize, height: mediumButtonSize, borderRadius: mediumButtonSize / 2 },
-                  currentSlide.textAlign === 'center' &&
-                    styles.activeAlignmentButton,
-                ]}
-                onPress={() => {
-                  FeedbackService.buttonTap();
-                  handleTextAlignChange('center');
-                }}
-              >
-                <Text
+              {isStyleMenuVisible && (
+                <View
                   style={[
-                    styles.alignmentIcon,
-                    { fontSize: scaleFont(16) },
-                    currentSlide.textAlign === 'center' &&
-                      styles.activeAlignmentIcon,
+                    styles.styleMenuDropdown,
+                    { bottom: largeButtonSize + scaleSize(12) },
                   ]}
                 >
-                  ☰
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.alignmentButton,
-                  { width: mediumButtonSize, height: mediumButtonSize, borderRadius: mediumButtonSize / 2 },
-                  currentSlide.textAlign === 'right' &&
-                    styles.activeAlignmentButton,
-                ]}
-                onPress={() => {
-                  FeedbackService.buttonTap();
-                  handleTextAlignChange('right');
-                }}
-              >
-                <Text
-                  style={[
-                    styles.alignmentIcon,
-                    { fontSize: scaleFont(16) },
-                    currentSlide.textAlign === 'right' &&
-                      styles.activeAlignmentIcon,
-                  ]}
-                >
-                  ≡
-                </Text>
-              </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.styleMenuItem}
+                    onPress={handleCopyStyleToAllSlides}
+                  >
+                    <Text style={styles.styleMenuItemText}>
+                      Copy style to all slides
+                    </Text>
+                  </TouchableOpacity>
+                  <View style={styles.styleMenuDivider} />
+                  <TouchableOpacity
+                    style={styles.styleMenuItem}
+                    onPress={handleCopyStyle}
+                  >
+                    <Text style={styles.styleMenuItemText}>Copy style</Text>
+                  </TouchableOpacity>
+                  {copiedStyle ? (
+                    <>
+                      <View style={styles.styleMenuDivider} />
+                      <TouchableOpacity
+                        style={styles.styleMenuItem}
+                        onPress={handleApplyCopiedStyle}
+                      >
+                        <Text style={styles.styleMenuItemText}>
+                          Apply copied style
+                        </Text>
+                      </TouchableOpacity>
+                    </>
+                  ) : null}
+                </View>
+              )}
             </View>
 
             {/* Color picker */}
@@ -1949,6 +1999,7 @@ const EditorScreen: React.FC = () => {
               ]}
               onPress={() => {
                 FeedbackService.buttonTap();
+                setStyleMenuVisible(false);
                 const willShow = !isColorPaletteVisible;
                 setColorPaletteVisible(willShow);
                 if (willShow) {
@@ -1972,6 +2023,7 @@ const EditorScreen: React.FC = () => {
               ]}
               onPress={() => {
                 FeedbackService.buttonTap();
+                setStyleMenuVisible(false);
                 const willShow = !isFontPaletteVisible;
                 setFontPaletteVisible(willShow);
                 if (willShow) {
@@ -1995,6 +2047,7 @@ const EditorScreen: React.FC = () => {
               ]}
               onPress={() => {
                 FeedbackService.buttonTap();
+                setStyleMenuVisible(false);
                 const willShow = !isEffectsPaletteVisible;
                 setEffectsPaletteVisible(willShow);
                 if (willShow) {
@@ -2018,6 +2071,7 @@ const EditorScreen: React.FC = () => {
               ]}
               onPress={() => {
                 FeedbackService.buttonTap();
+                setStyleMenuVisible(false);
                 const willShow = !isOpacityPaletteVisible;
                 setOpacityPaletteVisible(willShow);
                 if (willShow) {
@@ -2260,6 +2314,60 @@ const styles = StyleSheet.create({
   },
   activeAlignmentIcon: {
     color: '#FFFFFF',
+  },
+
+  // Style menu
+  styleMenuWrapper: {
+    position: 'relative',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  styleMenuButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
+  activeStyleMenuButton: {
+    borderColor: '#FF0000',
+    borderWidth: 2,
+  },
+  styleMenuIcon: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  styleMenuDropdown: {
+    position: 'absolute',
+    left: 0,
+    backgroundColor: 'rgba(0,0,0,0.85)',
+    borderRadius: 14,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    minWidth: 180,
+    zIndex: 2000,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 6,
+    elevation: 10,
+  },
+  styleMenuItem: {
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+  },
+  styleMenuItemText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  styleMenuDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    marginVertical: 4,
   },
 
   // Color picker

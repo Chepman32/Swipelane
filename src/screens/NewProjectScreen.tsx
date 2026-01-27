@@ -132,7 +132,7 @@ const NewProjectScreen: React.FC = () => {
                 styles.textInput,
                 {
                   backgroundColor: themeDefinition.colors.card,
-                  color: themeDefinition.colors.text,
+                  color: '#000000',
                   borderColor: themeDefinition.colors.border,
                   fontSize: scaleFont(16),
                   padding: scale(15),
@@ -140,7 +140,7 @@ const NewProjectScreen: React.FC = () => {
               ]}
               multiline
               placeholder={t('home_placeholder')}
-              placeholderTextColor={themeDefinition.colors.text + '66'}
+              placeholderTextColor="#00000066"
               value={text}
               onChangeText={setText}
               textAlignVertical="top"
