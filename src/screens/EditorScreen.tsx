@@ -32,7 +32,10 @@ import Animated, {
   withSpring,
   runOnJS,
 } from 'react-native-reanimated';
-import StorageService, { ProjectState } from '../services/StorageService';
+import StorageService, {
+  ProjectState,
+  SlideBackgroundGradient,
+} from '../services/StorageService';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import {
@@ -68,6 +71,7 @@ import { convertToNewFormat } from '../textfx/utils/effectConverter';
 import type { EffectInstance } from '../textfx/types';
 import ColorPicker from '../assets/icons/ColorPicker.png';
 import { useResponsive } from '../hooks/useResponsive';
+import GradientBackground from '../components/GradientBackground';
 
 const MIN_FONT_SIZE = 12;
 const MAX_FONT_SIZE = 72;
@@ -122,6 +126,7 @@ type Slide = {
   fontFamily?: string;
   fontId?: SlideFontId;
   textEffects: TextEffectInstance[];
+  backgroundGradient?: SlideBackgroundGradient | null;
 };
 
 type SlideStyleSnapshot = Pick<
@@ -129,6 +134,7 @@ type SlideStyleSnapshot = Pick<
   | 'fontSize'
   | 'color'
   | 'backgroundColor'
+  | 'backgroundGradient'
   | 'textAlign'
   | 'fontWeight'
   | 'fontFamily'
@@ -220,6 +226,7 @@ const EditorScreen: React.FC = () => {
           fontFamily: undefined,
           fontId: DEFAULT_SLIDE_FONT_ID,
           textEffects: [],
+          backgroundGradient: null,
         },
       ];
     }
@@ -257,6 +264,7 @@ const EditorScreen: React.FC = () => {
         fontFamily: undefined,
         fontId: DEFAULT_SLIDE_FONT_ID,
         textEffects: [],
+        backgroundGradient: null,
       };
     });
   }, [text, images, slideSize, imageContainerHeight, t]);
@@ -1517,12 +1525,19 @@ const EditorScreen: React.FC = () => {
               }}
             />
           ) : (
-            <View
-              style={[
-                styles.plainBackground,
-                { backgroundColor: themeDefinition.colors.card },
-              ]}
-            />
+            currentSlide.backgroundGradient ? (
+              <GradientBackground
+                gradient={currentSlide.backgroundGradient}
+                style={styles.plainBackground}
+              />
+            ) : (
+              <View
+                style={[
+                  styles.plainBackground,
+                  { backgroundColor: themeDefinition.colors.card },
+                ]}
+              />
+            )
           )}
 
           <GestureDetector gesture={composed}>

@@ -10,6 +10,9 @@ import {
   StatusBar,
   useWindowDimensions,
   Dimensions,
+  Pressable,
+  Modal,
+  TextInput,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -23,7 +26,12 @@ import {
   optimizeForSlides,
 } from '../utils/textUtils';
 import { useLanguage } from '../context/LanguageContext';
-import type { ProjectState } from '../services/StorageService';
+import type {
+  ProjectState,
+  SlideBackgroundGradient,
+} from '../services/StorageService';
+import GradientBackground from '../components/GradientBackground';
+import { DEFAULT_GRADIENT, GRADIENT_VARIANTS } from '../constants/gradients';
 
 type RootStackParamList = {
   Splash: undefined;
@@ -149,8 +157,10 @@ const ImageSelectionScreen: React.FC = () => {
   );
 
   const requiredImages = slides.length;
+  const gradientSwatchWidth = Math.min(170, Math.max(130, (validWidth - 96) / 2));
+  const gradientSwatchHeight = Math.round(gradientSwatchWidth * 0.62);
 
-  const ensureCapacity = (images: string[]): string[] => {
+  const ensureCapacity = useCallback((images: string[]): string[] => {
     const truncated = images.slice(0, requiredImages);
     if (truncated.length < requiredImages) {
       return [
@@ -159,82 +169,198 @@ const ImageSelectionScreen: React.FC = () => {
       ];
     }
     return truncated;
-  };
+  }, [requiredImages]);
+
+  const ensureChoiceCapacity = useCallback((choices: boolean[]): boolean[] => {
+    const truncated = choices.slice(0, requiredImages);
+    if (truncated.length < requiredImages) {
+      return [
+        ...truncated,
+        ...Array(requiredImages - truncated.length).fill(false),
+      ];
+    }
+    return truncated;
+  }, [requiredImages]);
+
+  const ensureGradientCapacity = useCallback(
+    (gradients: Array<SlideBackgroundGradient | null>): Array<SlideBackgroundGradient | null> => {
+      const truncated = gradients.slice(0, requiredImages);
+      if (truncated.length < requiredImages) {
+        return [
+          ...truncated,
+          ...Array(requiredImages - truncated.length).fill(null),
+        ];
+      }
+      return truncated;
+    },
+    [requiredImages],
+  );
+
+  const ensureTextCapacity = useCallback((texts: string[]): string[] => {
+    const truncated = texts.slice(0, requiredImages);
+    const filled = truncated.map((value, idx) => value ?? slides[idx] ?? '');
+    if (filled.length < requiredImages) {
+      for (let idx = filled.length; idx < requiredImages; idx += 1) {
+        filled.push(slides[idx] ?? '');
+      }
+    }
+    return filled;
+  }, [requiredImages, slides]);
 
   const [selectedImages, setSelectedImages] = useState<string[]>(() => {
-    // If images are provided in navigation params, use them
     if (initialImages && initialImages.length > 0) {
       return ensureCapacity(initialImages);
     }
-    // Otherwise, start with empty array
     return Array(requiredImages).fill('');
   });
   const [hasUserMadeChoice, setHasUserMadeChoice] = useState<boolean[]>(() => {
-    // If images are provided, mark as having user choice
     if (initialImages && initialImages.length > 0) {
       const choiceArray = Array(initialImages.length).fill(true);
-      // Ensure the array has the required length
-      if (choiceArray.length < requiredImages) {
-        return [...choiceArray, ...Array(requiredImages - choiceArray.length).fill(false)];
-      }
-      return choiceArray.slice(0, requiredImages);
+      return ensureChoiceCapacity(choiceArray);
     }
     return Array(requiredImages).fill(false);
   });
+  const [slideTexts, setSlideTexts] = useState<string[]>(() => ensureTextCapacity(slides));
+  const [selectedGradients, setSelectedGradients] = useState<
+    Array<SlideBackgroundGradient | null>
+  >(() => ensureGradientCapacity([]));
+  const [editingSlideIndex, setEditingSlideIndex] = useState<number | null>(null);
+  const [editingSlideDraft, setEditingSlideDraft] = useState('');
+  const [gradientModalSlideIndex, setGradientModalSlideIndex] = useState<number | null>(null);
+
   const hasRestoredImages = React.useRef(false);
+  const selectedImagesRef = React.useRef(selectedImages);
+  const hasUserMadeChoiceRef = React.useRef(hasUserMadeChoice);
+  const slideTextsRef = React.useRef(slideTexts);
+  const selectedGradientsRef = React.useRef(selectedGradients);
+  const restoredSlidesRef = React.useRef<ProjectState['slides'] | null>(null);
 
-  const saveProjectState = useCallback(async (images: string[]) => {
-    try {
-      // Calculate centered positions
-      const projectSlides = slides.map((slideText, index) => {
-        const fontSize = 24;
-        const textLength = slideText.length;
-        const textPadding = 20;
-        const charsPerLine = Math.max(
-          1,
-          Math.floor((slideSize * 0.9) / (fontSize * 0.6)),
-        );
-        const numberOfLines = Math.ceil(textLength / charsPerLine);
-        const estimatedTextWidth = Math.min(
-          slideSize * 0.9,
-          textLength < charsPerLine
-            ? textLength * fontSize * 0.6
-            : slideSize * 0.9,
-        );
-        const estimatedTextHeight = numberOfLines * fontSize * 1.2 + textPadding;
-        
-        const centerX = Math.max(0, (slideSize - estimatedTextWidth) / 2);
-        const centerY = Math.max(0, (imageContainerHeight - estimatedTextHeight) / 2);
+  useEffect(() => {
+    selectedImagesRef.current = selectedImages;
+  }, [selectedImages]);
 
-        return {
-          id: index,
-          text: slideText,
-          image: images[index] || '',
-          position: { x: centerX, y: centerY },
-          fontSize: fontSize,
-          color: '#FFFFFF',
-          backgroundColor: 'rgba(0,0,0,0.4)',
-          textAlign: 'center' as const,
-          fontWeight: 'normal' as const,
-          textEffects: [],
-        };
-      });
+  useEffect(() => {
+    hasUserMadeChoiceRef.current = hasUserMadeChoice;
+  }, [hasUserMadeChoice]);
 
-      const projectState: ProjectState = {
-        id: projectId,
-        text,
-        slides: projectSlides,
-        images,
-        lastModified: new Date().toISOString(),
-        isCompleted: false,
+  useEffect(() => {
+    slideTextsRef.current = slideTexts;
+  }, [slideTexts]);
+
+  useEffect(() => {
+    selectedGradientsRef.current = selectedGradients;
+  }, [selectedGradients]);
+
+  useEffect(() => {
+    setSelectedImages(prev => ensureCapacity(prev));
+    setHasUserMadeChoice(prev => ensureChoiceCapacity(prev));
+    setSlideTexts(prev => ensureTextCapacity(prev));
+    setSelectedGradients(prev => ensureGradientCapacity(prev));
+  }, [
+    ensureCapacity,
+    ensureChoiceCapacity,
+    ensureGradientCapacity,
+    ensureTextCapacity,
+  ]);
+
+  const createCenteredSlide = useCallback(
+    (
+      slideText: string,
+      index: number,
+      image: string,
+      gradient: SlideBackgroundGradient | null,
+    ) => {
+      const fontSize = 24;
+      const textLength = slideText.length;
+      const textPadding = 20;
+      const charsPerLine = Math.max(
+        1,
+        Math.floor((slideSize * 0.9) / (fontSize * 0.6)),
+      );
+      const numberOfLines = Math.ceil(textLength / charsPerLine);
+      const estimatedTextWidth = Math.min(
+        slideSize * 0.9,
+        textLength < charsPerLine ? textLength * fontSize * 0.6 : slideSize * 0.9,
+      );
+      const estimatedTextHeight = numberOfLines * fontSize * 1.2 + textPadding;
+
+      const centerX = Math.max(0, (slideSize - estimatedTextWidth) / 2);
+      const centerY = Math.max(0, (imageContainerHeight - estimatedTextHeight) / 2);
+
+      return {
+        id: index,
+        text: slideText,
+        image,
+        position: { x: centerX, y: centerY },
+        fontSize,
+        color: '#FFFFFF',
+        backgroundColor: 'rgba(0,0,0,0.4)',
+        textAlign: 'center' as const,
+        fontWeight: 'normal' as const,
+        textEffects: [],
+        backgroundGradient: gradient,
       };
+    },
+    [imageContainerHeight, slideSize],
+  );
 
-      await StorageService.saveCurrentProject(projectState);
-      console.log('Project state saved after image selection');
-    } catch (error) {
-      console.error('Failed to save project state:', error);
-    }
-  }, [slides, text, projectId, slideSize, imageContainerHeight]);
+  const saveProjectState = useCallback(
+    async (images: string[]) => {
+      try {
+        const normalizedImages = ensureCapacity(images);
+        const normalizedTexts = ensureTextCapacity(slideTextsRef.current);
+        const normalizedGradients = ensureGradientCapacity(selectedGradientsRef.current);
+        const existingSlides = restoredSlidesRef.current ?? [];
+
+        const projectSlides = normalizedTexts.map((slideText, index) => {
+          const existingSlide = existingSlides[index];
+          const nextGradient =
+            normalizedGradients[index] ?? existingSlide?.backgroundGradient ?? null;
+
+          if (existingSlide) {
+            return {
+              ...existingSlide,
+              id: index,
+              text: slideText,
+              image: normalizedImages[index] || '',
+              backgroundGradient: nextGradient,
+              textEffects: existingSlide.textEffects ?? [],
+            };
+          }
+
+          return createCenteredSlide(
+            slideText,
+            index,
+            normalizedImages[index] || '',
+            nextGradient,
+          );
+        });
+
+        const projectState: ProjectState = {
+          id: projectId,
+          text,
+          slides: projectSlides,
+          images: normalizedImages,
+          lastModified: new Date().toISOString(),
+          isCompleted: false,
+        };
+
+        restoredSlidesRef.current = projectSlides;
+        await StorageService.saveCurrentProject(projectState);
+        console.log('Project state saved after image selection');
+      } catch (error) {
+        console.error('Failed to save project state:', error);
+      }
+    },
+    [
+      createCenteredSlide,
+      ensureCapacity,
+      ensureGradientCapacity,
+      ensureTextCapacity,
+      projectId,
+      text,
+    ],
+  );
 
   useEffect(() => {
     if (hasRestoredImages.current) {
@@ -256,26 +382,43 @@ const ImageSelectionScreen: React.FC = () => {
           return;
         }
 
-        const restoredImages = Array.from(
-          { length: requiredImages },
-          (_, idx) => {
+        restoredSlidesRef.current = savedProject.slides;
+
+        const restoredImages = ensureCapacity(
+          Array.from({ length: requiredImages }, (_, idx) => {
             const savedSlide = savedProject.slides?.[idx];
-            if (!savedSlide) {
-              return '';
-            }
-            return savedSlide.image ?? '';
-          },
+            return savedSlide?.image ?? '';
+          }),
+        );
+        const restoredTexts = ensureTextCapacity(
+          Array.from({ length: requiredImages }, (_, idx) => {
+            const savedSlide = savedProject.slides?.[idx];
+            return savedSlide?.text ?? slides[idx] ?? '';
+          }),
+        );
+        const restoredGradients = ensureGradientCapacity(
+          Array.from({ length: requiredImages }, (_, idx) => {
+            const savedSlide = savedProject.slides?.[idx];
+            return savedSlide?.backgroundGradient ?? null;
+          }),
+        );
+        const restoredChoices = ensureChoiceCapacity(
+          Array.from(
+            { length: requiredImages },
+            (_, idx) => Boolean(savedProject.slides?.[idx]),
+          ),
         );
 
-        if (restoredImages.some(image => image !== '')) {
-          hasRestoredImages.current = true;
-          setSelectedImages(restoredImages);
-          // Mark all restored slides as having user choice
-          setHasUserMadeChoice(Array(requiredImages).fill(true));
-          
-          // Save project state with restored images
-          await saveProjectState(restoredImages);
-        }
+        hasRestoredImages.current = true;
+        selectedImagesRef.current = restoredImages;
+        hasUserMadeChoiceRef.current = restoredChoices;
+        slideTextsRef.current = restoredTexts;
+        selectedGradientsRef.current = restoredGradients;
+        setSelectedImages(restoredImages);
+        setHasUserMadeChoice(restoredChoices);
+        setSlideTexts(restoredTexts);
+        setSelectedGradients(restoredGradients);
+        await saveProjectState(restoredImages);
       } catch (error) {
         console.error('Failed to restore selected images:', error);
       }
@@ -286,43 +429,47 @@ const ImageSelectionScreen: React.FC = () => {
     return () => {
       isActive = false;
     };
-  }, [requiredImages, saveProjectState]);
+  }, [
+    ensureCapacity,
+    ensureChoiceCapacity,
+    ensureGradientCapacity,
+    ensureTextCapacity,
+    requiredImages,
+    saveProjectState,
+    slides,
+  ]);
+
+  const countChoices = (choices: boolean[]): number => choices.filter(Boolean).length;
 
   const handleSelectImage = async (index: number) => {
     FeedbackService.buttonTap();
 
     try {
-      // First try to get permission by directly calling pickFromGallery
       const imageUri = await ImageService.pickFromGallery(t);
 
       if (imageUri) {
         console.log('Selected image URI:', imageUri);
-        setSelectedImages(prevImages => {
-          const normalized = ensureCapacity(prevImages);
-          const next = [...normalized];
-          next[index] = imageUri;
-          return next;
-        });
-        setHasUserMadeChoice(prevChoices => {
-          const next = [...prevChoices];
-          next[index] = true;
-          return next;
-        });
+        const currentImages = ensureCapacity(selectedImagesRef.current);
+        const currentChoices = ensureChoiceCapacity(hasUserMadeChoiceRef.current);
+
+        const nextImages = [...currentImages];
+        nextImages[index] = imageUri;
+        const nextChoices = [...currentChoices];
+        nextChoices[index] = true;
+
+        selectedImagesRef.current = nextImages;
+        hasUserMadeChoiceRef.current = nextChoices;
+        setSelectedImages(nextImages);
+        setHasUserMadeChoice(nextChoices);
         FeedbackService.success();
 
-        // Check if all slides now have images selected and save project state
-        const updatedChoices = [...hasUserMadeChoice];
-        updatedChoices[index] = true;
-        if (updatedChoices.filter(choice => choice).length === requiredImages) {
-          const updatedImages = [...selectedImages];
-          updatedImages[index] = imageUri;
-          saveProjectState(updatedImages);
+        if (countChoices(nextChoices) === requiredImages) {
+          await saveProjectState(nextImages);
         }
 
-        // Try to process the image in the background (optional)
         ImageService.processImage(imageUri, {
           width: 1080,
-          height: 1920, // Use different dimensions to avoid forcing square
+          height: 1920,
           quality: 0.8,
         })
           .then(processedUri => {
@@ -337,6 +484,7 @@ const ImageSelectionScreen: React.FC = () => {
               }
               const next = [...normalized];
               next[index] = processedUri;
+              selectedImagesRef.current = next;
               return next;
             });
           })
@@ -356,36 +504,84 @@ const ImageSelectionScreen: React.FC = () => {
 
   const handleUsePlainBackground = (index: number) => {
     FeedbackService.buttonTap();
-    setSelectedImages(prevImages => {
-      const normalized = ensureCapacity(prevImages);
-      const next = [...normalized];
-      next[index] = '';
-      return next;
-    });
-    setHasUserMadeChoice(prevChoices => {
-      const next = [...prevChoices];
-      next[index] = true;
-      return next;
-    });
+    setGradientModalSlideIndex(index);
+  };
+
+  const handleOpenTextEditor = (index: number) => {
+    FeedbackService.buttonTap();
+    const normalizedTexts = ensureTextCapacity(slideTextsRef.current);
+    const draft = normalizedTexts[index] ?? slides[index] ?? '';
+    setEditingSlideIndex(index);
+    setEditingSlideDraft(draft);
+  };
+
+  const closeTextEditor = () => {
+    setEditingSlideIndex(null);
+    setEditingSlideDraft('');
+  };
+
+  const handleCancelEditingSlideText = () => {
+    closeTextEditor();
+    FeedbackService.buttonTap();
+  };
+
+  const handleSaveEditingSlideText = async () => {
+    if (editingSlideIndex === null) {
+      return;
+    }
+    const normalizedTexts = ensureTextCapacity(slideTextsRef.current);
+    const nextTexts = [...normalizedTexts];
+    nextTexts[editingSlideIndex] = editingSlideDraft;
+    slideTextsRef.current = nextTexts;
+    setSlideTexts(nextTexts);
+    closeTextEditor();
     FeedbackService.success();
 
-    // Check if all slides now have images selected and save project state
-    const updatedChoices = [...hasUserMadeChoice];
-    updatedChoices[index] = true;
-    if (updatedChoices.filter(choice => choice).length === requiredImages) {
-      const updatedImages = [...selectedImages];
-      updatedImages[index] = '';
-      saveProjectState(updatedImages);
+    if (countChoices(hasUserMadeChoiceRef.current) === requiredImages) {
+      await saveProjectState(selectedImagesRef.current);
     }
   };
 
-  const handleContinue = () => {
+  const handleCloseGradientModal = () => {
+    setGradientModalSlideIndex(null);
+  };
+
+  const handleSelectGradient = async (gradient: SlideBackgroundGradient) => {
+    if (gradientModalSlideIndex === null) {
+      return;
+    }
+
+    const index = gradientModalSlideIndex;
+    const currentImages = ensureCapacity(selectedImagesRef.current);
+    const currentChoices = ensureChoiceCapacity(hasUserMadeChoiceRef.current);
+    const currentGradients = ensureGradientCapacity(selectedGradientsRef.current);
+
+    const nextImages = [...currentImages];
+    nextImages[index] = '';
+    const nextChoices = [...currentChoices];
+    nextChoices[index] = true;
+    const nextGradients = [...currentGradients];
+    nextGradients[index] = gradient;
+
+    selectedImagesRef.current = nextImages;
+    hasUserMadeChoiceRef.current = nextChoices;
+    selectedGradientsRef.current = nextGradients;
+    setSelectedImages(nextImages);
+    setHasUserMadeChoice(nextChoices);
+    setSelectedGradients(nextGradients);
+    setGradientModalSlideIndex(null);
+    FeedbackService.success();
+
+    if (countChoices(nextChoices) === requiredImages) {
+      await saveProjectState(nextImages);
+    }
+  };
+
+  const handleContinue = async () => {
     FeedbackService.buttonTap();
 
-    const normalizedImages = ensureCapacity(selectedImages);
-
-    // Check if user has made a choice for all slides
-    const choicesMade = hasUserMadeChoice.filter(choice => choice).length;
+    const normalizedImages = ensureCapacity(selectedImagesRef.current);
+    const choicesMade = countChoices(hasUserMadeChoiceRef.current);
 
     if (choicesMade < requiredImages) {
       FeedbackService.error();
@@ -396,13 +592,25 @@ const ImageSelectionScreen: React.FC = () => {
       return;
     }
 
-    FeedbackService.success();
-    // Navigate to editor with text and selected images
-    if (normalizedImages.some((img, idx) => selectedImages[idx] !== img)) {
+    if (normalizedImages.some((img, idx) => selectedImagesRef.current[idx] !== img)) {
+      selectedImagesRef.current = normalizedImages;
       setSelectedImages(normalizedImages);
     }
+
+    await saveProjectState(normalizedImages);
+    FeedbackService.success();
     navigation.navigate('Editor', { text, images: normalizedImages, projectId });
   };
+
+  const choicesMade = countChoices(hasUserMadeChoice);
+  const allChoicesMade = choicesMade === requiredImages;
+  const editingSlideNumber = editingSlideIndex !== null ? editingSlideIndex + 1 : null;
+  const gradientModalSlideNumber =
+    gradientModalSlideIndex !== null ? gradientModalSlideIndex + 1 : null;
+  const gradientModalSelection =
+    gradientModalSlideIndex !== null
+      ? selectedGradients[gradientModalSlideIndex] ?? null
+      : null;
 
   return (
     <View style={styles.container}>
@@ -414,73 +622,182 @@ const ImageSelectionScreen: React.FC = () => {
       </Text>
 
       <ScrollView style={styles.content}>
-        {slides.map((slideText, index) => (
-          <View key={index} style={styles.slideCard}>
-            <View style={styles.slideHeader}>
-              <Text style={styles.slideNumber}>{t('slide_number', { number: index + 1 })}</Text>
-              <Text style={styles.slideLocation} numberOfLines={2} ellipsizeMode="tail">
-                {slideText}
-              </Text>
-            </View>
-            
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity
-                style={styles.selectImageButton}
-                onPress={() => handleSelectImage(index)}
-              >
-                <Text style={styles.buttonIcon}>📷</Text>
-                <Text style={styles.selectImageText}>{t('select_image')}</Text>
-              </TouchableOpacity>
+        {slides.map((_, index) => {
+          const displayText = slideTexts[index] ?? slides[index] ?? '';
+          const gradient = selectedGradients[index] ?? DEFAULT_GRADIENT;
+          const hasChoice = Boolean(hasUserMadeChoice[index]);
+          const hasImage = hasChoice && selectedImages[index] !== '';
 
-              <TouchableOpacity
-                style={styles.plainBackgroundButton}
-                onPress={() => handleUsePlainBackground(index)}
-              >
-                <Text style={styles.buttonIcon}>+</Text>
-                <Text style={styles.plainBackgroundText}>{t('plain_background')}</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Image Preview Area */}
-            <View style={styles.imagePreviewArea}>
-              {hasUserMadeChoice[index] && selectedImages[index] !== '' ? (
-                <PannableImage
-                  uri={selectedImages[index]}
-                  onPress={() => handleSelectImage(index)}
-                />
-              ) : hasUserMadeChoice[index] ? (
+          return (
+            <View key={index} style={styles.slideCard}>
+              <View style={styles.slideHeader}>
+                <View style={styles.slideHeaderTextContainer}>
+                  <Text style={styles.slideNumber}>{t('slide_number', { number: index + 1 })}</Text>
+                  <Text style={styles.slideLocation} numberOfLines={3} ellipsizeMode="tail">
+                    {displayText}
+                  </Text>
+                </View>
                 <TouchableOpacity
-                  style={styles.plainBackgroundContainer}
+                  style={styles.editTextButton}
+                  onPress={() => handleOpenTextEditor(index)}
+                >
+                  <Text style={styles.editTextButtonText}>Edit</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.buttonContainer}>
+                <TouchableOpacity
+                  style={styles.selectImageButton}
                   onPress={() => handleSelectImage(index)}
                 >
-                  <View style={styles.plainBackgroundPlaceholder} />
+                  <Text style={styles.buttonIcon}>📷</Text>
+                  <Text style={styles.selectImageText}>{t('select_image')}</Text>
                 </TouchableOpacity>
-              ) : (
+
                 <TouchableOpacity
-                  style={styles.emptyImageContainer}
-                  onPress={() => handleSelectImage(index)}
+                  style={styles.plainBackgroundButton}
+                  onPress={() => handleUsePlainBackground(index)}
                 >
-                  <Text style={styles.emptyImageText}>{t('no_image_selected')}</Text>
+                  <Text style={styles.buttonIcon}>+</Text>
+                  <Text style={styles.plainBackgroundText}>{t('plain_background')}</Text>
                 </TouchableOpacity>
-              )}
+              </View>
+
+              <View style={styles.imagePreviewArea}>
+                {hasImage ? (
+                  <PannableImage
+                    uri={selectedImages[index]}
+                    onPress={() => handleSelectImage(index)}
+                  />
+                ) : hasChoice ? (
+                  <TouchableOpacity
+                    style={styles.plainBackgroundContainer}
+                    onPress={() => handleUsePlainBackground(index)}
+                  >
+                    <GradientBackground
+                      gradient={gradient}
+                      style={styles.plainBackgroundPlaceholder}
+                    />
+                    <View style={styles.plainBackgroundBadge}>
+                      <Text style={styles.plainBackgroundBadgeText}>Gradient</Text>
+                    </View>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    style={styles.emptyImageContainer}
+                    onPress={() => handleSelectImage(index)}
+                  >
+                    <Text style={styles.emptyImageText}>{t('no_image_selected')}</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
-          </View>
-        ))}
+          );
+        })}
       </ScrollView>
 
       <TouchableOpacity
         style={[
           styles.continueButton,
-          hasUserMadeChoice.filter(choice => choice).length ===
-            requiredImages && styles.continueButtonEnabled,
+          allChoicesMade && styles.continueButtonEnabled,
         ]}
         onPress={handleContinue}
-        disabled={
-          hasUserMadeChoice.filter(choice => choice).length !== requiredImages
-        }
+        disabled={!allChoicesMade}
       >
         <Text style={styles.continueButtonText}>{t('continue_to_editor')}</Text>
       </TouchableOpacity>
+
+      <Modal
+        visible={editingSlideIndex !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={handleSaveEditingSlideText}
+      >
+        <View style={styles.modalRoot}>
+          <Pressable style={styles.modalBackdrop} onPress={handleSaveEditingSlideText} />
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>
+              {editingSlideNumber ? `Edit Slide ${editingSlideNumber}` : 'Edit Slide'}
+            </Text>
+            <Text style={styles.modalSubtitle}>
+              Adjust the slide text before choosing images.
+            </Text>
+            <TextInput
+              style={styles.modalTextInput}
+              value={editingSlideDraft}
+              onChangeText={setEditingSlideDraft}
+              multiline
+              autoFocus
+              textAlignVertical="top"
+              placeholder={t('home_placeholder')}
+              placeholderTextColor="#00000066"
+            />
+            <View style={styles.modalButtonRow}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalCancelButton]}
+                onPress={handleCancelEditingSlideText}
+              >
+                <Text style={styles.modalCancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalSaveButton]}
+                onPress={handleSaveEditingSlideText}
+              >
+                <Text style={styles.modalSaveButtonText}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={gradientModalSlideIndex !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={handleCloseGradientModal}
+      >
+        <View style={styles.modalRoot}>
+          <Pressable style={styles.modalBackdrop} onPress={handleCloseGradientModal} />
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Choose Gradient</Text>
+            <Text style={styles.modalSubtitle}>
+              {gradientModalSlideNumber
+                ? `Slide ${gradientModalSlideNumber}`
+                : 'Select a gradient background'}
+            </Text>
+            <ScrollView
+              style={styles.gradientScroll}
+              contentContainerStyle={styles.gradientGrid}
+              showsVerticalScrollIndicator={false}
+            >
+              {GRADIENT_VARIANTS.map(gradientOption => {
+                const isSelected = gradientModalSelection?.id === gradientOption.id;
+                return (
+                  <TouchableOpacity
+                    key={gradientOption.id}
+                    style={[
+                      styles.gradientSwatch,
+                      { width: gradientSwatchWidth, height: gradientSwatchHeight },
+                      isSelected && styles.gradientSwatchActive,
+                    ]}
+                    onPress={() => handleSelectGradient(gradientOption)}
+                  >
+                    <GradientBackground
+                      gradient={gradientOption}
+                      style={styles.gradientSwatchBackground}
+                    />
+                    {isSelected ? (
+                      <View style={styles.gradientSwatchCheck}>
+                        <Text style={styles.gradientSwatchCheckText}>✓</Text>
+                      </View>
+                    ) : null}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -530,7 +847,15 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   slideHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 12,
     marginBottom: 20,
+  },
+  slideHeaderTextContainer: {
+    flex: 1,
+    paddingRight: 12,
   },
   slideNumber: {
     fontSize: 16,
@@ -541,6 +866,19 @@ const styles = StyleSheet.create({
   slideLocation: {
     fontSize: 14,
     color: 'rgba(255, 255, 255, 0.7)',
+  },
+  editTextButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.35)',
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+  },
+  editTextButtonText: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '700',
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -607,12 +945,32 @@ const styles = StyleSheet.create({
   plainBackgroundContainer: {
     width: '100%',
     height: '100%',
+    position: 'relative',
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   plainBackgroundPlaceholder: {
     width: '100%',
     height: '100%',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 12,
+  },
+  plainBackgroundBadge: {
+    position: 'absolute',
+    right: 10,
+    bottom: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+  },
+  plainBackgroundBadgeText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '700',
   },
   emptyImageContainer: {
     width: '100%',
@@ -629,6 +987,121 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.5)',
     fontSize: 14,
     textAlign: 'center',
+  },
+  modalRoot: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  modalBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 480,
+    maxHeight: 540,
+    backgroundColor: '#0F172A',
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.18)',
+    zIndex: 2,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#ffffff',
+  },
+  modalSubtitle: {
+    marginTop: 6,
+    marginBottom: 12,
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.7)',
+  },
+  modalTextInput: {
+    backgroundColor: '#ffffff',
+    color: '#000000',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    minHeight: 140,
+    maxHeight: 280,
+    fontSize: 16,
+    textAlignVertical: 'top',
+  },
+  modalButtonRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 16,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalCancelButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+  },
+  modalCancelButtonText: {
+    color: '#ffffff',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  modalSaveButton: {
+    backgroundColor: '#007AFF',
+  },
+  modalSaveButtonText: {
+    color: '#ffffff',
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  gradientScroll: {
+    marginTop: 4,
+  },
+  gradientGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    paddingBottom: 8,
+  },
+  gradientSwatch: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.28)',
+    position: 'relative',
+  },
+  gradientSwatchBackground: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  gradientSwatchActive: {
+    borderColor: '#ffffff',
+    borderWidth: 2,
+  },
+  gradientSwatchCheck: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+  },
+  gradientSwatchCheckText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '900',
+    lineHeight: 18,
   },
   continueButton: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',

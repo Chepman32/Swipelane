@@ -18,6 +18,7 @@ import {
 import type { TextEffectInstance } from '../constants/textEffects';
 import { buildPreviewEffects } from '../utils/textEffectsPreview';
 import { isTextEffectSupported } from '../constants/textEffects';
+import type { SlideBackgroundGradient } from '../services/StorageService';
 
 interface SkiaSlideRendererProps {
   slide: {
@@ -33,6 +34,7 @@ interface SkiaSlideRendererProps {
     fontFamily?: string;
     fontId?: SlideFontId;
     textEffects?: TextEffectInstance[];
+    backgroundGradient?: SlideBackgroundGradient | null;
   };
   width?: number;
   height?: number;

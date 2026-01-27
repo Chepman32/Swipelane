@@ -15,6 +15,15 @@ import { isTextEffectSupported } from '../constants/textEffects';
 const platformKey: 'ios' | 'android' | 'default' =
   Platform.OS === 'ios' ? 'ios' : Platform.OS === 'android' ? 'android' : 'default';
 
+export type GradientPoint = { x: number; y: number };
+
+export interface SlideBackgroundGradient {
+  id: string;
+  colors: string[];
+  start: GradientPoint;
+  end: GradientPoint;
+}
+
 export interface ProjectState {
   id: string;
   text: string;
@@ -31,6 +40,7 @@ export interface ProjectState {
     fontFamily?: string;
     fontId?: SlideFontId;
     textEffects?: TextEffectInstance[];
+    backgroundGradient?: SlideBackgroundGradient | null;
   }>;
   images: string[];
   lastModified: string;

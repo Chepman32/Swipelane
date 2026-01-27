@@ -38,6 +38,7 @@ import { EffectPipeline } from '../textfx/render/pipeline';
 import { convertToNewFormat } from '../textfx/utils/effectConverter';
 import type { EffectInstance } from '../textfx/types';
 import { isTextEffectSupported } from '../constants/textEffects';
+import GradientBackground from '../components/GradientBackground';
 
 // Skia font sources for each supported font
 const SKIA_FONT_SOURCES: Record<SlideFontId, number> = {
@@ -143,6 +144,11 @@ const SlideRenderer: React.FC<SlideRendererProps> = ({
           source={{ uri: item.image }}
           style={styles.imageBackground}
           resizeMode="contain"
+        />
+      ) : item.backgroundGradient ? (
+        <GradientBackground
+          gradient={item.backgroundGradient}
+          style={styles.plainBackground}
         />
       ) : (
         <View
