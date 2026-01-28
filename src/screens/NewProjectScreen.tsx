@@ -4,6 +4,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  ScrollView,
   StyleSheet,
   Alert,
   KeyboardAvoidingView,
@@ -118,8 +119,13 @@ const NewProjectScreen: React.FC = () => {
       <KeyboardAvoidingView
         style={styles.keyboardContainer}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? scale(80) : 0}
       >
-        <View style={[styles.content, { padding: scale(20) }]}>
+        <ScrollView
+          contentContainerStyle={[styles.content, { padding: scale(20) }]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
           <Text
             style={[styles.subtitle, { color: themeDefinition.colors.text, fontSize: scaleFont(16) }]}
           >
@@ -147,6 +153,7 @@ const NewProjectScreen: React.FC = () => {
             />
             <MicrophoneFAB
               onTextReceived={handleSpeechResult}
+              onPress={handleHideKeyboard}
               style={styles.microphoneFab}
             />
           </View>
@@ -193,7 +200,7 @@ const NewProjectScreen: React.FC = () => {
               <Image source={require('../assets/icons/hideKeyboard.png')} style={{ width: 24, height: 24, opacity: 0.7 }} />
             </TouchableOpacity>
           )}
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -232,7 +239,7 @@ const styles = StyleSheet.create({
     width: 44,
   },
   content: {
-    flex: 1,
+    flexGrow: 1,
     padding: 20,
   },
   subtitle: {

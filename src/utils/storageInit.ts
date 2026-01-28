@@ -4,6 +4,34 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
+import RNFS from 'react-native-fs';
+
+const getManifestDirectoryFromError = (error: unknown): string | null => {
+  if (Platform.OS !== 'ios') {
+    return null;
+  }
+
+  const message =
+    error instanceof Error ? error.message : typeof error === 'string' ? error : '';
+
+  if (!message || !message.includes('manifest.json')) {
+    return null;
+  }
+
+  const filePathMatch = message.match(/NSFilePath=([^,}]+)/);
+  if (filePathMatch?.[1]) {
+    return filePathMatch[1].replace(/\/manifest\.json$/, '');
+  }
+
+  const urlMatch = message.match(/NSURL=file:\/\/\/([^,}]+)/);
+  if (urlMatch?.[1]) {
+    const decodedPath = decodeURIComponent(urlMatch[1]);
+    return decodedPath.replace(/\/manifest\.json$/, '');
+  }
+
+  return null;
+};
 
 class StorageInitializer {
   private static instance: StorageInitializer;
@@ -57,6 +85,7 @@ class StorageInitializer {
           return;
         }
       } catch (error) {
+        await this.repairFromError(error);
         retryCount++;
         console.log(`AsyncStorage initialization attempt ${retryCount} failed:`, error);
 
@@ -94,8 +123,31 @@ class StorageInitializer {
       // Perform the operation
       return await operation();
     } catch (error) {
+      const repaired = await this.repairFromError(error);
+      if (repaired) {
+        try {
+          return await operation();
+        } catch (retryError) {
+          console.warn(`Safe storage operation retry failed for ${operationName}:`, retryError);
+        }
+      }
       console.warn(`Safe storage operation failed for ${operationName}:`, error);
       return fallback;
+    }
+  }
+
+  async repairFromError(error: unknown): Promise<boolean> {
+    const directory = getManifestDirectoryFromError(error);
+    if (!directory) {
+      return false;
+    }
+
+    try {
+      await RNFS.mkdir(directory);
+      return true;
+    } catch (mkdirError) {
+      console.warn('Failed to repair AsyncStorage directory:', mkdirError);
+      return false;
     }
   }
 

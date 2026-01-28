@@ -416,6 +416,15 @@ class ColorAnalysisService {
 
   private async resizeForAnalysis(imageUri: string): Promise<string | null> {
     try {
+      if (imageUri.startsWith('file://') || imageUri.startsWith('/')) {
+        const RNFS = getRNFS();
+        const imagePath = sanitizeFileUri(imageUri);
+        const exists = await RNFS.exists(imagePath);
+        if (!exists) {
+          return null;
+        }
+      }
+
       const RNImageManipulator = getImageManipulator();
       const result: RNImageManipulatorResult =
         await RNImageManipulator.manipulate(
@@ -442,6 +451,13 @@ class ColorAnalysisService {
       const resizedUri = await this.resizeForAnalysis(imageUri);
       const analysisUri = resizedUri ?? imageUri;
       const imagePath = sanitizeFileUri(analysisUri);
+
+      if (analysisUri.startsWith('file://') || analysisUri.startsWith('/')) {
+        const exists = await RNFS.exists(imagePath);
+        if (!exists) {
+          return null;
+        }
+      }
 
       const base64 = await RNFS.readFile(imagePath, 'base64');
       const image = Skia.Image.MakeImageFromEncoded(Skia.Data.fromBase64(base64));

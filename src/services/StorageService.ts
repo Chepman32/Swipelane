@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import StorageInitializer from '../utils/storageInit';
 import ProjectImageStore from './ProjectImageStore';
+import { normalizeImageUri, normalizeImageUris } from '../utils/imageUri';
 import {
   DEFAULT_SLIDE_FONT_ID,
   getSlideFontByFamily,
@@ -105,14 +106,14 @@ class StorageService {
 
     const migratedSlides = await Promise.all(
       project.slides.map(async (slide, index) => {
-        const imageUri = slide.image;
+        const imageUri = normalizeImageUri(slide.image);
         if (!imageUri) {
           return slide;
         }
 
         // Skip if already persistent.
         if (ProjectImageStore.isPersistentProjectImageUri(imageUri, project.id)) {
-          return slide;
+          return imageUri === slide.image ? slide : { ...slide, image: imageUri };
         }
 
         const persistedUri = await ProjectImageStore.persistImageForProject({
@@ -122,7 +123,7 @@ class StorageService {
         });
 
         if (!persistedUri || persistedUri === imageUri) {
-          return slide;
+          return imageUri === slide.image ? slide : { ...slide, image: imageUri };
         }
 
         changed = true;
@@ -208,6 +209,7 @@ class StorageService {
 
               return {
                 ...slide,
+                image: normalizeImageUri(slide.image),
                 fontId:
                   legacyFontId ??
                   (slide.fontFamily
@@ -217,6 +219,12 @@ class StorageService {
                 textEffects: sanitizeTextEffects(slide.textEffects),
               };
             });
+          }
+
+          if (parsed.images && parsed.images.length > 0) {
+            parsed.images = normalizeImageUris(parsed.images);
+          } else if (parsed.slides?.length) {
+            parsed.images = parsed.slides.map(slide => slide.image || '');
           }
 
           const migration = await this.migrateProjectImages(parsed);
@@ -278,6 +286,7 @@ class StorageService {
         const parsed: ProjectState[] = JSON.parse(projectsData);
         const hydratedProjects = parsed.map(project => ({
           ...project,
+          images: project.images ? normalizeImageUris(project.images) : project.images,
           slides: project.slides?.map(slide => {
             const legacyFontId =
               slide.fontId === LEGACY_SYSTEM_FONT_ID
@@ -289,6 +298,7 @@ class StorageService {
 
             return {
               ...slide,
+              image: normalizeImageUri(slide.image),
               fontId:
                 legacyFontId ??
                 (slide.fontFamily

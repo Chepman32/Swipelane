@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
   Platform,
 } from 'react-native';
+import RNFS from 'react-native-fs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Create animated FlatList component
@@ -39,6 +40,7 @@ import type { EffectInstance } from '../textfx/types';
 import { isTextEffectSupported } from '../constants/textEffects';
 import GradientBackground from '../components/GradientBackground';
 import { captureRef } from 'react-native-view-shot';
+import { normalizeImageUri } from '../utils/imageUri';
 
 // Skia font sources for each supported font
 const SKIA_FONT_SOURCES: Record<SlideFontId, number> = {
@@ -52,7 +54,12 @@ type RootStackParamList = {
   Home: undefined;
   Editor: { text: string; images: string[] };
   Preview: { slides: any[] };
-  Export: { imageUri: string; effectId?: string; params?: Record<string, any> };
+  Export: {
+    imageUri?: string;
+    imageUris?: string[];
+    effectId?: string;
+    params?: Record<string, any>;
+  };
 };
 
 type PreviewRouteProp = RouteProp<RootStackParamList, 'Preview'>;
@@ -142,7 +149,7 @@ const SlideRenderer: React.FC<SlideRendererProps> = ({
     >
       {item.image ? (
         <Image
-          source={{ uri: item.image }}
+          source={{ uri: normalizeImageUri(item.image) }}
           style={styles.imageBackground}
           resizeMode="contain"
         />
@@ -263,14 +270,28 @@ const PreviewScreen: React.FC = () => {
         targetWidth = Math.round(exportResolution * aspectRatio);
       }
 
-      const uri = await captureRef(currentSlideRef as any, {
+      const base64 = await captureRef(currentSlideRef as any, {
         format: 'png',
-        result: 'tmpfile',
+        result: 'base64',
         width: Math.max(1, targetWidth),
         height: Math.max(1, targetHeight),
       });
 
-      navigation.navigate('Export', { imageUri: uri });
+      // console.log('CaptureRef URI:', uri);
+
+      // Copy the temporary file to a more persistent location
+      // This ensures the file exists when ExportScreen tries to use it
+      const exportDir = `${RNFS.CachesDirectoryPath}/exports`;
+      await RNFS.mkdir(exportDir).catch(() => {}); // Ignore if directory exists
+      
+      const fileName = `export_${Date.now()}.png`;
+      const persistentPath = `${exportDir}/${fileName}`;
+      
+      // Write the base64 data to the persistent location
+      await RNFS.writeFile(persistentPath, base64, 'base64');
+      
+      const persistentUri = `file://${persistentPath}`;
+      navigation.navigate('Export', { imageUri: persistentUri });
     } catch (error) {
       console.error('Export error:', error);
       FeedbackService.error();

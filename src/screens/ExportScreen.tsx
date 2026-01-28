@@ -2,7 +2,7 @@
  * Export Screen - Save and share edited images
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,13 +12,13 @@ import {
   ActivityIndicator,
   Alert,
   Image,
-  Linking,
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { CameraRoll } from '@react-native-camera-roll/camera-roll';
 import Share, { Social } from 'react-native-share';
+import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import {
   Canvas,
   useImage,
@@ -38,44 +38,97 @@ const ShareIcon = require('../assets/icons/export/Share.png');
 type ExportAction = 'instagram' | 'x' | 'gallery' | 'share' | null;
 
 const EXPORT_SIZE = 1080; // Export at high resolution
+const SHARE_MESSAGE = 'Created with Texora';
+
+const ensureFileScheme = (uri: string): string => {
+  if (/^(file|content|ph|assets-library):\/\//i.test(uri)) {
+    return uri;
+  }
+  return `file://${uri}`;
+};
 
 export const ExportScreen: React.FC = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { imageUri, effectId, params } = route.params as {
-    imageUri: string;
+  const { imageUri, imageUris, effectId, params } = route.params as {
+    imageUri?: string;
+    imageUris?: string[];
     effectId?: string;
     params?: Record<string, any>;
   };
 
-  const image = useImage(imageUri);
+  const primaryImageUri = imageUri || imageUris?.[0] || '';
+  const normalizedPrimaryImageUri = primaryImageUri
+    ? ensureFileScheme(primaryImageUri)
+    : null;
+  const image = useImage(normalizedPrimaryImageUri);
   const effect = effectId ? EFFECTS.find(e => e.id === effectId) : null;
   const canvasRef = useCanvasRef();
+  const tempFilesRef = useRef<string[]>([]);
+  const cachedExportUriRef = useRef<string | null>(null);
 
   const [exportingAction, setExportingAction] = useState<ExportAction>(null);
 
+  useEffect(() => {
+    if (!primaryImageUri) {
+      Alert.alert('Error', 'No image available to export.', [
+        { text: 'OK', onPress: () => navigation.goBack() },
+      ]);
+    }
+  }, [primaryImageUri, navigation]);
+
+  useEffect(() => {
+    return () => {
+      tempFilesRef.current.forEach(path => {
+        RNFS.unlink(path).catch(() => {});
+      });
+      tempFilesRef.current = [];
+    };
+  }, []);
+
   // Capture the canvas with effect applied and return file path
   const captureProcessedImage = useCallback(async (): Promise<string> => {
-    if (!image) {
+    if (cachedExportUriRef.current) {
+      return cachedExportUriRef.current;
+    }
+
+    if (image && canvasRef.current) {
+      const snapshot = canvasRef.current.makeImageSnapshot();
+      if (snapshot) {
+        const base64 = snapshot.encodeToBase64(ImageFormat.PNG, 100);
+
+        // Save to temp file
+        const exportDir = `${RNFS.CachesDirectoryPath}/exports`;
+        await RNFS.mkdir(exportDir).catch(() => {}); // Ignore if exists
+
+        const exportPath = `${exportDir}/export_${Date.now()}_${Math.random()
+          .toString(36)
+          .slice(2)}.png`;
+        await RNFS.writeFile(exportPath, base64, 'base64');
+        tempFilesRef.current.push(exportPath);
+
+        const fileUri = `file://${exportPath}`;
+        cachedExportUriRef.current = fileUri;
+        return fileUri;
+      }
+    }
+
+    if (!primaryImageUri) {
       throw new Error('Image not ready');
     }
-    const snapshot = canvasRef.current?.makeImageSnapshot();
-    if (!snapshot) {
-      throw new Error('Failed to capture canvas snapshot');
+
+    const fallbackUri = ensureFileScheme(primaryImageUri);
+    cachedExportUriRef.current = fallbackUri;
+    return fallbackUri;
+  }, [canvasRef, image, primaryImageUri]);
+
+  const getShareUris = useCallback(async (): Promise<string[]> => {
+    if (imageUris && imageUris.length > 0) {
+      return imageUris.map(ensureFileScheme);
     }
-
-    // Encode as base64 PNG for better quality
-    const base64 = snapshot.encodeToBase64(ImageFormat.PNG, 100);
-
-    // Save to temp file
-    const exportDir = `${RNFS.CachesDirectoryPath}/exports`;
-    await RNFS.mkdir(exportDir).catch(() => {}); // Ignore if exists
-
-    const exportPath = `${exportDir}/export_${Date.now()}.png`;
-    await RNFS.writeFile(exportPath, base64, 'base64');
-
-    return `file://${exportPath}`;
-  }, [canvasRef, image]);
+    const processedImageUri = await captureProcessedImage();
+    return [processedImageUri];
+  }, [imageUris, captureProcessedImage]);
 
   // Calculate canvas dimensions to maintain aspect ratio
   const canvasDimensions = useMemo(() => {
@@ -101,19 +154,33 @@ export const ExportScreen: React.FC = () => {
       setExportingAction('gallery');
       FeedbackService.triggerHaptic('impactMedium');
 
-      // Capture canvas with effect applied
-      const processedImageUri = await captureProcessedImage();
+      if (Platform.OS === 'ios') {
+        const permission = PERMISSIONS.IOS.PHOTO_LIBRARY_ADD_ONLY;
+        const result = await check(permission);
+        
+        if (result === RESULTS.DENIED) {
+          const requestResult = await request(permission);
+          if (requestResult !== RESULTS.GRANTED && requestResult !== RESULTS.LIMITED) {
+            throw new Error('Permission denied');
+          }
+        } else if (result === RESULTS.BLOCKED || result === RESULTS.UNAVAILABLE) {
+          Alert.alert(
+            'Permission Required',
+            'Please enable photo library access in settings to save images.',
+            [{ text: 'OK' }]
+          );
+          return;
+        }
+      }
 
-      // Save to camera roll
-      await CameraRoll.save(processedImageUri, { type: 'photo' });
+      const shareUris = await getShareUris();
 
-      // Clean up temp file
-      await RNFS.unlink(processedImageUri.replace('file://', '')).catch(
-        () => {},
-      );
+      for (const uri of shareUris) {
+        await CameraRoll.save(uri, { type: 'photo' });
+      }
 
       FeedbackService.triggerHaptic('notificationSuccess');
-      Alert.alert('Success', 'Image saved to Photos!', [
+      Alert.alert('Success', shareUris.length > 1 ? 'Images saved to Photos!' : 'Image saved to Photos!', [
         { text: 'OK', onPress: () => navigation.goBack() },
       ]);
     } catch (error) {
@@ -130,18 +197,14 @@ export const ExportScreen: React.FC = () => {
       setExportingAction('share');
       FeedbackService.triggerHaptic('impactMedium');
 
-      // Capture canvas with effect applied
-      const processedImageUri = await captureProcessedImage();
+      const shareUris = await getShareUris();
 
       await Share.open({
-        url: processedImageUri,
+        urls: shareUris,
         type: 'image/png',
+        message: SHARE_MESSAGE,
+        failOnCancel: false,
       });
-
-      // Clean up temp file
-      await RNFS.unlink(processedImageUri.replace('file://', '')).catch(
-        () => {},
-      );
 
       FeedbackService.triggerHaptic('notificationSuccess');
     } catch (error: any) {
@@ -159,53 +222,51 @@ export const ExportScreen: React.FC = () => {
       setExportingAction('instagram');
       FeedbackService.triggerHaptic('impactMedium');
 
-      // Capture canvas with effect applied
-      const processedImageUri = await captureProcessedImage();
+      const shareUris = await getShareUris();
 
       if (Platform.OS === 'ios') {
-        // Save to camera roll first
-        const savedResult = await CameraRoll.save(processedImageUri, {
+        const savedResult = await CameraRoll.save(shareUris[0], {
           type: 'photo',
         });
 
         const localIdentifier =
-          typeof savedResult === 'string' ? savedResult : savedResult?.node?.id || '';
+          typeof savedResult === 'string'
+            ? savedResult
+            : savedResult?.node?.id || '';
 
         if (!localIdentifier) {
           throw new Error('Failed to get photo identifier');
         }
 
-        // Open Instagram with the photo - this shows the native share modal
-        const instagramUrl = `instagram://library?LocalIdentifier=${encodeURIComponent(
-          localIdentifier,
-        )}`;
+        const instagramAssetId = localIdentifier.startsWith('ph://')
+          ? localIdentifier
+          : `ph://${localIdentifier}`;
 
-        const canOpen = await Linking.canOpenURL('instagram://');
-        if (!canOpen) {
-          throw new Error('instagram_not_installed');
-        }
-
-        await Linking.openURL(instagramUrl);
-      } else {
-        // Android - use share single
         await Share.shareSingle({
-          url: processedImageUri,
-          type: 'image/png',
           social: Social.Instagram,
+          url: instagramAssetId,
+          message: SHARE_MESSAGE,
+        });
+      } else {
+        await Share.shareSingle({
+          social: Social.Instagram,
+          ...(shareUris.length > 1
+            ? { urls: shareUris }
+            : { url: shareUris[0] }),
+          type: 'image/png',
+          message: SHARE_MESSAGE,
         });
       }
-
-      // Clean up temp file
-      await RNFS.unlink(processedImageUri.replace('file://', '')).catch(
-        () => {},
-      );
 
       FeedbackService.triggerHaptic('notificationSuccess');
     } catch (error: any) {
       console.error('Instagram share error:', error);
       FeedbackService.triggerHaptic('notificationError');
 
-      if (error?.message === 'instagram_not_installed') {
+      if (
+        typeof error?.message === 'string' &&
+        error.message.toLowerCase().includes('not installed')
+      ) {
         Alert.alert(
           'Instagram not installed',
           'Please install Instagram to share.',
@@ -223,19 +284,16 @@ export const ExportScreen: React.FC = () => {
       setExportingAction('x');
       FeedbackService.triggerHaptic('impactMedium');
 
-      // Capture canvas with effect applied
-      const processedImageUri = await captureProcessedImage();
+      const shareUris = await getShareUris();
 
       await Share.shareSingle({
-        url: processedImageUri,
-        type: 'image/png',
         social: Social.Twitter,
+        ...(shareUris.length > 1
+          ? { urls: shareUris }
+          : { url: shareUris[0] }),
+        type: 'image/png',
+        message: SHARE_MESSAGE,
       });
-
-      // Clean up temp file
-      await RNFS.unlink(processedImageUri.replace('file://', '')).catch(
-        () => {},
-      );
 
       FeedbackService.triggerHaptic('notificationSuccess');
     } catch (error: any) {
@@ -253,7 +311,12 @@ export const ExportScreen: React.FC = () => {
       <Pressable style={styles.backdrop} onPress={() => navigation.goBack()} />
       <SafeAreaView style={styles.sheet} edges={['bottom']}>
         {/* Preview */}
-        <View style={styles.previewContainer}>
+        <View
+          style={[
+            styles.previewContainer,
+            { width: canvasDimensions.width, height: canvasDimensions.height },
+          ]}
+        >
           {image && (
             <Canvas
               ref={canvasRef}
@@ -378,16 +441,15 @@ const styles = StyleSheet.create({
     paddingTop: 6,
   },
   previewContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 0,
-    height: 0,
+    position: 'absolute',
+    left: -10000,
+    top: -10000,
+    opacity: 0,
     overflow: 'hidden',
   },
   preview: {
     borderRadius: 12,
     overflow: 'hidden',
-    transform: [{ scale: 300 / EXPORT_SIZE }],
   },
   exportList: {
     gap: 12,

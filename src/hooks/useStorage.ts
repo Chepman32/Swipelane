@@ -14,6 +14,18 @@ export const useStorage = <T>(key: string, initialValue: T) => {
           setStoredValue(JSON.parse(item));
         }
       } catch (error) {
+        const repaired = await StorageInitializer.repairFromError(error);
+        if (repaired) {
+          try {
+            const item = await AsyncStorage.getItem(key);
+            if (item !== null) {
+              setStoredValue(JSON.parse(item));
+            }
+            return;
+          } catch (retryError) {
+            console.error(`Error reading ${key} from storage after repair`, retryError);
+          }
+        }
         console.error(`Error reading ${key} from storage`, error);
       }
     };
@@ -22,13 +34,22 @@ export const useStorage = <T>(key: string, initialValue: T) => {
   }, [key]);
 
   const setValue = async (value: T | ((val: T) => T)) => {
+    const valueToStore =
+      value instanceof Function ? value(storedValue) : value;
     try {
-      const valueToStore =
-        value instanceof Function ? value(storedValue) : value;
       setStoredValue(valueToStore);
       await StorageInitializer.initialize();
       await AsyncStorage.setItem(key, JSON.stringify(valueToStore));
     } catch (error) {
+      const repaired = await StorageInitializer.repairFromError(error);
+      if (repaired) {
+        try {
+          await AsyncStorage.setItem(key, JSON.stringify(valueToStore));
+          return;
+        } catch (retryError) {
+          console.error(`Error setting ${key} in storage after repair`, retryError);
+        }
+      }
       console.error(`Error setting ${key} in storage`, error);
     }
   };
@@ -39,6 +60,16 @@ export const useStorage = <T>(key: string, initialValue: T) => {
       await AsyncStorage.removeItem(key);
       setStoredValue(initialValue);
     } catch (error) {
+      const repaired = await StorageInitializer.repairFromError(error);
+      if (repaired) {
+        try {
+          await AsyncStorage.removeItem(key);
+          setStoredValue(initialValue);
+          return;
+        } catch (retryError) {
+          console.error(`Error removing ${key} from storage after repair`, retryError);
+        }
+      }
       console.error(`Error removing ${key} from storage`, error);
     }
   };

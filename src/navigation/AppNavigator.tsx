@@ -24,7 +24,12 @@ export type RootStackParamList = {
   ImageSelection: { text: string; projectId: string; images?: string[] };
   Editor: { text: string; images: string[]; projectId: string };
   Preview: { slides: any[] };
-  Export: { imageUri: string; effectId?: string; params?: Record<string, any> };
+  Export: {
+    imageUri?: string;
+    imageUris?: string[];
+    effectId?: string;
+    params?: Record<string, any>;
+  };
   Settings: undefined;
   About: undefined;
   PrivacyPolicy: undefined;

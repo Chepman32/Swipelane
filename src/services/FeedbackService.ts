@@ -2,6 +2,7 @@
  * Sound and Haptic Feedback Service for Text-to-Slides app
  */
 
+import { Platform } from 'react-native';
 import Sound from 'react-native-sound';
 import ReactNativeHapticFeedback, { HapticFeedbackTypes } from 'react-native-haptic-feedback';
 import StorageService from './StorageService';
@@ -32,13 +33,39 @@ class FeedbackService {
 
   private initializeSounds() {
     // Initialize sound objects for different feedback types
-    // Note: In a real app, you would include actual sound files
-    // For now, we'll use system sounds or create simple beeps
+    // We'll use system sounds to avoid file management issues
     
     try {
-      // Use system sounds instead of custom files
-      // This prevents the OSStatus errors we were seeing
-      console.log('Sound system initialized (using system sounds)');
+      // Initialize sound objects with system sounds
+      // For iOS, we can use system sound IDs
+      // For Android, we'll use the Sound library with simple tones
+      
+      // Create sound objects for different types
+      this.sounds['tap'] = new Sound('tap.mp3', Sound.MAIN_BUNDLE, (error) => {
+        if (error) {
+          console.log('Failed to load tap sound, will use system sound');
+        }
+      });
+      
+      this.sounds['success'] = new Sound('success.mp3', Sound.MAIN_BUNDLE, (error) => {
+        if (error) {
+          console.log('Failed to load success sound, will use system sound');
+        }
+      });
+      
+      this.sounds['error'] = new Sound('error.mp3', Sound.MAIN_BUNDLE, (error) => {
+        if (error) {
+          console.log('Failed to load error sound, will use system sound');
+        }
+      });
+      
+      this.sounds['slide'] = new Sound('slide.mp3', Sound.MAIN_BUNDLE, (error) => {
+        if (error) {
+          console.log('Failed to load slide sound, will use system sound');
+        }
+      });
+      
+      console.log('Sound system initialized');
     } catch (error) {
       console.log('Error initializing sounds:', error);
     }
@@ -61,14 +88,26 @@ class FeedbackService {
     if (!this.soundEnabled) return;
 
     try {
-      // For now, we'll just log the sound type since we don't have actual sound files
-      // In a production app, you would either:
-      // 1. Include actual sound files in the bundle
-      // 2. Use system sounds
-      // 3. Use a different sound library
-      console.log(`Playing sound: ${soundType}`);
-      
-      // TODO: Implement actual sound playback when sound files are available
+      const sound = this.sounds[soundType];
+      if (sound) {
+        // Reset sound position to beginning and play
+        sound.setCurrentTime(0);
+        sound.play((success) => {
+          if (!success) {
+            console.log(`Failed to play ${soundType} sound`);
+          }
+        });
+      } else {
+        // Fallback: use system sound if available
+        if (soundType === 'tap') {
+          // Use system sound for tap (iOS system sound 1104)
+          if (Platform.OS === 'ios') {
+            const sound = new Sound(1104); // iOS system sound
+            sound.play();
+          }
+        }
+        console.log(`Playing sound: ${soundType}`);
+      }
     } catch (error) {
       console.log('Error playing sound:', error);
     }

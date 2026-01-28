@@ -21,6 +21,7 @@ import ImageService from '../services/ImageService';
 import StorageService from '../services/StorageService';
 import FeedbackService from '../services/FeedbackService';
 import ProjectImageStore from '../services/ProjectImageStore';
+import { normalizeImageUri, normalizeImageUris } from '../utils/imageUri';
 import {
   smartSplit,
   getOptimalSlideCount,
@@ -217,7 +218,7 @@ const ImageSelectionScreen: React.FC = () => {
 
   const [selectedImages, setSelectedImages] = useState<string[]>(() => {
     if (initialImages && initialImages.length > 0) {
-      return ensureCapacity(initialImages);
+      return ensureCapacity(normalizeImageUris(initialImages));
     }
     return Array(requiredImages).fill('');
   });
@@ -235,6 +236,7 @@ const ImageSelectionScreen: React.FC = () => {
   const [editingSlideIndex, setEditingSlideIndex] = useState<number | null>(null);
   const [editingSlideDraft, setEditingSlideDraft] = useState('');
   const [gradientModalSlideIndex, setGradientModalSlideIndex] = useState<number | null>(null);
+  const [isFinalizing, setIsFinalizing] = useState(false);
 
   const hasRestoredImages = React.useRef(false);
   const selectedImagesRef = React.useRef(selectedImages);
@@ -242,6 +244,8 @@ const ImageSelectionScreen: React.FC = () => {
   const slideTextsRef = React.useRef(slideTexts);
   const selectedGradientsRef = React.useRef(selectedGradients);
   const restoredSlidesRef = React.useRef<ProjectState['slides'] | null>(null);
+  const pendingPersistRef = React.useRef<Map<number, Promise<void>>>(new Map());
+  const isFinalizingRef = React.useRef(false);
 
   useEffect(() => {
     selectedImagesRef.current = selectedImages;
@@ -471,13 +475,14 @@ const ImageSelectionScreen: React.FC = () => {
       const imageUri = await ImageService.pickFromGallery(t);
 
       if (imageUri) {
-        console.log('Selected image URI:', imageUri);
+        const normalizedImageUri = normalizeImageUri(imageUri);
+        console.log('Selected image URI:', normalizedImageUri);
         const currentImages = ensureCapacity(selectedImagesRef.current);
         const currentChoices = ensureChoiceCapacity(hasUserMadeChoiceRef.current);
         const previousUri = currentImages[index];
 
         const nextImages = [...currentImages];
-        nextImages[index] = imageUri;
+        nextImages[index] = normalizedImageUri;
         const nextChoices = [...currentChoices];
         nextChoices[index] = true;
 
@@ -492,29 +497,45 @@ const ImageSelectionScreen: React.FC = () => {
         }
 
         const finalizeSelection = async () => {
+          let processedUri = normalizedImageUri;
           try {
-            const processedUri =
-              (await ImageService.processImage(imageUri, {
-                width: 1080,
-                height: 1920,
-                quality: 0.8,
-              })) ?? imageUri;
+            const result = await ImageService.processImage(normalizedImageUri, {
+              width: 1080,
+              height: 1920,
+              quality: 0.8,
+            });
+            if (result) {
+              processedUri = result;
+            }
+          } catch (err) {
+            console.log('Image processing failed, using original:', err);
+          }
 
+          try {
             // If the user re-selected the image before processing finished,
             // do not overwrite the newer choice.
             const latestImages = ensureCapacity(selectedImagesRef.current);
-            if (latestImages[index] !== imageUri) {
+            if (latestImages[index] !== normalizedImageUri) {
               return;
             }
 
-            const persistentUri = await ProjectImageStore.persistImageForProject({
+            let persistentUri = await ProjectImageStore.persistImageForProject({
               uri: processedUri,
               projectId,
               slideIndex: index,
               previousUri,
             });
 
-            const finalUri = persistentUri ?? processedUri;
+            if (!persistentUri && processedUri !== normalizedImageUri) {
+              persistentUri = await ProjectImageStore.persistImageForProject({
+                uri: normalizedImageUri,
+                projectId,
+                slideIndex: index,
+                previousUri,
+              });
+            }
+
+            const finalUri = normalizeImageUri(persistentUri ?? processedUri);
             console.log('Final image URI (persistent if possible):', finalUri);
 
             const nextPersistedImages = [...latestImages];
@@ -530,7 +551,13 @@ const ImageSelectionScreen: React.FC = () => {
           }
         };
 
-        finalizeSelection();
+        const persistPromise = finalizeSelection();
+        pendingPersistRef.current.set(index, persistPromise);
+        persistPromise.finally(() => {
+          if (pendingPersistRef.current.get(index) === persistPromise) {
+            pendingPersistRef.current.delete(index);
+          }
+        });
       }
     } catch (error) {
       console.error('Error selecting image:', error);
@@ -620,26 +647,45 @@ const ImageSelectionScreen: React.FC = () => {
   const handleContinue = async () => {
     FeedbackService.buttonTap();
 
-    const normalizedImages = ensureCapacity(selectedImagesRef.current);
-    const choicesMade = countChoices(hasUserMadeChoiceRef.current);
-
-    if (choicesMade < requiredImages) {
-      FeedbackService.error();
-      Alert.alert(
-        t('image_selection_error_title'),
-        t('image_selection_error', { count: requiredImages }),
-      );
+    if (isFinalizingRef.current) {
       return;
     }
 
-    if (normalizedImages.some((img, idx) => selectedImagesRef.current[idx] !== img)) {
-      selectedImagesRef.current = normalizedImages;
-      setSelectedImages(normalizedImages);
-    }
+    isFinalizingRef.current = true;
+    setIsFinalizing(true);
 
-    await saveProjectState(normalizedImages);
-    FeedbackService.success();
-    navigation.navigate('Editor', { text, images: normalizedImages, projectId });
+    try {
+      const choicesMade = countChoices(hasUserMadeChoiceRef.current);
+
+      if (choicesMade < requiredImages) {
+        FeedbackService.error();
+        Alert.alert(
+          t('image_selection_error_title'),
+          t('image_selection_error', { count: requiredImages }),
+        );
+        return;
+      }
+
+      const pendingPersists = Array.from(pendingPersistRef.current.values());
+      if (pendingPersists.length > 0) {
+        await Promise.allSettled(pendingPersists);
+      }
+
+      const latestImages = ensureCapacity(selectedImagesRef.current);
+      const latestImagesWithScheme = normalizeImageUris(latestImages);
+
+      if (latestImagesWithScheme.some((img, idx) => selectedImagesRef.current[idx] !== img)) {
+        selectedImagesRef.current = latestImagesWithScheme;
+        setSelectedImages(latestImagesWithScheme);
+      }
+
+      await saveProjectState(latestImagesWithScheme);
+      FeedbackService.success();
+      navigation.navigate('Editor', { text, images: latestImagesWithScheme, projectId });
+    } finally {
+      isFinalizingRef.current = false;
+      setIsFinalizing(false);
+    }
   };
 
   const choicesMade = countChoices(hasUserMadeChoice);
@@ -739,10 +785,10 @@ const ImageSelectionScreen: React.FC = () => {
       <TouchableOpacity
         style={[
           styles.continueButton,
-          allChoicesMade && styles.continueButtonEnabled,
+          allChoicesMade && !isFinalizing && styles.continueButtonEnabled,
         ]}
         onPress={handleContinue}
-        disabled={!allChoicesMade}
+        disabled={!allChoicesMade || isFinalizing}
       >
         <Text style={styles.continueButtonText}>{t('continue_to_editor')}</Text>
       </TouchableOpacity>

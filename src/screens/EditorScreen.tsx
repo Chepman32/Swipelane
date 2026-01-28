@@ -61,6 +61,7 @@ import {
 import TextEffectsPanel from '../components/TextEffectsPanel';
 import TextEffectParameterEditor from '../components/TextEffectParameterEditor';
 import { buildPreviewEffects } from '../utils/textEffectsPreview';
+import { normalizeImageUri, normalizeImageUris } from '../utils/imageUri';
 import {
   TextEffectCategory,
   TextEffectInstance,
@@ -267,6 +268,7 @@ const EditorScreen: React.FC = () => {
   const route = useRoute<EditorRouteProp>();
   const navigation = useNavigation<EditorNavigationProp>();
   const { text, images, projectId } = route.params;
+  const normalizedImages = useMemo(() => normalizeImageUris(images || []), [images]);
   const insets = useSafeAreaInsets();
   const { themeDefinition } = useTheme();
   const { t } = useLanguage();
@@ -349,7 +351,7 @@ const EditorScreen: React.FC = () => {
       return {
         id: index,
         text: slideText,
-        image: images[index] || '',
+        image: normalizedImages[index] || '',
         position: { x: centerX, y: centerY },
         fontSize: fontSize,
         color: DEFAULT_TEXT_COLOR,
@@ -365,7 +367,7 @@ const EditorScreen: React.FC = () => {
         aiDominantColor: undefined,
       };
     });
-  }, [text, images, slideSize, imageContainerHeight, t]);
+  }, [text, normalizedImages, slideSize, imageContainerHeight, t]);
 
   // Loading state for project initialization
   const [isLoadingProject, setIsLoadingProject] = useState(true);
@@ -719,7 +721,7 @@ const EditorScreen: React.FC = () => {
       id: projectId,
       text,
       slides: sanitizedSlidesForPersist,
-      images,
+      images: normalizedImages,
       lastModified: new Date().toISOString(),
       isCompleted: false,
     };
@@ -731,7 +733,7 @@ const EditorScreen: React.FC = () => {
     } catch (error) {
       console.error('Failed to auto-save project:', error);
     }
-  }, [text, slides, images, projectId]);
+  }, [text, slides, normalizedImages, projectId]);
 
   const handleOpenImageSelection = useCallback(async () => {
     FeedbackService.buttonTap();
@@ -739,9 +741,18 @@ const EditorScreen: React.FC = () => {
     navigation.navigate('ImageSelection', {
       text: text,
       projectId: projectId,
-      images: images,
+      images: normalizedImages,
     });
-  }, [navigation, saveProject, text, projectId, images]);
+  }, [navigation, saveProject, text, projectId, normalizedImages]);
+
+  const handleHeaderBack = useCallback(() => {
+    FeedbackService.buttonTap();
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+    navigation.replace('Home');
+  }, [navigation]);
 
   // Undo/Redo handlers
   const handleUndo = useCallback(() => {
@@ -789,6 +800,27 @@ const EditorScreen: React.FC = () => {
   // Set up custom header with folder button and undo/redo
   useLayoutEffect(() => {
     navigation.setOptions({
+      headerShown: true,
+      headerLeft: () => (
+        <TouchableOpacity
+          onPress={handleHeaderBack}
+          style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12 }}
+          accessibilityRole="button"
+        >
+          <Text
+            style={{
+              fontSize: 18,
+              color: themeDefinition.colors.primary,
+              marginRight: 4,
+            }}
+          >
+            {'<'}
+          </Text>
+          <Text style={{ fontSize: 16, color: themeDefinition.colors.primary }}>
+            {t('back')}
+          </Text>
+        </TouchableOpacity>
+      ),
       headerRight: () => (
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <TouchableOpacity
@@ -812,7 +844,16 @@ const EditorScreen: React.FC = () => {
         </View>
       ),
     });
-  }, [navigation, handleOpenImageSelection, handleUndo, handleRedo, headerUpdateTrigger]);
+  }, [
+    navigation,
+    handleHeaderBack,
+    handleOpenImageSelection,
+    handleUndo,
+    handleRedo,
+    headerUpdateTrigger,
+    t,
+    themeDefinition.colors.primary,
+  ]);
 
   // Save project before navigating away
   useEffect(() => {
@@ -854,16 +895,17 @@ const EditorScreen: React.FC = () => {
           const savedImages = savedProject.slides.map(
             slide => slide.image || '',
           );
+          const normalizedSavedImages = normalizeImageUris(savedImages);
           const imagesChanged =
-            images.length !== savedImages.length ||
-            images.some((img, index) => img !== savedImages[index]);
+            normalizedImages.length !== normalizedSavedImages.length ||
+            normalizedImages.some((img, index) => img !== normalizedSavedImages[index]);
 
           if (imagesChanged) {
             // Images have changed, update slides with new images but keep other properties (including effects)
             console.log('Images changed, updating slides with new images');
             const updatedSlides = savedProject.slides.map((slide, index) => ({
               ...slide,
-              image: images[index] || '',
+              image: normalizedImages[index] || '',
               textEffects: filterSupportedEffects(slide.textEffects),
             }));
 
@@ -925,7 +967,7 @@ const EditorScreen: React.FC = () => {
     };
 
     loadSavedProject();
-  }, [images, createInitialSlides]); // Add images as dependency so it runs when images change
+  }, [normalizedImages, createInitialSlides]); // Add images as dependency so it runs when images change
 
   // Self-correction for initial 0,0 position if dimensions were not ready during initial load
   useEffect(() => {
@@ -2033,7 +2075,7 @@ const EditorScreen: React.FC = () => {
       id: projectId,
       text,
       slides: sanitizedSlidesForPersist,
-      images,
+      images: normalizedImages,
       lastModified: new Date().toISOString(),
       isCompleted: true,
     };
@@ -2083,7 +2125,7 @@ const EditorScreen: React.FC = () => {
           {currentSlide.image ? (
             <Image
               key={currentSlide.image}
-              source={{ uri: currentSlide.image }}
+              source={{ uri: normalizeImageUri(currentSlide.image) }}
               style={styles.imageBackground}
               resizeMode="contain"
               onError={error => {

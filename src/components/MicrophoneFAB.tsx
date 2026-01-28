@@ -18,12 +18,14 @@ interface MicrophoneFABProps {
   onTextReceived: (text: string) => void;
   style?: ViewStyle;
   disabled?: boolean;
+  onPress?: () => void;
 }
 
 export const MicrophoneFAB: React.FC<MicrophoneFABProps> = ({
   onTextReceived,
   style,
   disabled = false,
+  onPress,
 }) => {
   const { themeDefinition } = useTheme();
   const { scale } = useResponsive();
@@ -37,6 +39,7 @@ export const MicrophoneFAB: React.FC<MicrophoneFABProps> = ({
 
   const handlePress = async () => {
     FeedbackService.buttonTap();
+    onPress?.();
 
     if (isListening) {
       await stopListening();

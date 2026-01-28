@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import RNFS from 'react-native-fs';
 
 /**
@@ -28,6 +29,9 @@ const extractExtension = (uri: string): string => {
 
 const isLocalFileUri = (uri: string): boolean =>
   uri.startsWith('file://') || uri.startsWith('/');
+
+const isAssetLibraryUri = (uri: string): boolean =>
+  /^ph:\/\//i.test(uri) || /^assets-library:\/\//i.test(uri);
 
 const getProjectDir = (projectId: string): string =>
   `${PROJECT_IMAGES_ROOT}/${projectId}`;
@@ -108,9 +112,40 @@ class ProjectImageStore {
       return alreadyExists ? uri : null;
     }
 
-    // We can only copy local file paths.
+    // Handle iOS photo library URIs (ph:// or assets-library://).
     if (!isLocalFileUri(uri)) {
-      return null;
+      if (Platform.OS !== 'ios' || !isAssetLibraryUri(uri)) {
+        return null;
+      }
+
+      const imagesDir = getProjectImagesDir(projectId);
+      await RNFS.mkdir(imagesDir);
+
+      const uniqueSuffix = `${Date.now()}_${Math.round(Math.random() * 1_000_000)}`;
+      const destPath = `${imagesDir}/slide_${slideIndex}_${uniqueSuffix}.jpg`;
+
+      try {
+        await RNFS.copyAssetsFileIOS(uri, destPath, 0, 0, 1, 1, 'contain');
+      } catch (error) {
+        console.warn('ProjectImageStore.copyAssetsFileIOS failed:', error);
+        return null;
+      }
+
+      // Best-effort cleanup of the previous persistent file for this project.
+      if (
+        previousUri &&
+        previousUri !== uri &&
+        this.isPersistentProjectImageUri(previousUri, projectId)
+      ) {
+        const prevPath = stripFileScheme(previousUri);
+        if (prevPath !== destPath) {
+          RNFS.unlink(prevPath).catch(() => {
+            // Ignore cleanup errors.
+          });
+        }
+      }
+
+      return toFileUri(destPath);
     }
 
     const sourcePath = stripFileScheme(uri);
@@ -152,4 +187,3 @@ class ProjectImageStore {
 }
 
 export default ProjectImageStore.getInstance();
-
