@@ -16,6 +16,9 @@ export interface AiStyleSuggestion {
   dominantColor: string;
   dominantRgb: RGB;
   dominantLuminance: number;
+  averageLuminance: number;
+  averageBrightness: number;
+  brightnessPercentile: number;
   isDark: boolean;
   textColor: '#FFFFFF' | '#000000';
   backgroundColor: string;
@@ -29,7 +32,7 @@ const SAMPLE_STRIDE = 4;
 const QUANTIZATION_BIN_SIZE = 16; // 16 bins per channel
 const MIN_ALPHA = 16;
 const TARGET_CONTRAST_RATIO = 4.5;
-const DARK_LUMINANCE_THRESHOLD = 0.45;
+const BRIGHTNESS_THRESHOLD = 0.5;
 
 const clamp255 = (value: number): number => Math.max(0, Math.min(255, value));
 
@@ -110,11 +113,11 @@ const mix = (base: RGB, overlay: RGB, alpha: number): RGB => {
 const WHITE: RGB = { r: 255, g: 255, b: 255 };
 const BLACK: RGB = { r: 0, g: 0, b: 0 };
 
-const isDarkColor = (rgb: RGB): boolean =>
-  relativeLuminance(rgb) < DARK_LUMINANCE_THRESHOLD;
+const isDarkBrightness = (brightness: number): boolean =>
+  brightness < BRIGHTNESS_THRESHOLD;
 
-const chooseTextColor = (dominant: RGB): '#FFFFFF' | '#000000' =>
-  isDarkColor(dominant) ? '#FFFFFF' : '#000000';
+const chooseTextColorFromBrightness = (brightness: number): '#FFFFFF' | '#000000' =>
+  isDarkBrightness(brightness) ? '#FFFFFF' : '#000000';
 
 const computeNeonEffectParameters = (
   dominantColor: string,
@@ -216,6 +219,82 @@ const computeDominantRgb = (
   };
 };
 
+const computeAverageLuminance = (
+  pixels: Uint8Array,
+  width: number,
+  height: number,
+): number => {
+  let luminanceSum = 0;
+  let sampleCount = 0;
+
+  for (let y = 0; y < height; y += SAMPLE_STRIDE) {
+    for (let x = 0; x < width; x += SAMPLE_STRIDE) {
+      const index = (y * width + x) * 4;
+      const r = pixels[index];
+      const g = pixels[index + 1];
+      const b = pixels[index + 2];
+      const a = pixels[index + 3];
+
+      if (a < MIN_ALPHA) {
+        continue;
+      }
+
+      luminanceSum += relativeLuminance({ r, g, b });
+      sampleCount += 1;
+    }
+  }
+
+  if (sampleCount === 0) {
+    return 0.5;
+  }
+
+  return luminanceSum / sampleCount;
+};
+
+const computeBrightnessStats = (
+  pixels: Uint8Array,
+  width: number,
+  height: number,
+): { average: number; percentile: number } => {
+  let brightnessSum = 0;
+  let sampleCount = 0;
+  const samples: number[] = [];
+
+  for (let y = 0; y < height; y += SAMPLE_STRIDE) {
+    for (let x = 0; x < width; x += SAMPLE_STRIDE) {
+      const index = (y * width + x) * 4;
+      const r = pixels[index];
+      const g = pixels[index + 1];
+      const b = pixels[index + 2];
+      const a = pixels[index + 3];
+
+      if (a < MIN_ALPHA) {
+        continue;
+      }
+
+      const brightness = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+      brightnessSum += brightness;
+      sampleCount += 1;
+      samples.push(brightness);
+    }
+  }
+
+  if (sampleCount === 0) {
+    return { average: 0.5, percentile: 0.5 };
+  }
+
+  samples.sort((a, b) => a - b);
+  const percentileIndex = Math.min(
+    samples.length - 1,
+    Math.floor(samples.length * 0.8),
+  );
+
+  return {
+    average: brightnessSum / sampleCount,
+    percentile: samples[percentileIndex],
+  };
+};
+
 class ColorAnalysisService {
   private static instance: ColorAnalysisService;
 
@@ -298,8 +377,22 @@ class ColorAnalysisService {
     const dominantRgb = computeDominantRgb(decoded.pixels, decoded.width, decoded.height);
     const dominantColor = toHex(dominantRgb);
     const dominantLuminance = relativeLuminance(dominantRgb);
-    const isDark = dominantLuminance < DARK_LUMINANCE_THRESHOLD;
-    const textColor = chooseTextColor(dominantRgb);
+    const averageLuminance = computeAverageLuminance(
+      decoded.pixels,
+      decoded.width,
+      decoded.height,
+    );
+    const brightnessStats = computeBrightnessStats(
+      decoded.pixels,
+      decoded.width,
+      decoded.height,
+    );
+    const effectiveBrightness = Math.max(
+      brightnessStats.average,
+      brightnessStats.percentile,
+    );
+    const isDark = isDarkBrightness(effectiveBrightness);
+    const textColor = chooseTextColorFromBrightness(effectiveBrightness);
     const overlayAlpha = computeOverlayAlpha(dominantRgb, textColor);
     const overlayBase = textColor === '#FFFFFF' ? BLACK : WHITE;
     const backgroundColor = `rgba(${overlayBase.r},${overlayBase.g},${overlayBase.b},${overlayAlpha})`;
@@ -312,6 +405,9 @@ class ColorAnalysisService {
       dominantColor,
       dominantRgb,
       dominantLuminance,
+      averageLuminance,
+      averageBrightness: brightnessStats.average,
+      brightnessPercentile: brightnessStats.percentile,
       isDark,
       textColor,
       backgroundColor,

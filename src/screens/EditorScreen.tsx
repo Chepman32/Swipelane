@@ -30,6 +30,7 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
+  withTiming,
   runOnJS,
 } from 'react-native-reanimated';
 import StorageService, {
@@ -180,6 +181,88 @@ const cloneTextEffects = (
     };
   });
 
+const measureTextWidth = (
+  font: import('@shopify/react-native-skia').SkFont | null,
+  value: string,
+): number => {
+  if (!font || !value) {
+    return 0;
+  }
+  const measureText = (font as any)?.measureText;
+  if (typeof measureText !== 'function') {
+    return 0;
+  }
+  const measured = measureText.call(font, value);
+  if (typeof measured === 'number') {
+    return measured;
+  }
+  if (measured && typeof measured.width === 'number') {
+    return measured.width;
+  }
+  return 0;
+};
+
+const wrapTextWithFont = (
+  font: import('@shopify/react-native-skia').SkFont | null,
+  text: string,
+  maxWidth: number,
+): string[] => {
+  if (!text) {
+    return [''];
+  }
+  if (!font || !maxWidth || maxWidth <= 0) {
+    return text.split('\n');
+  }
+
+  const paragraphs = text.split('\n');
+  const lines: string[] = [];
+
+  for (const paragraph of paragraphs) {
+    const words = paragraph.split(/\s+/).filter(Boolean);
+    if (words.length === 0) {
+      lines.push('');
+      continue;
+    }
+
+    let currentLine = '';
+    for (const word of words) {
+      const candidate = currentLine ? `${currentLine} ${word}` : word;
+      if (measureTextWidth(font, candidate) <= maxWidth) {
+        currentLine = candidate;
+        continue;
+      }
+
+      if (currentLine) {
+        lines.push(currentLine);
+      }
+
+      if (measureTextWidth(font, word) > maxWidth) {
+        let chunk = '';
+        for (const char of word) {
+          const nextChunk = chunk + char;
+          if (measureTextWidth(font, nextChunk) <= maxWidth) {
+            chunk = nextChunk;
+          } else {
+            if (chunk) {
+              lines.push(chunk);
+            }
+            chunk = char;
+          }
+        }
+        currentLine = chunk;
+      } else {
+        currentLine = word;
+      }
+    }
+
+    if (currentLine) {
+      lines.push(currentLine);
+    }
+  }
+
+  return lines.length ? lines : [''];
+};
+
 const EditorScreen: React.FC = () => {
   const route = useRoute<EditorRouteProp>();
   const navigation = useNavigation<EditorNavigationProp>();
@@ -305,6 +388,8 @@ const EditorScreen: React.FC = () => {
 
   const slidesRef = useRef<Slide[]>(slides);
   const isAutoAiRunningRef = useRef(false);
+  const toolPaletteAnim = useSharedValue(0);
+  const opacityPaletteAnim = useSharedValue(0);
 
   useEffect(() => {
     slidesRef.current = slides;
@@ -403,6 +488,115 @@ const EditorScreen: React.FC = () => {
       .map(effect => convertToNewFormat(effect, currentSlide?.color))
       .filter((effect): effect is EffectInstance => effect !== null);
   }, [currentSlideEffects, currentSlide?.color]);
+
+  const effectsActive = currentSlideEffects.some(effect => effect.enabled !== false);
+  const effectTextLayout = useMemo(() => {
+    if (!skiaFont || !effectsActive) {
+      return null;
+    }
+    const maxTextWidth = Math.max(
+      24,
+      slideSize * 0.9 - overlayPaddingHorizontal * 2,
+    );
+    const lines = wrapTextWithFont(
+      skiaFont,
+      currentSlide?.text ?? '',
+      maxTextWidth,
+    );
+    const maxLineWidth = lines.reduce(
+      (maxWidth, line) =>
+        Math.max(maxWidth, measureTextWidth(skiaFont, line)),
+      0,
+    );
+    return {
+      maxTextWidth,
+      maxLineWidth,
+    };
+  }, [
+    skiaFont,
+    effectsActive,
+    currentSlide?.text,
+    slideSize,
+    overlayPaddingHorizontal,
+  ]);
+
+  const fallbackOverlayWidth = useMemo(() => {
+    if (!effectsActive) {
+      return undefined;
+    }
+    const fontSize = currentSlide?.fontSize || 24;
+    const textValue = currentSlide?.text ?? '';
+    const textLength = textValue.length;
+    const charsPerLine = Math.max(
+      1,
+      Math.floor((slideSize * 0.9) / (fontSize * 0.6)),
+    );
+    const estimatedTextWidth = Math.min(
+      slideSize * 0.9,
+      textLength < charsPerLine
+        ? textLength * fontSize * 0.6
+        : slideSize * 0.9,
+    );
+
+    return Math.min(
+      slideSize * 0.9,
+      Math.max(overlayPaddingHorizontal * 2 + 12, estimatedTextWidth + overlayPaddingHorizontal * 2),
+    );
+  }, [
+    effectsActive,
+    currentSlide?.fontSize,
+    currentSlide?.text,
+    slideSize,
+    overlayPaddingHorizontal,
+  ]);
+
+  const overlayMaxWidth = slideSize * 0.9;
+  const overlayWidth =
+    effectsActive && effectTextLayout
+      ? Math.min(
+          overlayMaxWidth,
+          Math.max(
+            overlayPaddingHorizontal * 2 + 12,
+            effectTextLayout.maxLineWidth + overlayPaddingHorizontal * 2,
+          ),
+        )
+      : effectsActive
+      ? fallbackOverlayWidth
+      : undefined;
+  const effectCanvasWidth = effectTextLayout?.maxTextWidth ?? overlayMaxWidth;
+
+  const toolPaletteVisible =
+    isColorPaletteVisible || isFontPaletteVisible || isEffectsPaletteVisible;
+  const anyToolPanelOpen = toolPaletteVisible || isOpacityPaletteVisible;
+
+  const closeToolPanels = useCallback(() => {
+    setColorPaletteVisible(false);
+    setFontPaletteVisible(false);
+    setEffectsPaletteVisible(false);
+    setOpacityPaletteVisible(false);
+  }, []);
+
+  useEffect(() => {
+    toolPaletteAnim.value = withTiming(toolPaletteVisible ? 1 : 0, {
+      duration: 180,
+    });
+  }, [toolPaletteVisible, toolPaletteAnim]);
+
+  useEffect(() => {
+    opacityPaletteAnim.value = withTiming(isOpacityPaletteVisible ? 1 : 0, {
+      duration: 180,
+    });
+  }, [isOpacityPaletteVisible, opacityPaletteAnim]);
+
+  const toolPaletteAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: toolPaletteAnim.value,
+    transform: [{ translateY: (1 - toolPaletteAnim.value) * 12 }],
+  }));
+
+  const opacityPaletteAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: opacityPaletteAnim.value,
+    transform: [{ translateY: (1 - opacityPaletteAnim.value) * 12 }],
+  }));
 
 
 
@@ -1878,15 +2072,8 @@ const EditorScreen: React.FC = () => {
                 animatedStyle,
                 {
                   backgroundColor: currentSlide.backgroundColor,
-                  // Only apply maxWidth if no effects are active that would create masks
-                  maxWidth: currentSlideEffects.some(
-                    effect =>
-                      effect.enabled !== false &&
-                      (effect.type === 'neonGlow' ||
-                        effect.type === 'softShadow'),
-                  )
-                    ? undefined
-                    : slideSize * 0.9,
+                  maxWidth: effectsActive ? undefined : overlayMaxWidth,
+                  width: overlayWidth,
                   paddingHorizontal: overlayPaddingHorizontal,
                   paddingVertical: overlayPaddingVertical,
                   borderRadius: overlayBorderRadius,
@@ -1901,7 +2088,7 @@ const EditorScreen: React.FC = () => {
                   x={0}
                   baselineY={currentSlide.fontSize}
                   font={skiaFont}
-                  width={slideSize * 0.9}
+                  width={effectCanvasWidth}
                   height={currentSlide.fontSize * 2}
                   textColor={currentSlide.color}
                   effects={newFormatEffects}
@@ -2025,6 +2212,16 @@ const EditorScreen: React.FC = () => {
         </View>
       </View>
 
+      {anyToolPanelOpen && (
+        <Pressable
+          style={styles.toolPanelsBackdrop}
+          onPress={() => {
+            FeedbackService.buttonTap();
+            closeToolPanels();
+          }}
+        />
+      )}
+
       {/* Slide indicator */}
       {slides.length > 1 && (
         <View style={styles.slideIndicator}>
@@ -2075,164 +2272,181 @@ const EditorScreen: React.FC = () => {
       )}
 
       {/* Tool-specific palettes - positioned above main toolbar */}
-      {(isColorPaletteVisible ||
-        isFontPaletteVisible ||
-        isEffectsPaletteVisible) && (() => {
+      {(() => {
         // Adjust color and effects palette position to match spacing of font/opacity palettes
         const paletteTopPosition = (isColorPaletteVisible || isEffectsPaletteVisible)
           ? imageContainerHeight - 150  // Move color/effects palettes 20px higher
           : imageContainerHeight - 160; // Standard position for font/opacity
 
         return (
-        <View style={[styles.toolPalette, { top: paletteTopPosition }]}>
-          {isColorPaletteVisible && (
-            <ScrollView
-              ref={colorPaletteScrollRef}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.colorPaletteScrollContainer}
-              contentContainerStyle={styles.colorPaletteContainer}
-            >
-              {COLOR_OPTIONS.map(color => {
-                const borderColor =
-                  currentSlide?.color === color
-                    ? '#FFFFFF'
-                    : 'rgba(255,255,255,0.3)';
-                return (
-                  <TouchableOpacity
-                    key={color}
-                    style={[
-                      styles.colorOption,
-                      {
-                        width: colorSwatchSize,
-                        height: colorSwatchSize,
-                        borderRadius: colorSwatchSize / 2,
-                        marginHorizontal: scaleSize(4),
-                        backgroundColor: color,
-                        borderColor,
-                      },
-                    ]}
-                    onPress={() => handleTextColorChange(color)}
-                    onLayout={event => {
-                      colorOptionPositions.current[color] =
-                        event.nativeEvent.layout.x;
-                      if (
-                        isColorPaletteVisible &&
-                        currentSlide?.color === color
-                      ) {
-                        ensureSelectedColorVisible();
-                      }
-                    }}
-                  />
-                );
-              })}
-            </ScrollView>
-          )}
+          <Animated.View
+            style={[
+              styles.toolPalette,
+              { top: paletteTopPosition },
+              toolPaletteAnimatedStyle,
+            ]}
+            pointerEvents={toolPaletteVisible ? 'auto' : 'none'}
+          >
+            {isColorPaletteVisible && (
+              <ScrollView
+                ref={colorPaletteScrollRef}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.colorPaletteScrollContainer}
+                contentContainerStyle={styles.colorPaletteContainer}
+              >
+                {COLOR_OPTIONS.map(color => {
+                  const borderColor =
+                    currentSlide?.color === color
+                      ? '#FFFFFF'
+                      : 'rgba(255,255,255,0.3)';
+                  return (
+                    <TouchableOpacity
+                      key={color}
+                      style={[
+                        styles.colorOption,
+                        {
+                          width: colorSwatchSize,
+                          height: colorSwatchSize,
+                          borderRadius: colorSwatchSize / 2,
+                          marginHorizontal: scaleSize(4),
+                          backgroundColor: color,
+                          borderColor,
+                        },
+                      ]}
+                      onPress={() => handleTextColorChange(color)}
+                      onLayout={event => {
+                        colorOptionPositions.current[color] =
+                          event.nativeEvent.layout.x;
+                        if (
+                          isColorPaletteVisible &&
+                          currentSlide?.color === color
+                        ) {
+                          ensureSelectedColorVisible();
+                        }
+                      }}
+                    />
+                  );
+                })}
+              </ScrollView>
+            )}
 
-          {isEffectsPaletteVisible && (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.effectsPaletteScrollContainer}
-              contentContainerStyle={styles.effectsPaletteContainer}
-            >
-              {/* Available effects in simple carousel format */}
-              {Object.values(TEXT_EFFECT_DEFINITIONS)
-                .filter(
-                  definition =>
-                    definition.category === 'lighting' &&
-                    isTextEffectSupported(definition.id),
-                )
-                .map(definition => {
-                  const isActive = currentSlideEffects.some(
-                    effect => effect.type === definition.id,
+            {isEffectsPaletteVisible && (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.effectsPaletteScrollContainer}
+                contentContainerStyle={styles.effectsPaletteContainer}
+              >
+                {/* Available effects in simple carousel format */}
+                {Object.values(TEXT_EFFECT_DEFINITIONS)
+                  .filter(
+                    definition =>
+                      definition.category === 'lighting' &&
+                      isTextEffectSupported(definition.id),
+                  )
+                  .map(definition => {
+                    const isActive = currentSlideEffects.some(
+                      effect => effect.type === definition.id,
+                    );
+                    return (
+                      <TouchableOpacity
+                        key={definition.id}
+                        style={[
+                          styles.effectOptionButton,
+                          isActive && styles.activeEffectOption,
+                        ]}
+                        onPress={() => {
+                          if (isActive) {
+                            // Remove effect if already active
+                            const effectToRemove = currentSlideEffects.find(
+                              effect => effect.type === definition.id,
+                            );
+                            if (effectToRemove) {
+                              handleRemoveTextEffect(effectToRemove.instanceId);
+                            }
+                          } else {
+                            // Add effect using simple function (no complex panel)
+                            handleAddTextEffectSimple(definition.id);
+                          }
+                          // Effects palette stays open for multiple selections
+                          // setEffectsPaletteVisible(false);
+                        }}
+                      >
+                        <Text style={styles.effectOptionLabel}>
+                          {definition.name}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+              </ScrollView>
+            )}
+
+            {isFontPaletteVisible && (
+              <ScrollView
+                ref={fontPaletteScrollRef}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.fontPaletteScrollContainer}
+                contentContainerStyle={styles.fontPaletteContainer}
+              >
+                {SLIDE_FONT_OPTIONS.map(option => {
+                  const isActive = option.id === activeFontId;
+                  const optionFontFamily = resolveFontFamilyForPlatform(
+                    option,
+                    platformKey,
                   );
                   return (
                     <TouchableOpacity
-                      key={definition.id}
+                      key={option.id}
                       style={[
-                        styles.effectOptionButton,
-                        isActive && styles.activeEffectOption,
+                        styles.fontOptionButton,
+                        isActive && styles.activeFontOption,
                       ]}
-                      onPress={() => {
-                        if (isActive) {
-                          // Remove effect if already active
-                          const effectToRemove = currentSlideEffects.find(
-                            effect => effect.type === definition.id,
-                          );
-                          if (effectToRemove) {
-                            handleRemoveTextEffect(effectToRemove.instanceId);
-                          }
-                        } else {
-                          // Add effect using simple function (no complex panel)
-                          handleAddTextEffectSimple(definition.id);
+                      onPress={() => handleFontChange(option)}
+                      onLayout={event => {
+                        fontOptionPositions.current[option.id] =
+                          event.nativeEvent.layout.x;
+                        if (isFontPaletteVisible && option.id === activeFontId) {
+                          ensureSelectedFontVisible();
                         }
-                        // Effects palette stays open for multiple selections
-                        // setEffectsPaletteVisible(false);
                       }}
                     >
-                      <Text style={styles.effectOptionLabel}>
-                        {definition.name}
+                      <Text
+                        style={[
+                          styles.fontOptionSample,
+                          optionFontFamily
+                            ? { fontFamily: optionFontFamily }
+                            : null,
+                        ]}
+                      >
+                        {option.sample || 'Aa'}
                       </Text>
+                      <Text style={styles.fontOptionLabel}>{option.label}</Text>
                     </TouchableOpacity>
                   );
                 })}
-            </ScrollView>
-          )}
-
-          {isFontPaletteVisible && (
-            <ScrollView
-              ref={fontPaletteScrollRef}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.fontPaletteScrollContainer}
-              contentContainerStyle={styles.fontPaletteContainer}
-            >
-              {SLIDE_FONT_OPTIONS.map(option => {
-                const isActive = option.id === activeFontId;
-                const optionFontFamily = resolveFontFamilyForPlatform(
-                  option,
-                  platformKey,
-                );
-                return (
-                  <TouchableOpacity
-                    key={option.id}
-                    style={[
-                      styles.fontOptionButton,
-                      isActive && styles.activeFontOption,
-                    ]}
-                    onPress={() => handleFontChange(option)}
-                    onLayout={event => {
-                      fontOptionPositions.current[option.id] =
-                        event.nativeEvent.layout.x;
-                      if (isFontPaletteVisible && option.id === activeFontId) {
-                        ensureSelectedFontVisible();
-                      }
-                    }}
-                  >
-                    <Text
-                      style={[
-                        styles.fontOptionSample,
-                        optionFontFamily
-                          ? { fontFamily: optionFontFamily }
-                          : null,
-                      ]}
-                    >
-                      {option.sample || 'Aa'}
-                    </Text>
-                    <Text style={styles.fontOptionLabel}>{option.label}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          )}
-        </View>
+              </ScrollView>
+            )}
+          </Animated.View>
         );
       })()}
 
       {/* Opacity palette - positioned separately between canvas and tool panel */}
-      {isOpacityPaletteVisible && (
-        <View style={[styles.opacityPaletteContainer, { position: 'absolute', top: imageContainerHeight - 130, left: 0, right: 0, justifyContent: 'center' }]}>
+      <Animated.View
+        style={[
+          styles.opacityPaletteContainer,
+          {
+            position: 'absolute',
+            top: imageContainerHeight - 130,
+            left: 0,
+            right: 0,
+            justifyContent: 'center',
+          },
+          opacityPaletteAnimatedStyle,
+        ]}
+        pointerEvents={isOpacityPaletteVisible ? 'auto' : 'none'}
+      >
           {[0, 0.2, 0.4, 0.6, 0.8, 1].map(opacity => {
             const currentOpacity = currentSlide?.backgroundColor
               ? parseFloat(
@@ -2261,8 +2475,7 @@ const EditorScreen: React.FC = () => {
               />
             );
           })}
-        </View>
-      )}
+      </Animated.View>
 
       {/* Main toolbar - always visible */}
       <View
@@ -2607,6 +2820,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
   },
+  toolPanelsBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'transparent',
+    zIndex: 6,
+  },
   // Vertical font size slider
   fontSizeSlider: {
     position: 'absolute',
@@ -2651,6 +2869,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 5,
     marginBottom: 10,
+    zIndex: 10,
   },
 
   // Minimalistic bottom controls
@@ -2959,6 +3178,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     paddingHorizontal: 12,
     paddingVertical: 8,
+    zIndex: 10,
   },
   opacityOption: {
     width: 40,
