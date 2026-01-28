@@ -8,6 +8,7 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  Pressable,
   ActivityIndicator,
   Alert,
   Image,
@@ -32,10 +33,9 @@ import FeedbackService from '../services/FeedbackService';
 const InstagramIcon = require('../assets/icons/export/Instagram.png');
 const XIcon = require('../assets/icons/export/X.png');
 const GalleryIcon = require('../assets/icons/export/Gallery.png');
-const FilesIcon = require('../assets/icons/export/Files.png');
 const ShareIcon = require('../assets/icons/export/Share.png');
 
-type ExportAction = 'instagram' | 'x' | 'gallery' | 'files' | 'share' | null;
+type ExportAction = 'instagram' | 'x' | 'gallery' | 'share' | null;
 
 const EXPORT_SIZE = 1080; // Export at high resolution
 
@@ -248,206 +248,140 @@ export const ExportScreen: React.FC = () => {
     }
   };
 
-  const handleSaveToFiles = async () => {
-    try {
-      setExportingAction('files');
-      FeedbackService.triggerHaptic('impactMedium');
-
-      // Capture canvas with effect applied
-      const processedImageUri = await captureProcessedImage();
-
-      await Share.open({
-        url: processedImageUri,
-        type: 'image/png',
-        saveToFiles: true,
-      });
-
-      // Clean up temp file
-      await RNFS.unlink(processedImageUri.replace('file://', '')).catch(
-        () => {},
-      );
-
-      FeedbackService.triggerHaptic('notificationSuccess');
-    } catch (error: any) {
-      if (error?.message !== 'User did not share') {
-        console.error('Save to files error:', error);
-        FeedbackService.triggerHaptic('notificationError');
-      }
-    } finally {
-      setExportingAction(null);
-    }
-  };
-
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-        >
-          <Text style={styles.backIcon}>{'<'}</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Export</Text>
-        <View style={{ width: 40 }} />
-      </View>
+    <View style={styles.overlay}>
+      <Pressable style={styles.backdrop} onPress={() => navigation.goBack()} />
+      <SafeAreaView style={styles.sheet} edges={['bottom']}>
+        {/* Preview */}
+        <View style={styles.previewContainer}>
+          {image && (
+            <Canvas
+              ref={canvasRef}
+              style={[
+                styles.preview,
+                {
+                  width: canvasDimensions.width,
+                  height: canvasDimensions.height,
+                },
+              ]}
+            >
+              <EffectRenderer
+                image={image}
+                effect={effect}
+                params={params || null}
+                x={0}
+                y={0}
+                width={canvasDimensions.width}
+                height={canvasDimensions.height}
+              />
+            </Canvas>
+          )}
+        </View>
 
-      {/* Preview */}
-      <View style={styles.previewContainer}>
-        {image && (
-          <Canvas
-            ref={canvasRef}
-            style={[
-              styles.preview,
-              {
-                width: canvasDimensions.width,
-                height: canvasDimensions.height,
-              },
-            ]}
+        {/* Export Options List */}
+        <View style={styles.exportList}>
+          <TouchableOpacity
+            onPress={handleShareInstagram}
+            disabled={exportingAction !== null}
+            style={styles.rowItem}
           >
-            <EffectRenderer
-              image={image}
-              effect={effect}
-              params={params || null}
-              x={0}
-              y={0}
-              width={canvasDimensions.width}
-              height={canvasDimensions.height}
-            />
-          </Canvas>
-        )}
-      </View>
+            <View style={styles.iconContainer}>
+              {exportingAction === 'instagram' ? (
+                <ActivityIndicator color="#FFFFFF" size="small" />
+              ) : (
+                <Image
+                  source={InstagramIcon}
+                  style={styles.icon}
+                  resizeMode="contain"
+                />
+              )}
+            </View>
+            <Text style={styles.rowLabel}>Instagram</Text>
+          </TouchableOpacity>
 
-      {/* Export Options Grid */}
-      <View style={styles.exportGrid}>
-        {/* Row 1 */}
-        <TouchableOpacity
-          onPress={handleShareInstagram}
-          disabled={exportingAction !== null}
-          style={styles.gridItem}
-        >
-          <View style={styles.iconContainer}>
-            {exportingAction === 'instagram' ? (
-              <ActivityIndicator color="#FFFFFF" size="small" />
-            ) : (
-              <Image
-                source={InstagramIcon}
-                style={styles.icon}
-                resizeMode="contain"
-              />
-            )}
-          </View>
-          <Text style={styles.gridItemLabel}>Instagram</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleShareX}
+            disabled={exportingAction !== null}
+            style={styles.rowItem}
+          >
+            <View style={styles.iconContainer}>
+              {exportingAction === 'x' ? (
+                <ActivityIndicator color="#FFFFFF" size="small" />
+              ) : (
+                <Image
+                  source={XIcon}
+                  style={styles.icon}
+                  resizeMode="contain"
+                />
+              )}
+            </View>
+            <Text style={styles.rowLabel}>X</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={handleShareX}
-          disabled={exportingAction !== null}
-          style={styles.gridItem}
-        >
-          <View style={styles.iconContainer}>
-            {exportingAction === 'x' ? (
-              <ActivityIndicator color="#FFFFFF" size="small" />
-            ) : (
-              <Image source={XIcon} style={styles.icon} resizeMode="contain" />
-            )}
-          </View>
-          <Text style={styles.gridItemLabel}>X</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleSave}
+            disabled={exportingAction !== null}
+            style={styles.rowItem}
+          >
+            <View style={styles.iconContainer}>
+              {exportingAction === 'gallery' ? (
+                <ActivityIndicator color="#FFFFFF" size="small" />
+              ) : (
+                <Image
+                  source={GalleryIcon}
+                  style={styles.icon}
+                  resizeMode="contain"
+                />
+              )}
+            </View>
+            <Text style={styles.rowLabel}>Gallery</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={handleSave}
-          disabled={exportingAction !== null}
-          style={styles.gridItem}
-        >
-          <View style={styles.iconContainer}>
-            {exportingAction === 'gallery' ? (
-              <ActivityIndicator color="#FFFFFF" size="small" />
-            ) : (
-              <Image
-                source={GalleryIcon}
-                style={styles.icon}
-                resizeMode="contain"
-              />
-            )}
-          </View>
-          <Text style={styles.gridItemLabel}>Gallery</Text>
-        </TouchableOpacity>
-
-        {/* Row 2 */}
-        <TouchableOpacity
-          onPress={handleSaveToFiles}
-          disabled={exportingAction !== null}
-          style={styles.gridItem}
-        >
-          <View style={styles.iconContainer}>
-            {exportingAction === 'files' ? (
-              <ActivityIndicator color="#FFFFFF" size="small" />
-            ) : (
-              <Image
-                source={FilesIcon}
-                style={styles.icon}
-                resizeMode="contain"
-              />
-            )}
-          </View>
-          <Text style={styles.gridItemLabel}>Files</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={handleShare}
-          disabled={exportingAction !== null}
-          style={styles.gridItem}
-        >
-          <View style={styles.iconContainer}>
-            {exportingAction === 'share' ? (
-              <ActivityIndicator color="#FFFFFF" size="small" />
-            ) : (
-              <Image
-                source={ShareIcon}
-                style={styles.icon}
-                resizeMode="contain"
-              />
-            )}
-          </View>
-          <Text style={styles.gridItemLabel}>Share</Text>
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+          <TouchableOpacity
+            onPress={handleShare}
+            disabled={exportingAction !== null}
+            style={styles.rowItem}
+          >
+            <View style={styles.iconContainer}>
+              {exportingAction === 'share' ? (
+                <ActivityIndicator color="#FFFFFF" size="small" />
+              ) : (
+                <Image
+                  source={ShareIcon}
+                  style={styles.icon}
+                  resizeMode="contain"
+                />
+              )}
+            </View>
+            <Text style={styles.rowLabel}>Share</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  overlay: {
     flex: 1,
+    backgroundColor: 'rgba(8, 8, 16, 0.6)',
+    justifyContent: 'flex-end',
+  },
+  backdrop: {
+    flex: 1,
+  },
+  sheet: {
     backgroundColor: '#0F0F1E',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#1F1F2E',
-  },
-  backButton: {
-    padding: 8,
-  },
-  backIcon: {
-    fontSize: 24,
-    color: '#FFFFFF',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingBottom: 6,
+    paddingTop: 6,
   },
   previewContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 32,
-    height: 340,
+    paddingVertical: 6,
+    height: 96,
     overflow: 'hidden',
   },
   preview: {
@@ -455,39 +389,38 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     transform: [{ scale: 300 / EXPORT_SIZE }],
   },
-  exportGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'flex-start',
-    gap: 12,
-    padding: 20,
-    marginTop: 'auto',
+  exportList: {
+    gap: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
   },
-  gridItem: {
-    width: '30%',
+  rowItem: {
+    width: '100%',
+    flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#1F1F2E',
     borderRadius: 16,
-    padding: 16,
-    paddingVertical: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
   iconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: '#0F0F1E',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
+    marginRight: 12,
   },
   icon: {
-    width: 32,
-    height: 32,
+    width: 26,
+    height: 26,
   },
-  gridItemLabel: {
-    fontSize: 12,
+  rowLabel: {
+    fontSize: 14,
+    fontWeight: '600',
     color: '#FFFFFF',
-    textAlign: 'center',
+    textAlign: 'left',
   },
 });
 

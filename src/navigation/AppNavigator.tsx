@@ -117,7 +117,8 @@ const AppNavigator: React.FC = () => {
           component={ExportScreen}
           options={{
             headerShown: false,
-            presentation: 'modal',
+            presentation: 'transparentModal',
+            cardStyle: { backgroundColor: 'transparent' },
           }}
         />
         <Stack.Screen
