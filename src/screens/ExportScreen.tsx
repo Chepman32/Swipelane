@@ -380,8 +380,8 @@ const styles = StyleSheet.create({
   previewContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 6,
-    height: 96,
+    paddingVertical: 0,
+    height: 0,
     overflow: 'hidden',
   },
   preview: {
@@ -390,7 +390,7 @@ const styles = StyleSheet.create({
     transform: [{ scale: 300 / EXPORT_SIZE }],
   },
   exportList: {
-    gap: 10,
+    gap: 12,
     paddingHorizontal: 20,
     paddingVertical: 12,
   },
@@ -401,7 +401,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#1F1F2E',
     borderRadius: 16,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 18,
   },
   iconContainer: {
     width: 44,
