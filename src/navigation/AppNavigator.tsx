@@ -14,6 +14,7 @@ import SettingsScreen from '../screens/SettingsScreen';
 import AboutScreen from '../screens/AboutScreen';
 import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
 import ExportScreen from '../screens/ExportScreen';
+import { useLanguage } from '../context/LanguageContext';
 
 export type RootStackParamList = {
   Splash: undefined;
@@ -35,6 +36,7 @@ const AppNavigator: React.FC = () => {
   const [showAdvancedSplash, setShowAdvancedSplash] = useState(true);
   const [hasRestoredProject, setHasRestoredProject] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const { t } = useLanguage();
 
   useEffect(() => {
     // Check if there's a saved project to restore
@@ -57,6 +59,7 @@ const AppNavigator: React.FC = () => {
         initialRouteName="Splash"
         screenOptions={{
           headerShown: false,
+          headerBackTitle: t('back'),
 
           gestureEnabled: true,
         }}
@@ -81,8 +84,7 @@ const AppNavigator: React.FC = () => {
           component={NewProjectScreen}
           options={{
             headerShown: true,
-            title: 'New Project',
-            headerBackTitle: 'Back',
+            title: t('new_project_title'),
           }}
         />
         <Stack.Screen
@@ -90,8 +92,7 @@ const AppNavigator: React.FC = () => {
           component={ImageSelectionScreen}
           options={{
             headerShown: true,
-            title: 'Select Images',
-            headerBackTitle: 'Back',
+            title: t('image_selection_title'),
           }}
         />
         <Stack.Screen
@@ -99,8 +100,7 @@ const AppNavigator: React.FC = () => {
           component={EditorScreen}
           options={{
             headerShown: true,
-            title: 'Slide Editor',
-            headerBackTitle: 'Back',
+            title: t('editor_title'),
           }}
         />
         <Stack.Screen
@@ -108,8 +108,7 @@ const AppNavigator: React.FC = () => {
           component={PreviewScreen}
           options={{
             headerShown: true,
-            title: 'Preview',
-            headerBackTitle: 'Back',
+            title: t('preview_title'),
           }}
         />
         <Stack.Screen
@@ -126,8 +125,7 @@ const AppNavigator: React.FC = () => {
           component={SettingsScreen}
           options={{
             headerShown: true,
-            title: 'Settings',
-            headerBackTitle: 'Back',
+            title: t('settings_title'),
           }}
         />
         <Stack.Screen
@@ -135,8 +133,7 @@ const AppNavigator: React.FC = () => {
           component={AboutScreen}
           options={{
             headerShown: true,
-            title: 'About',
-            headerBackTitle: 'Back',
+            title: t('about_title'),
           }}
         />
         <Stack.Screen
@@ -144,8 +141,7 @@ const AppNavigator: React.FC = () => {
           component={PrivacyPolicyScreen}
           options={{
             headerShown: true,
-            title: 'Privacy Policy',
-            headerBackTitle: 'Back',
+            title: t('privacy_policy_title'),
           }}
         />
       </Stack.Navigator>

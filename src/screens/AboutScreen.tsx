@@ -11,12 +11,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import { useResponsive } from '../hooks/useResponsive';
 import FeedbackService from '../services/FeedbackService';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 
 const appIcon = require('../assets/icons/Texora_icon_option_03.png');
-const VERSION_LABEL = 'Version 1.0.0';
+const APP_VERSION = '1.0.0';
 const COPYRIGHT_YEAR = 2026;
 
 type RowConfig = {
@@ -30,6 +31,7 @@ type RowConfig = {
 
 const AboutScreen: React.FC = () => {
   const { themeDefinition } = useTheme();
+  const { t } = useLanguage();
   const { scale, scaleFont } = useResponsive();
   const navigation =
     useNavigation<StackNavigationProp<RootStackParamList, 'About'>>();
@@ -163,7 +165,7 @@ const AboutScreen: React.FC = () => {
               },
             ]}
           >
-            Text to slides, fast.
+            {t('about_tagline')}
           </Text>
           <View
             style={[
@@ -183,7 +185,7 @@ const AboutScreen: React.FC = () => {
                 { color: mutedTextColor, fontSize: scaleFont(13) },
               ]}
             >
-              {VERSION_LABEL}
+              {t('about_version', { version: APP_VERSION })}
             </Text>
           </View>
         </View>
@@ -195,19 +197,19 @@ const AboutScreen: React.FC = () => {
               { color: sectionCaptionColor, fontSize: scaleFont(13) },
             ]}
           >
-            Info
+            {t('about_section_info')}
           </Text>
           <View style={[styles.sectionCard, sectionCardStyle]}>
             {renderRow({
-              label: 'Developer',
+              label: t('about_label_developer'),
               value: 'Anton Chepur',
             })}
             {renderRow({
-              label: 'Powered by',
+              label: t('about_label_powered_by'),
               value: 'React Native',
             })}
             {renderRow({
-              label: 'Copyright',
+              label: t('about_label_copyright'),
               value: `© ${COPYRIGHT_YEAR} Anton Chepur`,
               isLast: true,
             })}
@@ -221,11 +223,11 @@ const AboutScreen: React.FC = () => {
               { color: sectionCaptionColor, fontSize: scaleFont(13) },
             ]}
           >
-            Legal
+            {t('about_section_legal')}
           </Text>
           <View style={[styles.sectionCard, sectionCardStyle]}>
             {renderRow({
-              label: 'Privacy Policy',
+              label: t('privacy_policy_title'),
               chevronColor: themeDefinition.colors.primary,
               showChevron: true,
               onPress: handleOpenPrivacyPolicy,

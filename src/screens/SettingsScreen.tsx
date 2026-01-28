@@ -288,7 +288,9 @@ const SettingsScreen: React.FC = () => {
 
         {/* About */}
         <View style={[styles.section, { paddingHorizontal: scale(20) }]}>
-          <Text style={[styles.sectionTitle, { color: themeDefinition.colors.text, fontSize: scaleFont(18) }]}>About</Text>
+          <Text style={[styles.sectionTitle, { color: themeDefinition.colors.text, fontSize: scaleFont(18) }]}>
+            {t('about_title')}
+          </Text>
           <TouchableOpacity
             style={[
               styles.aboutRow,
@@ -303,7 +305,7 @@ const SettingsScreen: React.FC = () => {
             onPress={handleOpenAbout}
           >
             <Text style={[styles.aboutLabel, { color: themeDefinition.colors.text, fontSize: scaleFont(16) }]}>
-              About Texora
+              {t('about_texora')}
             </Text>
             <Text style={[styles.aboutChevron, { color: themeDefinition.colors.text + '99', fontSize: scaleFont(18) }]}>
               ›
