@@ -1470,75 +1470,106 @@ const EditorScreen: React.FC = () => {
     return candidates[randomIndex];
   }, []);
 
-  const applyAiNeonGlowEffect = useCallback(
+  const applyAiSuggestedEffect = useCallback(
     (
       slide: Slide,
       suggestion: AiStyleSuggestion,
     ): { effects: TextEffectInstance[]; aiEffectInstanceId?: string; changed: boolean } => {
       const baseEffects = slide.textEffects ?? [];
-      const neonParams = suggestion.effect.parameters;
+      const targetType = suggestion.effect.type;
+      const targetParams = suggestion.effect.parameters ?? {};
       let changed = false;
 
+      let workingEffects = baseEffects;
       if (slide.aiEffectInstanceId) {
-        let foundById = false;
-        const updatedById = baseEffects.map(effect => {
-          if (effect.instanceId !== slide.aiEffectInstanceId) {
-            return effect;
+        const existingById = baseEffects.find(
+          effect => effect.instanceId === slide.aiEffectInstanceId,
+        );
+        if (existingById) {
+          if (existingById.type === targetType) {
+            const updatedById = baseEffects.map(effect =>
+              effect.instanceId === slide.aiEffectInstanceId
+                ? {
+                    ...effect,
+                    enabled: true,
+                    parameters: {
+                      ...effect.parameters,
+                      ...targetParams,
+                    },
+                  }
+                : effect,
+            );
+            return {
+              effects: updatedById,
+              aiEffectInstanceId: slide.aiEffectInstanceId,
+              changed: true,
+            };
           }
-          foundById = true;
+
+          workingEffects = baseEffects.filter(
+            effect => effect.instanceId !== slide.aiEffectInstanceId,
+          );
           changed = true;
+        }
+      }
+
+      if (targetType === 'neonGlow') {
+        const fallbackNeonEffect = workingEffects.find(
+          effect =>
+            effect.type === 'neonGlow' &&
+            (effect.parameters?.glowColor === '#00FFFF' ||
+              effect.parameters?.glowColor === slide.aiDominantColor),
+        );
+
+        if (fallbackNeonEffect) {
+          const updatedFallback = workingEffects.map(effect =>
+            effect.instanceId === fallbackNeonEffect.instanceId
+              ? {
+                  ...effect,
+                  enabled: true,
+                  parameters: {
+                    ...effect.parameters,
+                    ...targetParams,
+                  },
+                }
+              : effect,
+          );
           return {
-            ...effect,
-            enabled: true,
-            parameters: {
-              ...effect.parameters,
-              ...neonParams,
-            },
+            effects: updatedFallback,
+            aiEffectInstanceId: fallbackNeonEffect.instanceId,
+            changed: true,
           };
-        });
-        if (foundById) {
+        }
+      } else {
+        const existingOfType = workingEffects.find(
+          effect => effect.type === targetType,
+        );
+        if (existingOfType) {
+          const updatedOfType = workingEffects.map(effect =>
+            effect.instanceId === existingOfType.instanceId
+              ? {
+                  ...effect,
+                  enabled: true,
+                  parameters: {
+                    ...effect.parameters,
+                    ...targetParams,
+                  },
+                }
+              : effect,
+          );
           return {
-            effects: updatedById,
-            aiEffectInstanceId: slide.aiEffectInstanceId,
-            changed,
+            effects: updatedOfType,
+            aiEffectInstanceId: existingOfType.instanceId,
+            changed: true,
           };
         }
       }
 
-      const fallbackNeonEffect = baseEffects.find(
-        effect =>
-          effect.type === 'neonGlow' &&
-          (effect.parameters?.glowColor === '#00FFFF' ||
-            effect.parameters?.glowColor === slide.aiDominantColor),
-      );
-
-      if (fallbackNeonEffect) {
-        changed = true;
-        const updatedFallback = baseEffects.map(effect =>
-          effect.instanceId === fallbackNeonEffect.instanceId
-            ? {
-                ...effect,
-                enabled: true,
-                parameters: {
-                  ...effect.parameters,
-                  ...neonParams,
-                },
-              }
-            : effect,
-        );
-        return {
-          effects: updatedFallback,
-          aiEffectInstanceId: fallbackNeonEffect.instanceId,
-          changed,
-        };
-      }
-
-      const newEffect = createTextEffectInstance('neonGlow', neonParams);
-      changed = true;
+      const newEffect = createTextEffectInstance(targetType, targetParams);
       return {
-        effects: [...baseEffects, newEffect],
+        effects: [...workingEffects, newEffect],
         aiEffectInstanceId: newEffect.instanceId,
-        changed,
+        changed: true,
       };
     },
     [],
@@ -1587,7 +1618,7 @@ const EditorScreen: React.FC = () => {
             return slide;
           }
 
-          const aiEffectResult = applyAiNeonGlowEffect(slide, suggestion);
+          const aiEffectResult = applyAiSuggestedEffect(slide, suggestion);
           const syncedEffects = updateNeonGlowEffects(
             aiEffectResult.effects,
             slide.color,
@@ -1644,7 +1675,7 @@ const EditorScreen: React.FC = () => {
     },
     [
       addToHistory,
-      applyAiNeonGlowEffect,
+      applyAiSuggestedEffect,
       updateNeonGlowEffects,
       isSlideEligibleForAutoAi,
       platformKey,

@@ -2,14 +2,11 @@ import type { RNImageManipulatorResult } from 'react-native-image-manipulator';
 
 type RGB = { r: number; g: number; b: number };
 
+export type AiSuggestedEffectType = 'neonGlow' | 'glossy3d' | 'chrome3d';
+
 export interface AiEffectSuggestion {
-  type: 'neonGlow';
-  parameters: {
-    glowColor: string;
-    intensity: number;
-    spread: number;
-    pulse: boolean;
-  };
+  type: AiSuggestedEffectType;
+  parameters?: Record<string, any>;
 }
 
 export interface AiStyleSuggestion {
@@ -20,7 +17,7 @@ export interface AiStyleSuggestion {
   averageBrightness: number;
   brightnessPercentile: number;
   isDark: boolean;
-  textColor: '#FFFFFF' | '#000000';
+  textColor: string;
   backgroundColor: string;
   overlayAlpha: number;
   effect: AiEffectSuggestion;
@@ -31,7 +28,6 @@ const TARGET_SIZE = 64;
 const SAMPLE_STRIDE = 4;
 const QUANTIZATION_BIN_SIZE = 16; // 16 bins per channel
 const MIN_ALPHA = 16;
-const TARGET_CONTRAST_RATIO = 4.5;
 const BRIGHTNESS_THRESHOLD = 0.5;
 
 const clamp255 = (value: number): number => Math.max(0, Math.min(255, value));
@@ -92,14 +88,6 @@ const relativeLuminance = ({ r, g, b }: RGB): number => {
   return 0.2126 * rLin + 0.7152 * gLin + 0.0722 * bLin;
 };
 
-const contrastRatio = (a: RGB, b: RGB): number => {
-  const l1 = relativeLuminance(a);
-  const l2 = relativeLuminance(b);
-  const lighter = Math.max(l1, l2);
-  const darker = Math.min(l1, l2);
-  return (lighter + 0.05) / (darker + 0.05);
-};
-
 const mix = (base: RGB, overlay: RGB, alpha: number): RGB => {
   const clampedAlpha = Math.max(0, Math.min(1, alpha));
   const inv = 1 - clampedAlpha;
@@ -116,9 +104,6 @@ const BLACK: RGB = { r: 0, g: 0, b: 0 };
 const isDarkBrightness = (brightness: number): boolean =>
   brightness < BRIGHTNESS_THRESHOLD;
 
-const chooseTextColorFromBrightness = (brightness: number): '#FFFFFF' | '#000000' =>
-  isDarkBrightness(brightness) ? '#FFFFFF' : '#000000';
-
 const computeNeonEffectParameters = (
   dominantColor: string,
   isDark: boolean,
@@ -129,19 +114,143 @@ const computeNeonEffectParameters = (
   pulse: false,
 });
 
-const computeOverlayAlpha = (dominant: RGB, textColor: '#FFFFFF' | '#000000') => {
-  const overlayBase = textColor === '#FFFFFF' ? BLACK : WHITE;
-  const textRgb = textColor === '#FFFFFF' ? WHITE : BLACK;
+const computeAverageRgb = (
+  pixels: Uint8Array,
+  width: number,
+  height: number,
+): RGB => {
+  let sumR = 0;
+  let sumG = 0;
+  let sumB = 0;
+  let sampleCount = 0;
 
-  for (let alpha = 0.2; alpha <= 0.8; alpha += 0.05) {
-    const effectiveBackground = mix(dominant, overlayBase, alpha);
-    const contrast = contrastRatio(textRgb, effectiveBackground);
-    if (contrast >= TARGET_CONTRAST_RATIO) {
-      return Number(alpha.toFixed(2));
+  for (let y = 0; y < height; y += SAMPLE_STRIDE) {
+    for (let x = 0; x < width; x += SAMPLE_STRIDE) {
+      const index = (y * width + x) * 4;
+      const r = pixels[index];
+      const g = pixels[index + 1];
+      const b = pixels[index + 2];
+      const a = pixels[index + 3];
+
+      if (a < MIN_ALPHA) {
+        continue;
+      }
+
+      sumR += r;
+      sumG += g;
+      sumB += b;
+      sampleCount += 1;
     }
   }
 
-  return textColor === '#FFFFFF' ? 0.5 : 0.35;
+  if (sampleCount === 0) {
+    return { r: 128, g: 128, b: 128 };
+  }
+
+  return {
+    r: sumR / sampleCount,
+    g: sumG / sampleCount,
+    b: sumB / sampleCount,
+  };
+};
+
+const colorChroma = ({ r, g, b }: RGB): number =>
+  Math.max(r, g, b) - Math.min(r, g, b);
+
+const rgbToHsv = ({ r, g, b }: RGB): { h: number; s: number; v: number } => {
+  const rn = clamp255(r) / 255;
+  const gn = clamp255(g) / 255;
+  const bn = clamp255(b) / 255;
+  const max = Math.max(rn, gn, bn);
+  const min = Math.min(rn, gn, bn);
+  const delta = max - min;
+
+  let h = 0;
+  if (delta !== 0) {
+    if (max === rn) {
+      h = 60 * (((gn - bn) / delta) % 6);
+    } else if (max === gn) {
+      h = 60 * ((bn - rn) / delta + 2);
+    } else {
+      h = 60 * ((rn - gn) / delta + 4);
+    }
+  }
+
+  if (h < 0) {
+    h += 360;
+  }
+
+  const s = max === 0 ? 0 : delta / max;
+  return { h, s, v: max };
+};
+
+const isRedOrPink = (rgb: RGB): boolean => {
+  const { h, s, v } = rgbToHsv(rgb);
+  const isHueRedPink = h >= 300 || h <= 35;
+  return isHueRedPink && s >= 0.25 && v >= 0.2;
+};
+
+const computeVibrantRgb = (
+  pixels: Uint8Array,
+  width: number,
+  height: number,
+): RGB | null => {
+  let sumR = 0;
+  let sumG = 0;
+  let sumB = 0;
+  let sampleCount = 0;
+
+  for (let y = 0; y < height; y += SAMPLE_STRIDE) {
+    for (let x = 0; x < width; x += SAMPLE_STRIDE) {
+      const index = (y * width + x) * 4;
+      const r = pixels[index];
+      const g = pixels[index + 1];
+      const b = pixels[index + 2];
+      const a = pixels[index + 3];
+
+      if (a < MIN_ALPHA) {
+        continue;
+      }
+
+      const { s, v } = rgbToHsv({ r, g, b });
+      if (s < 0.25 || v < 0.2) {
+        continue;
+      }
+
+      sumR += r;
+      sumG += g;
+      sumB += b;
+      sampleCount += 1;
+    }
+  }
+
+  if (sampleCount === 0) {
+    return null;
+  }
+
+  return {
+    r: sumR / sampleCount,
+    g: sumG / sampleCount,
+    b: sumB / sampleCount,
+  };
+};
+
+const pickTextRgb = (dominant: RGB, average: RGB): RGB =>
+  colorChroma(dominant) >= colorChroma(average) ? dominant : average;
+
+const pickRandomBackgroundColor = (
+  base: RGB,
+): { color: string; alpha: number } => {
+  const alpha = Number((0.35 + Math.random() * 0.25).toFixed(2));
+  const mixTarget = Math.random() < 0.5 ? WHITE : BLACK;
+  const mixAmount = 0.2 + Math.random() * 0.45;
+  const mixed = mix(base, mixTarget, mixAmount);
+  return {
+    color: `rgba(${Math.round(mixed.r)},${Math.round(mixed.g)},${Math.round(
+      mixed.b,
+    )},${alpha})`,
+    alpha,
+  };
 };
 
 type QuantizedBucket = {
@@ -374,7 +483,21 @@ class ColorAnalysisService {
       return null;
     }
 
-    const dominantRgb = computeDominantRgb(decoded.pixels, decoded.width, decoded.height);
+    const dominantRgb = computeDominantRgb(
+      decoded.pixels,
+      decoded.width,
+      decoded.height,
+    );
+    const averageRgb = computeAverageRgb(
+      decoded.pixels,
+      decoded.width,
+      decoded.height,
+    );
+    const vibrantRgb = computeVibrantRgb(
+      decoded.pixels,
+      decoded.width,
+      decoded.height,
+    );
     const dominantColor = toHex(dominantRgb);
     const dominantLuminance = relativeLuminance(dominantRgb);
     const averageLuminance = computeAverageLuminance(
@@ -392,14 +515,26 @@ class ColorAnalysisService {
       brightnessStats.percentile,
     );
     const isDark = isDarkBrightness(effectiveBrightness);
-    const textColor = chooseTextColorFromBrightness(effectiveBrightness);
-    const overlayAlpha = computeOverlayAlpha(dominantRgb, textColor);
-    const overlayBase = textColor === '#FFFFFF' ? BLACK : WHITE;
-    const backgroundColor = `rgba(${overlayBase.r},${overlayBase.g},${overlayBase.b},${overlayAlpha})`;
-    const effect: AiEffectSuggestion = {
-      type: 'neonGlow',
-      parameters: computeNeonEffectParameters(dominantColor, isDark),
-    };
+    const textRgb = vibrantRgb ?? pickTextRgb(dominantRgb, averageRgb);
+    const textColor = toHex(textRgb);
+    const backgroundBase = vibrantRgb ?? dominantRgb;
+    const { color: backgroundColor, alpha: overlayAlpha } =
+      pickRandomBackgroundColor(backgroundBase);
+    const shouldUseGlossy =
+      isRedOrPink(vibrantRgb ?? dominantRgb) || isRedOrPink(averageRgb);
+    const chromeChance = 0.08;
+    const effectType: AiSuggestedEffectType = shouldUseGlossy
+      ? 'glossy3d'
+      : Math.random() < chromeChance
+      ? 'chrome3d'
+      : 'neonGlow';
+    const effect: AiEffectSuggestion =
+      effectType === 'neonGlow'
+        ? {
+            type: 'neonGlow',
+            parameters: computeNeonEffectParameters(dominantColor, isDark),
+          }
+        : { type: effectType };
 
     return {
       dominantColor,

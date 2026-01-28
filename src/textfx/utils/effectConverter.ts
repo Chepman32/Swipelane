@@ -29,9 +29,10 @@ export function convertToNewFormat(
 
   switch (oldEffect.type) {
     case 'neonGlow':
+      const baseTextColor = textColor || '#FFFFFF';
       const defaultGlowColor = textColor || '#00FFFF';
       values = {
-        innerColor: '#FFFFFF',
+        innerColor: baseTextColor,
         glowColor: oldEffect.parameters?.glowColor || defaultGlowColor,
         glowRadius: oldEffect.parameters?.spread || 12,
         strokeWidth: 2,
