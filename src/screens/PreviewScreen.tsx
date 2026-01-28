@@ -20,7 +20,6 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 
 import FeedbackService from '../services/FeedbackService';
-import ExportService from '../services/ExportService';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import {
@@ -39,6 +38,7 @@ import { convertToNewFormat } from '../textfx/utils/effectConverter';
 import type { EffectInstance } from '../textfx/types';
 import { isTextEffectSupported } from '../constants/textEffects';
 import GradientBackground from '../components/GradientBackground';
+import { captureRef } from 'react-native-view-shot';
 
 // Skia font sources for each supported font
 const SKIA_FONT_SOURCES: Record<SlideFontId, number> = {
@@ -52,6 +52,7 @@ type RootStackParamList = {
   Home: undefined;
   Editor: { text: string; images: string[] };
   Preview: { slides: any[] };
+  Export: { imageUri: string; effectId?: string; params?: Record<string, any> };
 };
 
 type PreviewRouteProp = RouteProp<RootStackParamList, 'Preview'>;
@@ -236,6 +237,7 @@ const PreviewScreen: React.FC = () => {
   const exportButtonHeight = 100; // Height for export button + margins
   const availableHeight = screenHeight - headerHeight - exportButtonHeight;
   const imageContainerHeight = availableHeight; // Use available height without minimum constraint
+  const exportResolution = 1080;
 
   const handleExport = async () => {
     if (isExporting) return;
@@ -244,27 +246,31 @@ const PreviewScreen: React.FC = () => {
     setIsExporting(true);
 
     try {
-      const result = await ExportService.exportSlides(
-        slides,
-        slideRefs.current.map(ref => ({ current: ref })),
-        {
-          quality: 0.9,
-          format: 'png',
-          resolution: 1080,
-        },
-      );
-
-      if (result.success && result.savedPaths.length > 0) {
-        FeedbackService.success();
-        ExportService.showExportSuccess(result.savedPaths.length, t);
-      } else {
-        FeedbackService.error();
-        Alert.alert(
-          t('export_failed'),
-          result.error || t('export_failed_message'),
-          [{ text: t('ok') }],
-        );
+      const currentSlideRef = slideRefs.current[currentSlideIndex];
+      if (!currentSlideRef) {
+        throw new Error('Slide is not ready to export');
       }
+
+      const aspectRatio = slideSize / imageContainerHeight;
+      let targetWidth = exportResolution;
+      let targetHeight = exportResolution;
+
+      if (aspectRatio > 1) {
+        targetWidth = exportResolution;
+        targetHeight = Math.round(exportResolution / aspectRatio);
+      } else {
+        targetHeight = exportResolution;
+        targetWidth = Math.round(exportResolution * aspectRatio);
+      }
+
+      const uri = await captureRef(currentSlideRef as any, {
+        format: 'png',
+        result: 'tmpfile',
+        width: Math.max(1, targetWidth),
+        height: Math.max(1, targetHeight),
+      });
+
+      navigation.navigate('Export', { imageUri: uri });
     } catch (error) {
       console.error('Export error:', error);
       FeedbackService.error();

@@ -1,15 +1,18 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import {
   TouchableOpacity,
   StyleSheet,
-  Animated,
-  ViewStyle,
   Text,
+  View,
+  ViewStyle,
 } from 'react-native';
+import LottieView from 'lottie-react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useResponsive } from '../hooks/useResponsive';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
 import FeedbackService from '../services/FeedbackService';
+
+const recordingAnimation = require('../assets/animations/Recording bubble red.json');
 
 interface MicrophoneFABProps {
   onTextReceived: (text: string) => void;
@@ -24,8 +27,6 @@ export const MicrophoneFAB: React.FC<MicrophoneFABProps> = ({
 }) => {
   const { themeDefinition } = useTheme();
   const { scale } = useResponsive();
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-  const pulseAnimRef = useRef<Animated.CompositeAnimation | null>(null);
 
   const {
     isListening,
@@ -33,38 +34,6 @@ export const MicrophoneFAB: React.FC<MicrophoneFABProps> = ({
     startListening,
     stopListening,
   } = useSpeechRecognition(onTextReceived);
-
-  // Pulsing animation when listening
-  useEffect(() => {
-    if (isListening) {
-      pulseAnimRef.current = Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 1.15,
-            duration: 600,
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 1,
-            duration: 600,
-            useNativeDriver: true,
-          }),
-        ]),
-      );
-      pulseAnimRef.current.start();
-    } else {
-      if (pulseAnimRef.current) {
-        pulseAnimRef.current.stop();
-      }
-      pulseAnim.setValue(1);
-    }
-
-    return () => {
-      if (pulseAnimRef.current) {
-        pulseAnimRef.current.stop();
-      }
-    };
-  }, [isListening, pulseAnim]);
 
   const handlePress = async () => {
     FeedbackService.buttonTap();
@@ -83,15 +52,7 @@ export const MicrophoneFAB: React.FC<MicrophoneFABProps> = ({
   const buttonSize = scale(56);
 
   return (
-    <Animated.View
-      style={[
-        styles.container,
-        style,
-        {
-          transform: [{ scale: pulseAnim }],
-        },
-      ]}
-    >
+    <View style={[styles.container, style]}>
       <TouchableOpacity
         style={[
           styles.button,
@@ -100,7 +61,7 @@ export const MicrophoneFAB: React.FC<MicrophoneFABProps> = ({
             height: buttonSize,
             borderRadius: buttonSize / 2,
             backgroundColor: isListening
-              ? '#FF3B30'
+              ? 'transparent'
               : themeDefinition.colors.primary || '#007AFF',
           },
         ]}
@@ -108,11 +69,19 @@ export const MicrophoneFAB: React.FC<MicrophoneFABProps> = ({
         disabled={disabled}
         activeOpacity={0.7}
       >
-        <Text style={[styles.icon, { fontSize: scale(24) }]}>
-          {isListening ? '⏹' : '🎤'}
-        </Text>
+        {isListening ? (
+          <LottieView
+            source={recordingAnimation}
+            autoPlay
+            loop
+            resizeMode="contain"
+            style={{ width: buttonSize * 1.6, height: buttonSize * 1.6 }}
+          />
+        ) : (
+          <Text style={[styles.icon, { fontSize: scale(24) }]}>🎤</Text>
+        )}
       </TouchableOpacity>
-    </Animated.View>
+    </View>
   );
 };
 
@@ -130,6 +99,7 @@ const styles = StyleSheet.create({
   button: {
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'visible',
   },
   icon: {
     color: '#fff',

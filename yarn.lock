@@ -3139,6 +3139,7 @@ __metadata:
     react-native-reanimated: "npm:^4.1.0"
     react-native-safe-area-context: "npm:^5.6.1"
     react-native-screens: "npm:^4.16.0"
+    react-native-share: "npm:^10.2.0"
     react-native-sound: "npm:^0.12.0"
     react-native-view-shot: "npm:^4.0.3"
     react-native-webview: "npm:^13.16.0"
@@ -8381,6 +8382,13 @@ __metadata:
     react: "*"
     react-native: "*"
   checksum: 10c0/8ec459ff52cbd317bfca598843a0010b4ca9070d05664f28d792594d8ceabb398b9d68abb578f40295e41f906308efe7ac7359046fba7aaf318a0d9d65446102
+  languageName: node
+  linkType: hard
+
+"react-native-share@npm:^10.2.0":
+  version: 10.2.1
+  resolution: "react-native-share@npm:10.2.1"
+  checksum: 10c0/534e6930d337d7e48de5572d8d6afac865bdad027a5d1c7fa843c7adba702d594b82cf2bb8124f82ffb1b4171f78754744c97a88b2fa5e5fda479f486768d42e
   languageName: node
   linkType: hard
 
