@@ -293,6 +293,7 @@ const EditorScreen: React.FC = () => {
   const previewButtonHeight = 80; // Height for preview button + margins
   const availableHeight = validHeight - headerHeight - previewButtonHeight;
   const imageContainerHeight = availableHeight; // Use available height without minimum constraint
+  const contentHeightEstimate = imageContainerHeight + previewButtonHeight;
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isRestoringFromStorage = useRef(false);
 
@@ -385,6 +386,8 @@ const EditorScreen: React.FC = () => {
   const [isStyleMenuVisible, setStyleMenuVisible] = useState(false);
   const [copiedStyle, setCopiedStyle] = useState<SlideStyleSnapshot | null>(null);
   const [isAiApplying, setAiApplying] = useState(false);
+  const [contentHeight, setContentHeight] = useState<number | null>(null);
+  const [toolbarTop, setToolbarTop] = useState<number | null>(null);
 
   const slidesRef = useRef<Slide[]>(slides);
   const isAutoAiRunningRef = useRef(false);
@@ -568,6 +571,14 @@ const EditorScreen: React.FC = () => {
   const toolPaletteVisible =
     isColorPaletteVisible || isFontPaletteVisible || isEffectsPaletteVisible;
   const anyToolPanelOpen = toolPaletteVisible || isOpacityPaletteVisible;
+  const toolPanelGap = scaleSize(12);
+  const mainToolbarTop = imageContainerHeight - scaleSize(60);
+  const resolvedContentHeight = contentHeight ?? contentHeightEstimate;
+  const resolvedToolbarTop = toolbarTop ?? mainToolbarTop;
+  const toolPanelBottom = Math.max(
+    0,
+    resolvedContentHeight - resolvedToolbarTop + toolPanelGap,
+  );
 
   const closeToolPanels = useCallback(() => {
     setColorPaletteVisible(false);
@@ -590,12 +601,12 @@ const EditorScreen: React.FC = () => {
 
   const toolPaletteAnimatedStyle = useAnimatedStyle(() => ({
     opacity: toolPaletteAnim.value,
-    transform: [{ translateY: (1 - toolPaletteAnim.value) * 12 }],
+    transform: [{ translateY: (1 - toolPaletteAnim.value) * toolPanelGap }],
   }));
 
   const opacityPaletteAnimatedStyle = useAnimatedStyle(() => ({
     opacity: opacityPaletteAnim.value,
-    transform: [{ translateY: (1 - opacityPaletteAnim.value) * 12 }],
+    transform: [{ translateY: (1 - opacityPaletteAnim.value) * toolPanelGap }],
   }));
 
 
@@ -2026,6 +2037,9 @@ const EditorScreen: React.FC = () => {
           backgroundColor: themeDefinition.colors.background,
         },
       ]}
+      onLayout={event => {
+        setContentHeight(event.nativeEvent.layout.height);
+      }}
     >
       {/* Slide preview area */}
       <View style={styles.editorContainer}>
@@ -2214,7 +2228,10 @@ const EditorScreen: React.FC = () => {
 
       {anyToolPanelOpen && (
         <Pressable
-          style={styles.toolPanelsBackdrop}
+          style={[
+            styles.toolPanelsBackdrop,
+            { bottom: Math.max(0, resolvedContentHeight - resolvedToolbarTop) },
+          ]}
           onPress={() => {
             FeedbackService.buttonTap();
             closeToolPanels();
@@ -2273,16 +2290,11 @@ const EditorScreen: React.FC = () => {
 
       {/* Tool-specific palettes - positioned above main toolbar */}
       {(() => {
-        // Adjust color and effects palette position to match spacing of font/opacity palettes
-        const paletteTopPosition = (isColorPaletteVisible || isEffectsPaletteVisible)
-          ? imageContainerHeight - 150  // Move color/effects palettes 20px higher
-          : imageContainerHeight - 160; // Standard position for font/opacity
-
         return (
           <Animated.View
             style={[
               styles.toolPalette,
-              { top: paletteTopPosition },
+              { bottom: toolPanelBottom },
               toolPaletteAnimatedStyle,
             ]}
             pointerEvents={toolPaletteVisible ? 'auto' : 'none'}
@@ -2438,7 +2450,7 @@ const EditorScreen: React.FC = () => {
           styles.opacityPaletteContainer,
           {
             position: 'absolute',
-            top: imageContainerHeight - 130,
+            bottom: toolPanelBottom,
             left: 0,
             right: 0,
             justifyContent: 'center',
@@ -2479,7 +2491,10 @@ const EditorScreen: React.FC = () => {
 
       {/* Main toolbar - always visible */}
       <View
-        style={[styles.minimalControls, { top: imageContainerHeight - scaleSize(60), gap: controlGap }]}
+        style={[styles.minimalControls, { top: mainToolbarTop, gap: controlGap }]}
+        onLayout={event => {
+          setToolbarTop(event.nativeEvent.layout.y);
+        }}
       >
         {/* Always show main toolbar buttons */}
         {
@@ -2515,7 +2530,7 @@ const EditorScreen: React.FC = () => {
                 <View
                   style={[
                     styles.styleMenuDropdown,
-                    { bottom: largeButtonSize + scaleSize(12) },
+                    { bottom: largeButtonSize + toolPanelGap },
                   ]}
                 >
                   <TouchableOpacity
@@ -2823,7 +2838,7 @@ const styles = StyleSheet.create({
   toolPanelsBackdrop: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'transparent',
-    zIndex: 6,
+    zIndex: 4,
   },
   // Vertical font size slider
   fontSizeSlider: {
@@ -2868,7 +2883,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 5,
-    marginBottom: 10,
     zIndex: 10,
   },
 
@@ -2883,6 +2897,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     gap: 20,
+    zIndex: 7,
   },
 
   // Alignment controls
