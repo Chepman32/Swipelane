@@ -31,6 +31,7 @@ import RNFS from 'react-native-fs';
 import { EffectRenderer } from './effects/EffectRenderer';
 import { EFFECTS } from '../domain/effects/registry';
 import FeedbackService from '../services/FeedbackService';
+import { useLanguage } from '../context/LanguageContext';
 
 const InstagramIcon = require('../assets/icons/export/Instagram.png');
 const XIcon = require('../assets/icons/export/X.png');
@@ -40,7 +41,6 @@ const ShareIcon = require('../assets/icons/export/Share.png');
 type ExportAction = 'instagram' | 'x' | 'gallery' | 'share' | null;
 
 const EXPORT_SIZE = 1080; // Export at high resolution
-const SHARE_MESSAGE = 'Created with Texora';
 
 const ensureFileScheme = (uri: string): string => {
   if (/^(file|content|ph|assets-library):\/\//i.test(uri)) {
@@ -77,11 +77,12 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   const cachedExportUriRef = useRef<string | null>(null);
 
   const [exportingAction, setExportingAction] = useState<ExportAction>(null);
+  const { t } = useLanguage();
 
   useEffect(() => {
     if (visible && !primaryImageUri) {
-      Alert.alert('Error', 'No image available to export.', [
-        { text: 'OK', onPress: onClose },
+      Alert.alert(t('error'), t('export_no_image_error'), [
+        { text: t('ok'), onPress: onClose },
       ]);
     }
   }, [visible, primaryImageUri, onClose]);
@@ -181,9 +182,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           }
         } else if (result === RESULTS.BLOCKED || result === RESULTS.UNAVAILABLE) {
           Alert.alert(
-            'Permission Required',
-            'Please enable photo library access in settings to save images.',
-            [{ text: 'OK' }]
+            t('export_permission_title'),
+            t('export_permission_denied'),
+            [{ text: t('ok') }]
           );
           return;
         }
@@ -196,13 +197,16 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       }
 
       FeedbackService.triggerHaptic(HapticFeedbackTypes.notificationSuccess);
-      Alert.alert('Success', shareUris.length > 1 ? 'Images saved to Photos!' : 'Image saved to Photos!', [
-        { text: 'OK', onPress: onClose },
+      const successKey = shareUris.length > 1
+        ? 'export_images_saved_multiple'
+        : 'export_images_saved_single';
+      Alert.alert(t('success'), t(successKey), [
+        { text: t('ok'), onPress: onClose },
       ]);
     } catch (error) {
       console.error('Save error:', error);
       FeedbackService.triggerHaptic(HapticFeedbackTypes.notificationError);
-      Alert.alert('Error', 'Failed to save image');
+      Alert.alert(t('error'), t('export_save_failed'));
     } finally {
       setExportingAction(null);
     }
@@ -218,7 +222,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       await Share.open({
         urls: shareUris,
         type: 'image/png',
-        message: SHARE_MESSAGE,
+        message: t('export_share_message'),
         failOnCancel: false,
       });
 
@@ -242,7 +246,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       const instagramInstalled = await Linking.canOpenURL('instagram://app');
       if (!instagramInstalled) {
         FeedbackService.triggerHaptic(HapticFeedbackTypes.notificationError);
-        Alert.alert('Error', 'Instagram is not installed on this device.');
+        Alert.alert(t('error'), t('export_instagram_not_installed'));
         return;
       }
 
@@ -258,24 +262,27 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
       // Show success message and open Instagram
       const imageCount = shareUris.length;
+      const instructionKey = imageCount > 1
+        ? 'export_instagram_instruction_multiple'
+        : 'export_instagram_instruction_single';
       Alert.alert(
-        'Images Saved!',
-        `${imageCount} image${imageCount > 1 ? 's' : ''} saved to your Photos.\n\nInstagram will open now. Select your images from the gallery to create a ${imageCount > 1 ? 'carousel ' : ''}post.`,
+        t('export_images_saved_title'),
+        t(instructionKey, { count: imageCount }),
         [
           {
-            text: 'Open Instagram',
+            text: t('export_open_instagram'),
             onPress: () => {
               // Open Instagram's library/camera picker
               Linking.openURL('instagram://library');
             },
           },
-          { text: 'Cancel', style: 'cancel' },
+          { text: t('cancel'), style: 'cancel' },
         ],
       );
     } catch (error: any) {
       console.error('Instagram share error:', error);
       FeedbackService.triggerHaptic(HapticFeedbackTypes.notificationError);
-      Alert.alert('Error', 'Failed to save images. Please try again.');
+      Alert.alert(t('error'), t('export_save_images_failed'));
     } finally {
       setExportingAction(null);
     }
@@ -290,7 +297,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       const xInstalled = await Linking.canOpenURL('twitter://');
       if (!xInstalled) {
         FeedbackService.triggerHaptic(HapticFeedbackTypes.notificationError);
-        Alert.alert('Error', 'X is not installed on this device.');
+        Alert.alert(t('error'), t('export_x_not_installed'));
         return;
       }
 
@@ -306,24 +313,28 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
       // Show success message and open X
       const imageCount = shareUris.length;
+      const instructionKey = imageCount > 1
+        ? 'export_x_instruction_multiple'
+        : 'export_x_instruction_single';
       Alert.alert(
-        'Images Saved!',
-        `${imageCount} image${imageCount > 1 ? 's' : ''} saved to your Photos.\n\nX will open now. Tap the photo icon to attach your images${imageCount > 1 ? ' as a carousel' : ''}.`,
+        t('export_images_saved_title'),
+        t(instructionKey, { count: imageCount }),
         [
           {
-            text: 'Open X',
+            text: t('export_open_x'),
             onPress: () => {
               // Open X with pre-filled message
-              Linking.openURL('twitter://post?message=Created%20with%20Texora');
+              const message = encodeURIComponent(t('export_share_message'));
+              Linking.openURL(`twitter://post?message=${message}`);
             },
           },
-          { text: 'Cancel', style: 'cancel' },
+          { text: t('cancel'), style: 'cancel' },
         ],
       );
     } catch (error: any) {
       console.error('X share error:', error);
       FeedbackService.triggerHaptic(HapticFeedbackTypes.notificationError);
-      Alert.alert('Error', 'Failed to save images. Please try again.');
+      Alert.alert(t('error'), t('export_save_images_failed'));
     } finally {
       setExportingAction(null);
     }
@@ -388,7 +399,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                   />
                 )}
               </View>
-              <Text style={styles.rowLabel}>Instagram</Text>
+              <Text style={styles.rowLabel}>{t('export_action_instagram')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -407,7 +418,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                   />
                 )}
               </View>
-              <Text style={styles.rowLabel}>X</Text>
+              <Text style={styles.rowLabel}>{t('export_action_x')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -426,7 +437,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                   />
                 )}
               </View>
-              <Text style={styles.rowLabel}>Gallery</Text>
+              <Text style={styles.rowLabel}>{t('export_action_gallery')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -445,7 +456,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                   />
                 )}
               </View>
-              <Text style={styles.rowLabel}>Share</Text>
+              <Text style={styles.rowLabel}>{t('export_action_share')}</Text>
             </TouchableOpacity>
           </View>
         </SafeAreaView>

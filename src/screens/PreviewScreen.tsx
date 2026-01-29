@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -17,12 +17,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Create animated FlatList component
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
-import { useRoute, RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 
 import FeedbackService from '../services/FeedbackService';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
-import { ExportModal } from '../components/ExportModal';
 import {
   DEFAULT_SLIDE_FONT_ID,
   getSlideFontByFamily,
@@ -54,9 +54,16 @@ type RootStackParamList = {
   Home: undefined;
   Editor: { text: string; images: string[] };
   Preview: { slides: any[] };
+  Export: {
+    imageUri?: string;
+    imageUris?: string[];
+    effectId?: string;
+    params?: Record<string, any>;
+  };
 };
 
 type PreviewRouteProp = RouteProp<RootStackParamList, 'Preview'>;
+type PreviewNavigationProp = StackNavigationProp<RootStackParamList, 'Home'>;
 
 // Helper to filter supported effects
 const filterSupportedEffects = (effects?: any[]) =>
@@ -218,6 +225,7 @@ const SlideRenderer: React.FC<SlideRendererProps> = ({
 
 const PreviewScreen: React.FC = () => {
   const route = useRoute<PreviewRouteProp>();
+  const navigation = useNavigation<PreviewNavigationProp>();
   const { slides } = route.params;
   const insets = useSafeAreaInsets();
   const { themeDefinition } = useTheme();
@@ -226,8 +234,6 @@ const PreviewScreen: React.FC = () => {
 
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [isExporting, setIsExporting] = useState(false);
-  const [exportModalVisible, setExportModalVisible] = useState(false);
-  const [exportImageUris, setExportImageUris] = useState<string[]>([]);
   const scrollX = useRef(new Animated.Value(0)).current;
   const slideRefs = useRef<View[]>([]);
   const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -292,8 +298,7 @@ const PreviewScreen: React.FC = () => {
         throw new Error('No slides captured');
       }
 
-      setExportImageUris(uris);
-      setExportModalVisible(true);
+      navigation.navigate('Export', { imageUris: uris });
     } catch (error) {
       console.error('Export error:', error);
       FeedbackService.error();
@@ -333,11 +338,6 @@ const PreviewScreen: React.FC = () => {
   const viewabilityConfig = useRef({
     itemVisiblePercentThreshold: 50,
   }).current;
-
-  const handleCloseExportModal = useCallback(() => {
-    setExportModalVisible(false);
-    setExportImageUris([]);
-  }, []);
 
   return (
     <View
@@ -445,12 +445,6 @@ const PreviewScreen: React.FC = () => {
           <Text style={[styles.exportButtonText, { fontSize: scaleFont(18) }]}>{t('export')}</Text>
         )}
       </TouchableOpacity>
-
-      <ExportModal
-        visible={exportModalVisible}
-        onClose={handleCloseExportModal}
-        imageUris={exportImageUris}
-      />
     </View>
   );
 };

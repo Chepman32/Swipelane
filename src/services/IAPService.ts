@@ -1,6 +1,19 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert, Platform } from 'react-native';
 
+// Translation interface for IAP messages
+export interface IAPTranslations {
+  errorTitle: string;
+  successTitle: string;
+  productNotFound: string;
+  confirmTitle: string;
+  confirmMessage: (title: string, price: string) => string;
+  cancel: string;
+  buy: string;
+  purchaseSuccessful: string;
+  purchaseFailed: string;
+}
+
 // Product IDs for App Store and Google Play
 const PRODUCT_IDS = Platform.select({
   ios: ['com.texora.pro', 'com.texora.pro.monthly'],
@@ -95,7 +108,7 @@ class IAPService {
   }
 
   // Purchase a product
-  async purchaseProduct(productId: string): Promise<boolean> {
+  async purchaseProduct(productId: string, translations: IAPTranslations): Promise<boolean> {
     try {
       if (!this.isInitialized) {
         await this.init();
@@ -103,7 +116,7 @@ class IAPService {
 
       const product = this.products.find(p => p.productId === productId);
       if (!product) {
-        Alert.alert('Error', 'Product not found');
+        Alert.alert(translations.errorTitle, translations.productNotFound);
         return false;
       }
 
@@ -111,12 +124,12 @@ class IAPService {
       // In production, this would call the native IAP API
       return new Promise((resolve) => {
         Alert.alert(
-          'Confirm Purchase',
-          `Purchase ${product.title} for ${product.localizedPrice}?`,
+          translations.confirmTitle,
+          translations.confirmMessage(product.title, product.localizedPrice),
           [
-            { text: 'Cancel', onPress: () => resolve(false), style: 'cancel' },
+            { text: translations.cancel, onPress: () => resolve(false), style: 'cancel' },
             {
-              text: 'Buy',
+              text: translations.buy,
               onPress: async () => {
                 // Simulate successful purchase
                 const purchase: Purchase = {
@@ -129,7 +142,7 @@ class IAPService {
                 this.purchases.push(purchase);
                 await this.savePurchases();
 
-                Alert.alert('Success', 'Purchase successful! Pro features unlocked.');
+                Alert.alert(translations.successTitle, translations.purchaseSuccessful);
                 this.notifyListeners();
                 resolve(true);
               }
@@ -139,7 +152,7 @@ class IAPService {
       });
     } catch (error) {
       console.error('Purchase error:', error);
-      Alert.alert('Error', 'Purchase failed. Please try again.');
+      Alert.alert(translations.errorTitle, translations.purchaseFailed);
       return false;
     }
   }

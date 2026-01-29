@@ -793,15 +793,6 @@ const EditorScreen: React.FC = () => {
     useCallback(() => {
       navigation.setOptions({
         headerShown: true,
-        headerLeft: () => (
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={{ paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center' }}
-          >
-            <Text style={{ fontSize: 28, color: '#007AFF', marginRight: 4 }}>‹</Text>
-            <Text style={{ fontSize: 17, color: '#007AFF' }}>{t('back')}</Text>
-          </TouchableOpacity>
-        ),
         headerRight: () => (
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <TouchableOpacity
@@ -831,7 +822,6 @@ const EditorScreen: React.FC = () => {
       handleUndo,
       handleRedo,
       headerUpdateTrigger,
-      t,
     ])
   );
 
