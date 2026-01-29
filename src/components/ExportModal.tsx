@@ -249,44 +249,26 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
       console.log('Sharing to Instagram:', shareUris);
 
-      if (shareUris.length > 1) {
-        // For carousel (multiple images), we use Share.open but target Instagram
-        // This is the most reliable way to get the carousel option in the share sheet
-        await Share.open({
-          urls: shareUris,
-          type: 'image/png',
-          message: 'Created with Texora',
-        });
-      } else {
-        // For single image, try specific share (Stories usually)
-        await Share.shareSingle({
-          social: Social.Instagram,
-          url: fileUri,
-          type: 'image/png',
-          message: 'Created with Texora',
-        });
+      // Save all images to camera roll first - Instagram needs this for carousel posts
+      for (const uri of shareUris) {
+        await CameraRoll.save(uri, { type: 'photo' });
       }
+
+      // Open Instagram - it will detect the recent photos from camera roll
+      // This opens Instagram's native selector (Reel/Post/Story/Message)
+      await Share.shareSingle({
+        social: Social.Instagram,
+        url: fileUri,
+        type: 'image/png',
+      });
 
       FeedbackService.triggerHaptic(HapticFeedbackTypes.notificationSuccess);
     } catch (error: any) {
       console.error('Instagram share error:', error);
 
-      // Fallback
-      if (shareUris.length > 0) {
-        try {
-           console.log('Fallback to generic share for Instagram');
-           await Share.open({
-            urls: shareUris,
-            type: 'image/png',
-            message: 'Created with Texora',
-          });
-          FeedbackService.triggerHaptic(HapticFeedbackTypes.notificationSuccess);
-        } catch (fallbackError) {
-           console.log('Fallback cancelled or failed', fallbackError);
-        }
-      } else {
+      if (error?.message !== 'User did not share') {
         FeedbackService.triggerHaptic(HapticFeedbackTypes.notificationError);
-        Alert.alert('Error', 'Failed to share to Instagram');
+        Alert.alert('Error', 'Failed to share to Instagram. Make sure Instagram is installed.');
       }
     } finally {
       setExportingAction(null);
@@ -302,40 +284,28 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       shareUris = await getShareUris();
       console.log('Sharing to X:', shareUris);
 
-      // Use shareSingle to open Twitter-native modal
-      // Note: We cast to any because 'urls' might not be in the strict type definition
-      // but is supported by some underlying implementations or we fallback to single url
+      // Save all images to camera roll for multiple images - X can pick them up
       if (shareUris.length > 1) {
-         await Share.shareSingle({
-          social: Social.Twitter,
-          urls: shareUris,
-          type: 'image/png',
-          message: 'Created with Texora',
-        } as any);
-      } else {
-        await Share.shareSingle({
-          social: Social.Twitter,
-          url: shareUris[0],
-          type: 'image/png',
-          message: 'Created with Texora',
-        });
+        for (const uri of shareUris) {
+          await CameraRoll.save(uri, { type: 'photo' });
+        }
       }
+
+      // Use url (singular) not urls - Twitter/X doesn't support urls parameter
+      // The message will be pre-filled in the compose screen
+      await Share.shareSingle({
+        social: Social.Twitter,
+        url: shareUris[0],
+        type: 'image/png',
+        message: 'Created with Texora',
+      });
 
       FeedbackService.triggerHaptic(HapticFeedbackTypes.notificationSuccess);
     } catch (error: any) {
       if (error?.message !== 'User did not share') {
-        console.error('Share error:', error);
-        // Fallback to Share.open if shareSingle fails (e.g. app not installed or urls not supported)
-        try {
-          await Share.open({
-            urls: shareUris,
-            type: 'image/png',
-            message: 'Created with Texora',
-          });
-        } catch (fallbackError) {
-          FeedbackService.triggerHaptic(HapticFeedbackTypes.notificationError);
-          Alert.alert('Error', 'Failed to share to X');
-        }
+        console.error('X share error:', error);
+        FeedbackService.triggerHaptic(HapticFeedbackTypes.notificationError);
+        Alert.alert('Error', 'Failed to share to X. Make sure X is installed.');
       }
     } finally {
       setExportingAction(null);
