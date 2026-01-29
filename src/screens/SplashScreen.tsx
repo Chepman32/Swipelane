@@ -18,9 +18,14 @@ const SplashScreen: React.FC = () => {
   const { t, ensureLanguageReady } = useLanguage();
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
   const scaleAnim = React.useRef(new Animated.Value(0.8)).current;
+  const [titleText, setTitleText] = React.useState('');
+  const [subtitleText, setSubtitleText] = React.useState('');
 
   useEffect(() => {
-    // Start animations
+    const fullTitle = t('splash_title');
+    const fullSubtitle = t('splash_subtitle');
+
+    // Phase 1: Fade and scale animations (0-1000ms)
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -35,8 +40,35 @@ const SplashScreen: React.FC = () => {
       }),
     ]).start();
 
-    // Navigate to home screen after delay
-    const timer = setTimeout(async () => {
+    // Phase 2: Teletype effect (starts at 1000ms)
+    const titleDelay = 1000;
+    const charDelay = 50; // 50ms per character
+
+    // Title teletype
+    const titleLength = fullTitle.length;
+    const titleTimers: NodeJS.Timeout[] = [];
+
+    for (let i = 0; i <= titleLength; i++) {
+      const timer = setTimeout(() => {
+        setTitleText(fullTitle.substring(0, i));
+      }, titleDelay + (i * charDelay));
+      titleTimers.push(timer);
+    }
+
+    // Subtitle teletype (starts after title completes)
+    const subtitleDelay = titleDelay + (titleLength * charDelay) + 100; // 100ms pause
+    const subtitleLength = fullSubtitle.length;
+    const subtitleTimers: NodeJS.Timeout[] = [];
+
+    for (let i = 0; i <= subtitleLength; i++) {
+      const timer = setTimeout(() => {
+        setSubtitleText(fullSubtitle.substring(0, i));
+      }, subtitleDelay + (i * charDelay));
+      subtitleTimers.push(timer);
+    }
+
+    // Navigation timer (2000ms total)
+    const navTimer = setTimeout(async () => {
       await ensureLanguageReady();
       const isFirstLaunch = await StorageService.isFirstLaunch();
       if (isFirstLaunch) {
@@ -46,8 +78,13 @@ const SplashScreen: React.FC = () => {
       }
     }, 2000);
 
-    return () => clearTimeout(timer);
-  }, [fadeAnim, scaleAnim, navigation, ensureLanguageReady]);
+    // Cleanup
+    return () => {
+      titleTimers.forEach(timer => clearTimeout(timer));
+      subtitleTimers.forEach(timer => clearTimeout(timer));
+      clearTimeout(navTimer);
+    };
+  }, [fadeAnim, scaleAnim, navigation, ensureLanguageReady, t]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -59,8 +96,8 @@ const SplashScreen: React.FC = () => {
             transform: [{ scale: scaleAnim }],
           },
         ]}>
-        <Text style={styles.title}>{t('splash_title')}</Text>
-        <Text style={styles.subtitle}>{t('splash_subtitle')}</Text>
+        <Text style={styles.title}>{titleText}</Text>
+        <Text style={styles.subtitle}>{subtitleText}</Text>
         </Animated.View>
     </SafeAreaView>
   );

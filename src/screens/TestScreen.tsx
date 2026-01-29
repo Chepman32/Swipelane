@@ -12,7 +12,6 @@ import StorageService from '../services/StorageService';
 import FeedbackService from '../services/FeedbackService';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
-import IAPService from '../services/IAPService';
 import type { SlideFontId } from '../constants/fonts';
 
 interface TestResult {
@@ -102,16 +101,7 @@ const TestScreen: React.FC = () => {
       results.push({ name: 'Language Switching', status: 'failed', error: String(error) });
     }
 
-    // Test 5: IAP Service
-    try {
-      const products = await IAPService.getProducts();
-      const isProStatus = await IAPService.isPro();
-      results.push({ name: 'IAP Service', status: 'success' });
-    } catch (error) {
-      results.push({ name: 'IAP Service', status: 'failed', error: String(error) });
-    }
-
-    // Test 6: Preferences
+    // Test 5: Preferences
     try {
       await StorageService.savePreferences({
         soundEnabled: false,

@@ -73,7 +73,6 @@ class StorageService {
     RECENT_PROJECTS: '@TextToSlides:recentProjects',
     PREFERENCES: '@TextToSlides:preferences',
     APP_STATE: '@TextToSlides:appState',
-    PRO_STATUS: '@TextToSlides:proStatus',
     FIRST_LAUNCH: '@TextToSlides:firstLaunch'
   };
 

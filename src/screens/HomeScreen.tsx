@@ -60,7 +60,7 @@ type HomeScreenNavigationProp = StackNavigationProp<
   'NewProject'
 >;
 
-type GridItem = ProjectState | { isCreateButton: true } | (ProjectState & { isCurrentProject: true });
+type GridItem = ProjectState | (ProjectState & { isCurrentProject: true });
 
 // Helper function to check if item is current project
 const isCurrentProject = (item: GridItem): item is ProjectState & { isCurrentProject: true } => {
@@ -313,8 +313,8 @@ const HomeScreen: React.FC = () => {
   };
 
 
-  const renderProjectItem = (props: { item: ProjectState; isCurrent?: boolean }) => {
-    const { item, isCurrent } = props;
+  const renderProjectItem = (props: { item: ProjectState; isCurrent?: boolean; isLastOdd?: boolean }) => {
+    const { item, isCurrent, isLastOdd } = props;
     const firstSlide = item.slides && item.slides.length > 0 ? item.slides[0] : null;
 
     return (
@@ -328,6 +328,7 @@ const HomeScreen: React.FC = () => {
             margin: scale(8),
             minHeight: isPad ? 280 : 200,
           },
+          isLastOdd && styles.projectCardFullWidth,
         ]}
         onPress={() => handleOpenProject(item)}
         onLongPress={() => handleDeleteProject(item.id)}
@@ -371,46 +372,23 @@ const HomeScreen: React.FC = () => {
     );
   };
 
-  const renderCreateButton = () => (
-    <TouchableOpacity
-      style={[
-        styles.createButton,
-        {
-          backgroundColor: themeDefinition.colors.card,
-          borderColor: themeDefinition.colors.border,
-          margin: scale(8),
-          minHeight: isPad ? 280 : 200,
-        },
-      ]}
-      onPress={handleCreateNewProject}
-    >
-      <Text style={[styles.createButtonText, { color: themeDefinition.colors.primary || '#007AFF', fontSize: scaleFont(48) }]}>
-        +
-      </Text>
-      <Text style={[styles.createButtonLabel, { color: themeDefinition.colors.text, fontSize: scaleFont(16) }]}>
-        {t('new_project')}
-      </Text>
-    </TouchableOpacity>
-  );
+  const renderItem = ({ item, index }: { item: GridItem; index: number }) => {
+    const isLast = index === gridData.length - 1;
+    const isOddCount = gridData.length % 2 === 1;
+    const isLastOdd = isLast && isOddCount;
 
-  const renderItem = ({ item }: { item: GridItem }) => {
-    if ('isCreateButton' in item) {
-      return renderCreateButton();
-    }
     if (isCurrentProject(item)) {
-      return renderProjectItem({ item, isCurrent: true });
+      return renderProjectItem({ item, isCurrent: true, isLastOdd });
     }
-    return renderProjectItem({ item, isCurrent: false });
+    return renderProjectItem({ item, isCurrent: false, isLastOdd });
   };
 
   const keyExtractor = (item: GridItem, _index: number) => {
-    if ('isCreateButton' in item) return 'create-button';
     if ('isCurrentProject' in item) return `current-${item.id}`;
     return item.id;
   };
 
   const gridData: GridItem[] = [
-    { isCreateButton: true },
     ...(currentProject ? [{ ...currentProject, isCurrentProject: true as const }] : []),
     ...recentProjects.filter(p => !currentProject || p.id !== currentProject.id),
   ];
@@ -449,12 +427,36 @@ const HomeScreen: React.FC = () => {
         keyExtractor={keyExtractor}
         numColumns={gridColumns}
         key={`grid-${gridColumns}`}
-        contentContainerStyle={[styles.gridContainer, { padding: scale(16) }]}
+        contentContainerStyle={[
+          styles.gridContainer,
+          {
+            padding: scale(16),
+            paddingBottom: scale(100),
+          }
+        ]}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
         showsVerticalScrollIndicator={false}
       />
+
+      {/* Floating Action Button */}
+      <TouchableOpacity
+        style={[
+          styles.fab,
+          {
+            backgroundColor: themeDefinition.colors.primary || '#007AFF',
+            width: scale(56),
+            height: scale(56),
+            bottom: scale(20),
+            right: scale(20),
+          },
+        ]}
+        onPress={handleCreateNewProject}
+        activeOpacity={0.8}
+      >
+        <Text style={[styles.fabIcon, { fontSize: scaleFont(28) }]}>+</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 };
@@ -502,6 +504,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     overflow: 'hidden',
+  },
+  projectCardFullWidth: {
+    flexBasis: '100%',
   },
   currentProjectBadge: {
     position: 'absolute',
@@ -592,6 +597,25 @@ const styles = StyleSheet.create({
   createButtonLabel: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  fab: {
+    position: 'absolute',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  fabIcon: {
+    color: '#FFFFFF',
+    fontSize: 28,
+    fontWeight: 'bold',
+    lineHeight: 28,
   },
 });
 

@@ -215,11 +215,6 @@ const resources = {
       photo_library_permission_message: 'Photo library permission is required to select images. Please enable it in Settings.',
       photo_library_access_failed: 'Failed to access photo library. Please try again.',
       image_selection_failed: 'Error selecting image. Please try again.',
-      confirm_purchase: 'Confirm Purchase',
-      purchase_message: 'Purchase {{title}} for {{price}}?',
-      purchase_successful: 'Purchase successful! Pro features unlocked.',
-      purchase_failed: 'Purchase failed. Please try again.',
-      product_not_found: 'Product not found',
       export_to_photos: 'Exported to: {{path}}',
       no_content_provided: 'No text provided',
       view_in_photos: 'View in Photos',
@@ -392,14 +387,6 @@ const resources = {
       export_action_x: 'X',
       export_action_gallery: 'Gallery',
       export_action_share: 'Share',
-
-      // In-App Purchases
-      iap_product_not_found: 'Product not found',
-      iap_purchase_failed: 'Purchase failed. Please try again.',
-      iap_purchase_successful: 'Purchase successful! Pro features unlocked.',
-      iap_confirm_title: 'Confirm Purchase',
-      iap_confirm_message: 'Purchase {{title}} for {{price}}?',
-      iap_confirm_buy: 'Buy',
     },
   },
   ru: {
@@ -595,12 +582,6 @@ const resources = {
       export_action_share: 'Поделиться',
 
       // In-App Purchases
-      iap_product_not_found: 'Продукт не найден',
-      iap_purchase_failed: 'Ошибка покупки. Пожалуйста, попробуйте ещё раз.',
-      iap_purchase_successful: 'Покупка совершена! Pro-функции разблокированы.',
-      iap_confirm_title: 'Подтверждение покупки',
-      iap_confirm_message: 'Купить {{title}} за {{price}}?',
-      iap_confirm_buy: 'Купить',
     },
   },
   de: {
@@ -707,11 +688,6 @@ const resources = {
       photo_library_permission_message: 'Berechtigung für Fotobibliothek ist erforderlich, um Bilder auszuwählen. Bitte in den Einstellungen aktivieren.',
       photo_library_access_failed: 'Zugriff auf Fotobibliothek fehlgeschlagen. Bitte versuchen Sie es erneut.',
       image_selection_failed: 'Fehler bei der Bildauswahl. Bitte versuchen Sie es erneut.',
-      confirm_purchase: 'Kauf bestätigen',
-      purchase_message: '{{title}} für {{price}} kaufen?',
-      purchase_successful: 'Kauf erfolgreich! Pro-Funktionen freigeschaltet.',
-      purchase_failed: 'Kauf fehlgeschlagen. Bitte versuchen Sie es erneut.',
-      product_not_found: 'Produkt nicht gefunden',
       export_to_photos: 'Exportiert nach: {{path}}',
       
       // Splash Screen
@@ -884,12 +860,6 @@ const resources = {
       export_action_share: 'Teilen',
 
       // In-App Purchases
-      iap_product_not_found: 'Produkt nicht gefunden',
-      iap_purchase_failed: 'Kauf fehlgeschlagen. Bitte versuchen Sie es erneut.',
-      iap_purchase_successful: 'Kauf erfolgreich! Pro-Funktionen freigeschaltet.',
-      iap_confirm_title: 'Kauf bestätigen',
-      iap_confirm_message: '{{title}} für {{price}} kaufen?',
-      iap_confirm_buy: 'Kaufen',
     },
   },
   fr: {
@@ -996,11 +966,6 @@ const resources = {
       photo_library_permission_message: 'L\'autorisation de la bibliothèque de photos est nécessaire pour sélectionner des images. Veuillez l\'activer dans les paramètres.',
       photo_library_access_failed: 'Échec de l\'accès à la bibliothèque de photos. Veuillez réessayer.',
       image_selection_failed: 'Erreur lors de la sélection de l\'image. Veuillez réessayer.',
-      confirm_purchase: 'Confirmer l\'achat',
-      purchase_message: 'Acheter {{title}} pour {{price}} ?',
-      purchase_successful: 'Achat réussi ! Fonctions pro débloquées.',
-      purchase_failed: 'Échec de l\'achat. Veuillez réessayer.',
-      product_not_found: 'Produit non trouvé',
       export_to_photos: 'Exporté vers : {{path}}',
       
       // Splash Screen
@@ -1173,12 +1138,6 @@ const resources = {
       export_action_share: 'Partager',
 
       // In-App Purchases
-      iap_product_not_found: 'Produit introuvable',
-      iap_purchase_failed: 'Échec de l\'achat. Veuillez réessayer.',
-      iap_purchase_successful: 'Achat réussi ! Fonctionnalités Pro débloquées.',
-      iap_confirm_title: 'Confirmer l\'achat',
-      iap_confirm_message: 'Acheter {{title}} pour {{price}} ?',
-      iap_confirm_buy: 'Acheter',
     },
   },
   pt: {
@@ -1285,11 +1244,6 @@ const resources = {
       photo_library_permission_message: 'Permissão da biblioteca de fotos é necessária para selecionar imagens. Ative nas Configurações.',
       photo_library_access_failed: 'Falha ao acessar a biblioteca de fotos. Tente novamente.',
       image_selection_failed: 'Erro na seleção de imagem. Tente novamente.',
-      confirm_purchase: 'Confirmar Compra',
-      purchase_message: 'Comprar {{title}} por {{price}}?',
-      purchase_successful: 'Compra realizada! Recursos premium desbloqueados.',
-      purchase_failed: 'Falha na compra. Tente novamente.',
-      product_not_found: 'Produto não encontrado',
       export_to_photos: 'Exportado para: {{path}}',
 
       // Splash Screen
@@ -1462,12 +1416,6 @@ const resources = {
       export_action_share: 'Compartir',
 
       // In-App Purchases
-      iap_product_not_found: 'Producto no encontrado',
-      iap_purchase_failed: 'Error en la compra. Por favor, inténtalo de nuevo.',
-      iap_purchase_successful: '¡Compra exitosa! Funciones Pro desbloqueadas.',
-      iap_confirm_title: 'Confirmar Compra',
-      iap_confirm_message: '¿Comprar {{title}} por {{price}}?',
-      iap_confirm_buy: 'Comprar',
     },
   },
   ja: {
@@ -1574,11 +1522,6 @@ const resources = {
       photo_library_permission_message: '画像を選択するにはフォトライブラリ権限が必要です。設定で有効にしてください。',
       photo_library_access_failed: 'フォトライブラリへのアクセスに失敗しました。もう一度お試しください。',
       image_selection_failed: '画像の選択中にエラーが発生しました。もう一度お試しください。',
-      confirm_purchase: '購入を確認',
-      purchase_message: '{{title}} を {{price}} で購入しますか？',
-      purchase_successful: '購入成功！プロ機能がアンロックされました。',
-      purchase_failed: '購入に失敗しました。もう一度お試しください。',
-      product_not_found: '製品が見つかりません',
       export_to_photos: 'エクスポート先：{{path}}',
       
       // Splash Screen
@@ -1751,12 +1694,6 @@ const resources = {
       export_action_share: '共有',
 
       // In-App Purchases
-      iap_product_not_found: '商品が見つかりません',
-      iap_purchase_failed: '購入に失敗しました。もう一度お試しください。',
-      iap_purchase_successful: '購入が完了しました！Pro機能をご利用いただけます。',
-      iap_confirm_title: '購入の確認',
-      iap_confirm_message: '{{title}}を{{price}}で購入しますか？',
-      iap_confirm_buy: '購入',
     },
   },
   zh: {
@@ -1863,11 +1800,6 @@ const resources = {
       photo_library_permission_message: '选择图片需要照片库权限。请在设置中启用。',
       photo_library_access_failed: '访问照片库失败。请重试。',
       image_selection_failed: '选择图片时出错。请重试。',
-      confirm_purchase: '确认购买',
-      purchase_message: '购买 {{title}} 需要 {{price}}？',
-      purchase_successful: '购买成功！专业功能已解锁。',
-      purchase_failed: '购买失败。请重试。',
-      product_not_found: '未找到产品',
       export_to_photos: '已导出到：{{path}}',
       
       // Splash Screen
@@ -2040,12 +1972,6 @@ const resources = {
       export_action_share: '分享',
 
       // In-App Purchases
-      iap_product_not_found: '未找到产品',
-      iap_purchase_failed: '购买失败。请重试。',
-      iap_purchase_successful: '购买成功！专业版功能已解锁。',
-      iap_confirm_title: '确认购买',
-      iap_confirm_message: '以{{price}}购买{{title}}？',
-      iap_confirm_buy: '购买',
     },
   },
   ko: {
@@ -2152,11 +2078,6 @@ const resources = {
       photo_library_permission_message: '이미지를 선택하려면 사진 라이브러리 권한이 필요합니다. 설정에서 활성화해주세요.',
       photo_library_access_failed: '사진 라이브러리 접근에 실패했습니다. 다시 시도해주세요.',
       image_selection_failed: '이미지 선택 중 오류가 발생했습니다. 다시 시도해주세요.',
-      confirm_purchase: '구매 확인',
-      purchase_message: '{{title}}을(를) {{price}}에 구매하시겠습니까?',
-      purchase_successful: '구매 성공! 프로 기능이 잠금 해제되었습니다.',
-      purchase_failed: '구매에 실패했습니다. 다시 시도해주세요.',
-      product_not_found: '제품을 찾을 수 없습니다',
       export_to_photos: '내보낸 위치: {{path}}',
       
       // Splash Screen
@@ -2329,12 +2250,6 @@ const resources = {
       export_action_share: '공유',
 
       // In-App Purchases
-      iap_product_not_found: '제품을 찾을 수 없습니다',
-      iap_purchase_failed: '구매에 실패했습니다. 다시 시도해 주세요.',
-      iap_purchase_successful: '구매 완료! Pro 기능이 잠금 해제되었습니다.',
-      iap_confirm_title: '구매 확인',
-      iap_confirm_message: '{{title}}을(를) {{price}}에 구매하시겠습니까?',
-      iap_confirm_buy: '구매',
     },
   },
   uk: {
@@ -2530,12 +2445,6 @@ const resources = {
       export_action_share: 'Поділитися',
 
       // In-App Purchases
-      iap_product_not_found: 'Продукт не знайдено',
-      iap_purchase_failed: 'Покупка не вдалася. Спробуйте ще раз.',
-      iap_purchase_successful: 'Покупка успішна! Pro функції розблоковано.',
-      iap_confirm_title: 'Підтвердити покупку',
-      iap_confirm_message: 'Купити {{title}} за {{price}}?',
-      iap_confirm_buy: 'Купити',
     },
   },
   es: {
@@ -2718,12 +2627,6 @@ const resources = {
       export_action_share: 'Compartilhar',
 
       // In-App Purchases
-      iap_product_not_found: 'Produto não encontrado',
-      iap_purchase_failed: 'Falha na compra. Por favor, tente novamente.',
-      iap_purchase_successful: 'Compra realizada! Recursos Pro desbloqueados.',
-      iap_confirm_title: 'Confirmar Compra',
-      iap_confirm_message: 'Comprar {{title}} por {{price}}?',
-      iap_confirm_buy: 'Comprar',
     },
   },
   'es-MX': {
@@ -2902,12 +2805,6 @@ const resources = {
       export_action_share: 'Compartir',
 
       // In-App Purchases
-      iap_product_not_found: 'Producto no encontrado',
-      iap_purchase_failed: 'La compra falló. Intenta de nuevo.',
-      iap_purchase_successful: '¡Compra exitosa! Funciones Pro desbloqueadas.',
-      iap_confirm_title: 'Confirmar Compra',
-      iap_confirm_message: '¿Comprar {{title}} por {{price}}?',
-      iap_confirm_buy: 'Comprar',
     },
   },
   'pt-BR': {
@@ -3084,14 +2981,6 @@ const resources = {
       export_action_x: 'X',
       export_action_gallery: 'Gallery',
       export_action_share: 'Share',
-
-      // In-App Purchases
-      iap_product_not_found: 'Product not found',
-      iap_purchase_failed: 'Purchase failed. Please try again.',
-      iap_purchase_successful: 'Purchase successful! Pro features unlocked.',
-      iap_confirm_title: 'Confirm Purchase',
-      iap_confirm_message: 'Purchase {{title}} for {{price}}?',
-      iap_confirm_buy: 'Buy',
     },
   },
   ar: {
@@ -3270,12 +3159,6 @@ const resources = {
       export_action_share: 'مشاركة',
 
       // In-App Purchases
-      iap_product_not_found: 'المنتج غير موجود',
-      iap_purchase_failed: 'فشل الشراء. حاول مرة أخرى.',
-      iap_purchase_successful: 'نجح الشراء! تم فتح ميزات Pro.',
-      iap_confirm_title: 'تأكيد الشراء',
-      iap_confirm_message: 'شراء {{title}} بسعر {{price}}؟',
-      iap_confirm_buy: 'شراء',
     },
   },
   it: {
@@ -3454,12 +3337,6 @@ const resources = {
       export_action_share: 'Condividi',
 
       // In-App Purchases
-      iap_product_not_found: 'Prodotto non trovato',
-      iap_purchase_failed: 'Acquisto fallito. Riprova.',
-      iap_purchase_successful: 'Acquisto riuscito! Funzionalità Pro sbloccate.',
-      iap_confirm_title: 'Conferma Acquisto',
-      iap_confirm_message: 'Acquistare {{title}} per {{price}}?',
-      iap_confirm_buy: 'Acquista',
     },
   },
   nl: {
@@ -3638,12 +3515,6 @@ const resources = {
       export_action_share: 'Delen',
 
       // In-App Purchases
-      iap_product_not_found: 'Product niet gevonden',
-      iap_purchase_failed: 'Aankoop mislukt. Probeer opnieuw.',
-      iap_purchase_successful: 'Aankoop geslaagd! Pro-functies ontgrendeld.',
-      iap_confirm_title: 'Aankoop Bevestigen',
-      iap_confirm_message: '{{title}} kopen voor {{price}}?',
-      iap_confirm_buy: 'Kopen',
     },
   },
   tr: {
@@ -3822,12 +3693,6 @@ const resources = {
       export_action_share: 'Paylaş',
 
       // In-App Purchases
-      iap_product_not_found: 'Ürün bulunamadı',
-      iap_purchase_failed: 'Satın alma başarısız. Tekrar deneyin.',
-      iap_purchase_successful: 'Satın alma başarılı! Pro özellikler açıldı.',
-      iap_confirm_title: 'Satın Almayı Onayla',
-      iap_confirm_message: '{{title}} ürününü {{price}} karşılığında satın al?',
-      iap_confirm_buy: 'Satın Al',
     },
   },
   th: {
@@ -4006,12 +3871,6 @@ const resources = {
       export_action_share: 'แชร์',
 
       // In-App Purchases
-      iap_product_not_found: 'ไม่พบผลิตภัณฑ์',
-      iap_purchase_failed: 'การซื้อล้มเหลว กรุณาลองอีกครั้ง',
-      iap_purchase_successful: 'ซื้อสำเร็จ! ปลดล็อกฟีเจอร์ Pro แล้ว',
-      iap_confirm_title: 'ยืนยันการซื้อ',
-      iap_confirm_message: 'ซื้อ {{title}} ในราคา {{price}} หรือไม่?',
-      iap_confirm_buy: 'ซื้อ',
     },
   },
   vi: {
@@ -4190,12 +4049,6 @@ const resources = {
       export_action_share: 'Chia sẻ',
 
       // In-App Purchases
-      iap_product_not_found: 'Không tìm thấy sản phẩm',
-      iap_purchase_failed: 'Mua hàng thất bại. Vui lòng thử lại.',
-      iap_purchase_successful: 'Mua hàng thành công! Đã mở khóa tính năng Pro.',
-      iap_confirm_title: 'Xác Nhận Mua Hàng',
-      iap_confirm_message: 'Mua {{title}} với giá {{price}}?',
-      iap_confirm_buy: 'Mua',
     },
   },
   id: {
@@ -4374,12 +4227,6 @@ const resources = {
       export_action_share: 'Bagikan',
 
       // In-App Purchases
-      iap_product_not_found: 'Produk tidak ditemukan',
-      iap_purchase_failed: 'Pembelian gagal. Silakan coba lagi.',
-      iap_purchase_successful: 'Pembelian berhasil! Fitur Pro terbuka.',
-      iap_confirm_title: 'Konfirmasi Pembelian',
-      iap_confirm_message: 'Beli {{title}} seharga {{price}}?',
-      iap_confirm_buy: 'Beli',
     },
   },
   pl: {
@@ -4558,12 +4405,6 @@ const resources = {
       export_action_share: 'Udostępnij',
 
       // In-App Purchases
-      iap_product_not_found: 'Nie znaleziono produktu',
-      iap_purchase_failed: 'Zakup nie powiódł się. Spróbuj ponownie.',
-      iap_purchase_successful: 'Zakup udany! Odblokowano funkcje Pro.',
-      iap_confirm_title: 'Potwierdź Zakup',
-      iap_confirm_message: 'Kupić {{title}} za {{price}}?',
-      iap_confirm_buy: 'Kup',
     },
   },
   he: {
@@ -4742,12 +4583,6 @@ const resources = {
       export_action_share: 'שתף',
 
       // In-App Purchases
-      iap_product_not_found: 'המוצר לא נמצא',
-      iap_purchase_failed: 'הרכישה נכשלה. נסה שוב.',
-      iap_purchase_successful: 'הרכישה הצליחה! תכונות Pro נפתחו.',
-      iap_confirm_title: 'אשר רכישה',
-      iap_confirm_message: 'לרכוש {{title}} תמורת {{price}}?',
-      iap_confirm_buy: 'קנה',
     },
   },
   hi: {
@@ -4926,12 +4761,6 @@ const resources = {
       export_action_share: 'साझा करें',
 
       // In-App Purchases
-      iap_product_not_found: 'उत्पाद नहीं मिला',
-      iap_purchase_failed: 'खरीदारी विफल। पुनः प्रयास करें।',
-      iap_purchase_successful: 'खरीदारी सफल! Pro सुविधाएँ अनलॉक हुईं।',
-      iap_confirm_title: 'खरीदारी की पुष्टि करें',
-      iap_confirm_message: '{{title}} को {{price}} में खरीदें?',
-      iap_confirm_buy: 'खरीदें',
     },
   },
   sv: {
@@ -5110,12 +4939,6 @@ const resources = {
       export_action_share: 'Dela',
 
       // In-App Purchases
-      iap_product_not_found: 'Produkt hittades inte',
-      iap_purchase_failed: 'Köp misslyckades. Försök igen.',
-      iap_purchase_successful: 'Köp genomfört! Pro-funktioner upplåsta.',
-      iap_confirm_title: 'Bekräfta Köp',
-      iap_confirm_message: 'Köp {{title}} för {{price}}?',
-      iap_confirm_buy: 'Köp',
     },
   },
   no: {
@@ -5294,12 +5117,6 @@ const resources = {
       export_action_share: 'Del',
 
       // In-App Purchases
-      iap_product_not_found: 'Produkt ikke funnet',
-      iap_purchase_failed: 'Kjøp mislyktes. Prøv igjen.',
-      iap_purchase_successful: 'Kjøp vellykket! Pro-funksjoner låst opp.',
-      iap_confirm_title: 'Bekreft Kjøp',
-      iap_confirm_message: 'Kjøp {{title}} for {{price}}?',
-      iap_confirm_buy: 'Kjøp',
     },
   },
   da: {
@@ -5478,12 +5295,6 @@ const resources = {
       export_action_share: 'Del',
 
       // In-App Purchases
-      iap_product_not_found: 'Produkt ikke fundet',
-      iap_purchase_failed: 'Køb mislykkedes. Prøv igen.',
-      iap_purchase_successful: 'Køb gennemført! Pro-funktioner låst op.',
-      iap_confirm_title: 'Bekræft Køb',
-      iap_confirm_message: 'Køb {{title}} for {{price}}?',
-      iap_confirm_buy: 'Køb',
     },
   },
   fi: {
@@ -5662,12 +5473,6 @@ const resources = {
       export_action_share: 'Jaa',
 
       // In-App Purchases
-      iap_product_not_found: 'Tuotetta ei löytynyt',
-      iap_purchase_failed: 'Osto epäonnistui. Yritä uudelleen.',
-      iap_purchase_successful: 'Osto onnistui! Pro-ominaisuudet avattu.',
-      iap_confirm_title: 'Vahvista Osto',
-      iap_confirm_message: 'Osta {{title}} hintaan {{price}}?',
-      iap_confirm_buy: 'Osta',
     },
   },
   cs: {
@@ -5846,12 +5651,6 @@ const resources = {
       export_action_share: 'Sdílet',
 
       // In-App Purchases
-      iap_product_not_found: 'Produkt nenalezen',
-      iap_purchase_failed: 'Nákup se nezdařil. Zkuste to znovu.',
-      iap_purchase_successful: 'Nákup úspěšný! Pro funkce odemčeny.',
-      iap_confirm_title: 'Potvrdit Nákup',
-      iap_confirm_message: 'Koupit {{title}} za {{price}}?',
-      iap_confirm_buy: 'Koupit',
     },
   },
   hu: {
@@ -6030,12 +5829,6 @@ const resources = {
       export_action_share: 'Megosztás',
 
       // In-App Purchases
-      iap_product_not_found: 'Termék nem található',
-      iap_purchase_failed: 'Vásárlás sikertelen. Próbálja újra.',
-      iap_purchase_successful: 'Vásárlás sikeres! Pro funkciók feloldva.',
-      iap_confirm_title: 'Vásárlás Megerősítése',
-      iap_confirm_message: '{{title}} vásárlása {{price}} áron?',
-      iap_confirm_buy: 'Vásárlás',
     },
   },
   ro: {
@@ -6214,12 +6007,6 @@ const resources = {
       export_action_share: 'Partajare',
 
       // In-App Purchases
-      iap_product_not_found: 'Produs negăsit',
-      iap_purchase_failed: 'Achiziție eșuată. Încercați din nou.',
-      iap_purchase_successful: 'Achiziție reușită! Funcții Pro deblocate.',
-      iap_confirm_title: 'Confirmați Achiziția',
-      iap_confirm_message: 'Cumpărați {{title}} pentru {{price}}?',
-      iap_confirm_buy: 'Cumpără',
     },
   },
   el: {
@@ -6398,12 +6185,6 @@ const resources = {
       export_action_share: 'Κοινοποίηση',
 
       // In-App Purchases
-      iap_product_not_found: 'Το προϊόν δεν βρέθηκε',
-      iap_purchase_failed: 'Αποτυχία αγοράς. Δοκιμάστε ξανά.',
-      iap_purchase_successful: 'Επιτυχής αγορά! Οι λειτουργίες Pro ξεκλειδώθηκαν.',
-      iap_confirm_title: 'Επιβεβαίωση Αγοράς',
-      iap_confirm_message: 'Αγορά {{title}} για {{price}};',
-      iap_confirm_buy: 'Αγορά',
     },
   },
   ms: {
@@ -6582,12 +6363,6 @@ const resources = {
       export_action_share: 'Kongsi',
 
       // In-App Purchases
-      iap_product_not_found: 'Produk tidak dijumpai',
-      iap_purchase_failed: 'Pembelian gagal. Sila cuba lagi.',
-      iap_purchase_successful: 'Pembelian berjaya! Ciri Pro dibuka.',
-      iap_confirm_title: 'Sahkan Pembelian',
-      iap_confirm_message: 'Beli {{title}} untuk {{price}}?',
-      iap_confirm_buy: 'Beli',
     },
   },
   fil: {
@@ -6766,12 +6541,6 @@ const resources = {
       export_action_share: 'I-share',
 
       // In-App Purchases
-      iap_product_not_found: 'Hindi nahanap ang produkto',
-      iap_purchase_failed: 'Nabigo ang pagbili. Subukan muli.',
-      iap_purchase_successful: 'Matagumpay ang pagbili! Na-unlock ang mga Pro features.',
-      iap_confirm_title: 'Kumpirmahin ang Pagbili',
-      iap_confirm_message: 'Bilhin ang {{title}} para sa {{price}}?',
-      iap_confirm_buy: 'Bilhin',
     },
   },
 };

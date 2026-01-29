@@ -14,18 +14,8 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import AppNavigator from './src/navigation/AppNavigator';
 import { ThemeProvider } from './src/context/ThemeContext';
 import { LanguageProvider } from './src/context/LanguageContext';
-import IAPService from './src/services/IAPService';
 
 function App() {
-  useEffect(() => {
-    // Initialize IAP service
-    IAPService.init();
-    
-    // Cleanup on unmount
-    return () => {
-      IAPService.endConnection();
-    };
-  }, []);
 
   return (
     <GestureHandlerRootView style={styles.container}>
