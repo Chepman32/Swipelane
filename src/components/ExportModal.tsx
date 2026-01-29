@@ -14,10 +14,11 @@ import {
   Image,
   Platform,
   Modal,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CameraRoll } from '@react-native-camera-roll/camera-roll';
-import Share, { Social } from 'react-native-share';
+import Share from 'react-native-share';
 import { HapticFeedbackTypes } from 'react-native-haptic-feedback';
 import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import {
@@ -233,80 +234,96 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   };
 
   const handleShareInstagram = async () => {
-    let shareUris: string[] = [];
     try {
       setExportingAction('instagram');
       FeedbackService.triggerHaptic(HapticFeedbackTypes.impactMedium);
 
-      shareUris = await getShareUris();
-      const fileUri = shareUris[0];
-
-      // Verify file exists
-      const exists = await RNFS.exists(fileUri.replace('file://', ''));
-      if (!exists) {
-        throw new Error('File generation failed');
+      // Check if Instagram is installed
+      const instagramInstalled = await Linking.canOpenURL('instagram://app');
+      if (!instagramInstalled) {
+        FeedbackService.triggerHaptic(HapticFeedbackTypes.notificationError);
+        Alert.alert('Error', 'Instagram is not installed on this device.');
+        return;
       }
 
+      const shareUris = await getShareUris();
       console.log('Sharing to Instagram:', shareUris);
 
-      // Save all images to camera roll first - Instagram needs this for carousel posts
+      // Save all images to camera roll first
       for (const uri of shareUris) {
         await CameraRoll.save(uri, { type: 'photo' });
       }
 
-      // Open Instagram - it will detect the recent photos from camera roll
-      // This opens Instagram's native selector (Reel/Post/Story/Message)
-      await Share.shareSingle({
-        social: Social.Instagram,
-        url: fileUri,
-        type: 'image/png',
-      });
-
       FeedbackService.triggerHaptic(HapticFeedbackTypes.notificationSuccess);
+
+      // Show success message and open Instagram
+      const imageCount = shareUris.length;
+      Alert.alert(
+        'Images Saved!',
+        `${imageCount} image${imageCount > 1 ? 's' : ''} saved to your Photos.\n\nInstagram will open now. Select your images from the gallery to create a ${imageCount > 1 ? 'carousel ' : ''}post.`,
+        [
+          {
+            text: 'Open Instagram',
+            onPress: () => {
+              // Open Instagram's library/camera picker
+              Linking.openURL('instagram://library');
+            },
+          },
+          { text: 'Cancel', style: 'cancel' },
+        ],
+      );
     } catch (error: any) {
       console.error('Instagram share error:', error);
-
-      if (error?.message !== 'User did not share') {
-        FeedbackService.triggerHaptic(HapticFeedbackTypes.notificationError);
-        Alert.alert('Error', 'Failed to share to Instagram. Make sure Instagram is installed.');
-      }
+      FeedbackService.triggerHaptic(HapticFeedbackTypes.notificationError);
+      Alert.alert('Error', 'Failed to save images. Please try again.');
     } finally {
       setExportingAction(null);
     }
   };
 
   const handleShareX = async () => {
-    let shareUris: string[] = [];
     try {
       setExportingAction('x');
       FeedbackService.triggerHaptic(HapticFeedbackTypes.impactMedium);
 
-      shareUris = await getShareUris();
+      // Check if X/Twitter is installed
+      const xInstalled = await Linking.canOpenURL('twitter://');
+      if (!xInstalled) {
+        FeedbackService.triggerHaptic(HapticFeedbackTypes.notificationError);
+        Alert.alert('Error', 'X is not installed on this device.');
+        return;
+      }
+
+      const shareUris = await getShareUris();
       console.log('Sharing to X:', shareUris);
 
-      // Save all images to camera roll for multiple images - X can pick them up
-      if (shareUris.length > 1) {
-        for (const uri of shareUris) {
-          await CameraRoll.save(uri, { type: 'photo' });
-        }
+      // Save all images to camera roll first
+      for (const uri of shareUris) {
+        await CameraRoll.save(uri, { type: 'photo' });
       }
-
-      // Use url (singular) not urls - Twitter/X doesn't support urls parameter
-      // The message will be pre-filled in the compose screen
-      await Share.shareSingle({
-        social: Social.Twitter,
-        url: shareUris[0],
-        type: 'image/png',
-        message: 'Created with Texora',
-      });
 
       FeedbackService.triggerHaptic(HapticFeedbackTypes.notificationSuccess);
+
+      // Show success message and open X
+      const imageCount = shareUris.length;
+      Alert.alert(
+        'Images Saved!',
+        `${imageCount} image${imageCount > 1 ? 's' : ''} saved to your Photos.\n\nX will open now. Tap the photo icon to attach your images${imageCount > 1 ? ' as a carousel' : ''}.`,
+        [
+          {
+            text: 'Open X',
+            onPress: () => {
+              // Open X with pre-filled message
+              Linking.openURL('twitter://post?message=Created%20with%20Texora');
+            },
+          },
+          { text: 'Cancel', style: 'cancel' },
+        ],
+      );
     } catch (error: any) {
-      if (error?.message !== 'User did not share') {
-        console.error('X share error:', error);
-        FeedbackService.triggerHaptic(HapticFeedbackTypes.notificationError);
-        Alert.alert('Error', 'Failed to share to X. Make sure X is installed.');
-      }
+      console.error('X share error:', error);
+      FeedbackService.triggerHaptic(HapticFeedbackTypes.notificationError);
+      Alert.alert('Error', 'Failed to save images. Please try again.');
     } finally {
       setExportingAction(null);
     }
