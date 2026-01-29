@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -17,12 +17,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Create animated FlatList component
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
+import { useRoute, RouteProp } from '@react-navigation/native';
 
 import FeedbackService from '../services/FeedbackService';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
+import { ExportModal } from '../components/ExportModal';
 import {
   DEFAULT_SLIDE_FONT_ID,
   getSlideFontByFamily,
@@ -54,16 +54,9 @@ type RootStackParamList = {
   Home: undefined;
   Editor: { text: string; images: string[] };
   Preview: { slides: any[] };
-  Export: {
-    imageUri?: string;
-    imageUris?: string[];
-    effectId?: string;
-    params?: Record<string, any>;
-  };
 };
 
 type PreviewRouteProp = RouteProp<RootStackParamList, 'Preview'>;
-type PreviewNavigationProp = StackNavigationProp<RootStackParamList, 'Home'>;
 
 // Helper to filter supported effects
 const filterSupportedEffects = (effects?: any[]) =>
@@ -225,7 +218,6 @@ const SlideRenderer: React.FC<SlideRendererProps> = ({
 
 const PreviewScreen: React.FC = () => {
   const route = useRoute<PreviewRouteProp>();
-  const navigation = useNavigation<PreviewNavigationProp>();
   const { slides } = route.params;
   const insets = useSafeAreaInsets();
   const { themeDefinition } = useTheme();
@@ -234,10 +226,15 @@ const PreviewScreen: React.FC = () => {
 
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [isExporting, setIsExporting] = useState(false);
+  const [exportModalVisible, setExportModalVisible] = useState(false);
+  const [exportImageUris, setExportImageUris] = useState<string[]>([]);
   const scrollX = useRef(new Animated.Value(0)).current;
   const slideRefs = useRef<View[]>([]);
   const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
   const slideSize = Math.min(screenWidth * 0.99, screenWidth - 10); // Use 99% of screen width
+
+  // Refs for hidden slides used for export
+  const hiddenSlideRefs = useRef<View[]>([]);
 
   // Calculate available height for image container
   const headerHeight = Math.max(insets.top, 20) + 60; // Safe area + title height
@@ -253,45 +250,50 @@ const PreviewScreen: React.FC = () => {
     setIsExporting(true);
 
     try {
-      const currentSlideRef = slideRefs.current[currentSlideIndex];
-      if (!currentSlideRef) {
-        throw new Error('Slide is not ready to export');
-      }
-
-      const aspectRatio = slideSize / imageContainerHeight;
-      let targetWidth = exportResolution;
-      let targetHeight = exportResolution;
-
-      if (aspectRatio > 1) {
-        targetWidth = exportResolution;
-        targetHeight = Math.round(exportResolution / aspectRatio);
-      } else {
-        targetHeight = exportResolution;
-        targetWidth = Math.round(exportResolution * aspectRatio);
-      }
-
-      const base64 = await captureRef(currentSlideRef as any, {
-        format: 'png',
-        result: 'base64',
-        width: Math.max(1, targetWidth),
-        height: Math.max(1, targetHeight),
-      });
-
-      // console.log('CaptureRef URI:', uri);
-
-      // Copy the temporary file to a more persistent location
-      // This ensures the file exists when ExportScreen tries to use it
+      const uris: string[] = [];
       const exportDir = `${RNFS.CachesDirectoryPath}/exports`;
-      await RNFS.mkdir(exportDir).catch(() => {}); // Ignore if directory exists
-      
-      const fileName = `export_${Date.now()}.png`;
-      const persistentPath = `${exportDir}/${fileName}`;
-      
-      // Write the base64 data to the persistent location
-      await RNFS.writeFile(persistentPath, base64, 'base64');
-      
-      const persistentUri = `file://${persistentPath}`;
-      navigation.navigate('Export', { imageUri: persistentUri });
+      await RNFS.mkdir(exportDir).catch(() => {});
+
+      // Capture all slides
+      for (let i = 0; i < slides.length; i++) {
+        const slideRef = hiddenSlideRefs.current[i];
+        if (!slideRef) {
+          console.warn(`Slide ref ${i} not found`);
+          continue;
+        }
+
+        // Use the same aspect ratio calculation
+        const aspectRatio = slideSize / imageContainerHeight;
+        let targetWidth = exportResolution;
+        let targetHeight = exportResolution;
+
+        if (aspectRatio > 1) {
+          targetWidth = exportResolution;
+          targetHeight = Math.round(exportResolution / aspectRatio);
+        } else {
+          targetHeight = exportResolution;
+          targetWidth = Math.round(exportResolution * aspectRatio);
+        }
+
+        const base64 = await captureRef(slideRef as any, {
+          format: 'png',
+          result: 'base64',
+          width: Math.max(1, targetWidth),
+          height: Math.max(1, targetHeight),
+        });
+
+        const fileName = `export_${Date.now()}_${i}.png`;
+        const persistentPath = `${exportDir}/${fileName}`;
+        await RNFS.writeFile(persistentPath, base64, 'base64');
+        uris.push(`file://${persistentPath}`);
+      }
+
+      if (uris.length === 0) {
+        throw new Error('No slides captured');
+      }
+
+      setExportImageUris(uris);
+      setExportModalVisible(true);
     } catch (error) {
       console.error('Export error:', error);
       FeedbackService.error();
@@ -332,6 +334,11 @@ const PreviewScreen: React.FC = () => {
     itemVisiblePercentThreshold: 50,
   }).current;
 
+  const handleCloseExportModal = useCallback(() => {
+    setExportModalVisible(false);
+    setExportImageUris([]);
+  }, []);
+
   return (
     <View
       style={[
@@ -369,6 +376,32 @@ const PreviewScreen: React.FC = () => {
             </Text>
           </View>
         )}
+      </View>
+
+      {/* Hidden container for exporting all slides */}
+      <View
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          opacity: 0,
+          zIndex: -1000,
+          pointerEvents: 'none',
+        }}
+      >
+        {slides.map((item, index) => (
+          <SlideRenderer
+            key={`hidden-${index}`}
+            item={item}
+            index={index}
+            slideSize={slideSize}
+            imageContainerHeight={imageContainerHeight}
+            themeColors={{ card: themeDefinition.colors.card }}
+            onRef={(idx, ref) => {
+              if (ref) hiddenSlideRefs.current[idx] = ref;
+            }}
+          />
+        ))}
       </View>
 
       {/* Slide indicators */}
@@ -412,6 +445,12 @@ const PreviewScreen: React.FC = () => {
           <Text style={[styles.exportButtonText, { fontSize: scaleFont(18) }]}>{t('export')}</Text>
         )}
       </TouchableOpacity>
+
+      <ExportModal
+        visible={exportModalVisible}
+        onClose={handleCloseExportModal}
+        imageUris={exportImageUris}
+      />
     </View>
   );
 };

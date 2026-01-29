@@ -22,8 +22,6 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
-	<key>LSRequiresIPhoneOS</key>
-	<true/>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>instagram</string>
@@ -31,6 +29,8 @@
 		<string>twitter</string>
 		<string>x</string>
 	</array>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
@@ -38,43 +38,20 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string/>
 	<key>NSCameraUsageDescription</key>
 	<string>This app needs access to camera to take photos for slide backgrounds.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>This app needs access to photo library to select images for slide backgrounds.</string>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>This app needs access to save exported slides to your photo library.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string></string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>This app needs microphone access to recognize your speech and convert it to text.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>This app needs access to save exported slides to your photo library.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app needs access to photo library to select images for slide backgrounds.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>This app uses speech recognition to convert your voice to text for creating slides.</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
-	<key>UILaunchStoryboardName</key>
-	<string>LaunchScreen</string>
-	<key>UIRequiredDeviceCapabilities</key>
-	<array>
-		<string>arm64</string>
-	</array>
-	<key>UISupportedInterfaceOrientations</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
-	<key>UISupportedInterfaceOrientations~ipad</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationPortraitUpsideDown</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
-	<key>UIRequiresFullScreen</key>
-	<true/>
-	<key>UIViewControllerBasedStatusBarAppearance</key>
-	<false/>
 	<key>UIAppFonts</key>
 	<array>
 		<string>ArchivoBlack-Regular.ttf</string>
@@ -99,5 +76,30 @@
 		<string>FiraSans-ThinItalic.ttf</string>
 		<string>HomemadeApple-Regular.ttf</string>
 	</array>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>arm64</string>
+	</array>
+	<key>UIRequiresFullScreen</key>
+	<true/>
+	<key>UIStatusBarHidden</key>
+	<true/>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<false/>
 </dict>
 </plist>

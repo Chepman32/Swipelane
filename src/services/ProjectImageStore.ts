@@ -92,6 +92,26 @@ class ProjectImageStore {
   }
 
   /**
+   * Fixes a potentially stale file URI by updating the sandbox root path.
+   * On iOS, the app sandbox path changes on every update/build.
+   */
+  fixPath(uri: string): string {
+    if (!uri) return uri;
+    
+    // If it's a project image path (contains project-images)
+    if (uri.includes('project-images')) {
+      const parts = uri.split('project-images');
+      if (parts.length > 1) {
+        // Reconstruct using current DocumentDirectoryPath
+        const relativePath = parts[1]; // e.g. /projectId/images/image.jpg
+        return `file://${PROJECT_IMAGES_ROOT}${relativePath}`;
+      }
+    }
+    
+    return uri;
+  }
+
+  /**
    * Persist a local file into Documents/project-images/<projectId>/images.
    * Returns a file:// URI when successful, or null if it cannot persist.
    */

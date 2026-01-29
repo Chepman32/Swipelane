@@ -13,7 +13,6 @@ import PreviewScreen from '../screens/PreviewScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import AboutScreen from '../screens/AboutScreen';
 import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
-import ExportScreen from '../screens/ExportScreen';
 import { useLanguage } from '../context/LanguageContext';
 
 export type RootStackParamList = {
@@ -24,12 +23,6 @@ export type RootStackParamList = {
   ImageSelection: { text: string; projectId: string; images?: string[] };
   Editor: { text: string; images: string[]; projectId: string };
   Preview: { slides: any[] };
-  Export: {
-    imageUri?: string;
-    imageUris?: string[];
-    effectId?: string;
-    params?: Record<string, any>;
-  };
   Settings: undefined;
   About: undefined;
   PrivacyPolicy: undefined;
@@ -114,15 +107,6 @@ const AppNavigator: React.FC = () => {
           options={{
             headerShown: true,
             title: t('preview_title'),
-          }}
-        />
-        <Stack.Screen
-          name="Export"
-          component={ExportScreen}
-          options={{
-            headerShown: false,
-            presentation: 'transparentModal',
-            cardStyle: { backgroundColor: 'transparent' },
           }}
         />
         <Stack.Screen

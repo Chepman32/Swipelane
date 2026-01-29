@@ -23,7 +23,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -745,15 +745,6 @@ const EditorScreen: React.FC = () => {
     });
   }, [navigation, saveProject, text, projectId, normalizedImages]);
 
-  const handleHeaderBack = useCallback(() => {
-    FeedbackService.buttonTap();
-    if (navigation.canGoBack()) {
-      navigation.goBack();
-      return;
-    }
-    navigation.replace('Home');
-  }, [navigation]);
-
   // Undo/Redo handlers
   const handleUndo = useCallback(() => {
     FeedbackService.buttonTap();
@@ -798,62 +789,51 @@ const EditorScreen: React.FC = () => {
   }, [setHeaderUpdateTrigger]);
 
   // Set up custom header with folder button and undo/redo
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      headerShown: true,
-      headerLeft: () => (
-        <TouchableOpacity
-          onPress={handleHeaderBack}
-          style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12 }}
-          accessibilityRole="button"
-        >
-          <Text
-            style={{
-              fontSize: 18,
-              color: themeDefinition.colors.primary,
-              marginRight: 4,
-            }}
-          >
-            {'<'}
-          </Text>
-          <Text style={{ fontSize: 16, color: themeDefinition.colors.primary }}>
-            {t('back')}
-          </Text>
-        </TouchableOpacity>
-      ),
-      headerRight: () => (
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+  useFocusEffect(
+    useCallback(() => {
+      navigation.setOptions({
+        headerShown: true,
+        headerLeft: () => (
           <TouchableOpacity
-            onPress={handleUndo}
-            style={{ paddingHorizontal: 8, opacity: historyIndexRef.current > 0 ? 1 : 0.3 }}
+            onPress={() => navigation.goBack()}
+            style={{ paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center' }}
           >
-            <Image source={require('../assets/icons/undo.png')} style={{ width: 24, height: 24 }} />
+            <Text style={{ fontSize: 28, color: '#007AFF', marginRight: 4 }}>‹</Text>
+            <Text style={{ fontSize: 17, color: '#007AFF' }}>{t('back')}</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            onPress={handleRedo}
-            style={{ paddingHorizontal: 8, opacity: historyIndexRef.current < historyRef.current.length - 1 ? 1 : 0.3 }}
-          >
-            <Image source={require('../assets/icons/redo.png')} style={{ width: 24, height: 24 }} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={handleOpenImageSelection}
-            style={{ paddingHorizontal: 12 }}
-          >
-            <Text style={{ fontSize: 20 }}>📁</Text>
-          </TouchableOpacity>
-        </View>
-      ),
-    });
-  }, [
-    navigation,
-    handleHeaderBack,
-    handleOpenImageSelection,
-    handleUndo,
-    handleRedo,
-    headerUpdateTrigger,
-    t,
-    themeDefinition.colors.primary,
-  ]);
+        ),
+        headerRight: () => (
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <TouchableOpacity
+              onPress={handleUndo}
+              style={{ paddingHorizontal: 8, opacity: historyIndexRef.current > 0 ? 1 : 0.3 }}
+            >
+              <Image source={require('../assets/icons/undo.png')} style={{ width: 24, height: 24 }} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleRedo}
+              style={{ paddingHorizontal: 8, opacity: historyIndexRef.current < historyRef.current.length - 1 ? 1 : 0.3 }}
+            >
+              <Image source={require('../assets/icons/redo.png')} style={{ width: 24, height: 24 }} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleOpenImageSelection}
+              style={{ paddingHorizontal: 12 }}
+            >
+              <Text style={{ fontSize: 20 }}>📁</Text>
+            </TouchableOpacity>
+          </View>
+        ),
+      });
+    }, [
+      navigation,
+      handleOpenImageSelection,
+      handleUndo,
+      handleRedo,
+      headerUpdateTrigger,
+      t,
+    ])
+  );
 
   // Save project before navigating away
   useEffect(() => {

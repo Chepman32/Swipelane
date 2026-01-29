@@ -170,18 +170,23 @@ class StorageService {
             textEffects: sanitizeTextEffects(slide.textEffects),
           })),
         };
+
+        // Migrate images to persistent storage before saving
+        const migration = await this.migrateProjectImages(normalizedProject);
+        const projectToSave = migration.project;
+
         await AsyncStorage.setItem(
           this.STORAGE_KEYS.CURRENT_PROJECT,
-          JSON.stringify(normalizedProject)
+          JSON.stringify(projectToSave)
         );
 
         // Only add/update in recent projects if project has meaningful content
         // (has slides with images or text, or is completed)
-        const hasContent = normalizedProject.slides.length > 0 &&
-          normalizedProject.slides.some(slide => slide.image || slide.text);
+        const hasContent = projectToSave.slides.length > 0 &&
+          projectToSave.slides.some(slide => slide.image || slide.text);
 
-        if (normalizedProject.isCompleted || hasContent) {
-          await this.addToRecentProjects(normalizedProject);
+        if (projectToSave.isCompleted || hasContent) {
+          await this.addToRecentProjects(projectToSave);
         }
       },
       undefined,
@@ -207,9 +212,12 @@ class StorageService {
                 ? getSlideFontById(legacyFontId)
                 : getSlideFontByFamily(slide.fontFamily);
 
+              // Fix potential stale paths
+              const fixedImageUri = ProjectImageStore.fixPath(normalizeImageUri(slide.image));
+
               return {
                 ...slide,
-                image: normalizeImageUri(slide.image),
+                image: fixedImageUri,
                 fontId:
                   legacyFontId ??
                   (slide.fontFamily
@@ -222,7 +230,7 @@ class StorageService {
           }
 
           if (parsed.images && parsed.images.length > 0) {
-            parsed.images = normalizeImageUris(parsed.images);
+            parsed.images = normalizeImageUris(parsed.images).map(img => ProjectImageStore.fixPath(img));
           } else if (parsed.slides?.length) {
             parsed.images = parsed.slides.map(slide => slide.image || '');
           }
@@ -286,8 +294,12 @@ class StorageService {
         const parsed: ProjectState[] = JSON.parse(projectsData);
         const hydratedProjects = parsed.map(project => ({
           ...project,
-          images: project.images ? normalizeImageUris(project.images) : project.images,
+          images: project.images 
+            ? normalizeImageUris(project.images).map(img => ProjectImageStore.fixPath(img))
+            : project.images,
           slides: project.slides?.map(slide => {
+            const fixedImageUri = ProjectImageStore.fixPath(normalizeImageUri(slide.image));
+            
             const legacyFontId =
               slide.fontId === LEGACY_SYSTEM_FONT_ID
                 ? DEFAULT_SLIDE_FONT_ID
@@ -477,7 +489,7 @@ class StorageService {
         }
       }
 
-      return { totalSize, keys };
+      return { totalSize, keys: [...keys] };
     } catch (error) {
       console.error('Error getting storage info:', error);
       return { totalSize: 0, keys: [] };
@@ -485,7 +497,7 @@ class StorageService {
   }
 
   // Auto-save functionality
-  private autoSaveTimer: NodeJS.Timeout | null = null;
+  private autoSaveTimer: ReturnType<typeof setInterval> | null = null;
 
   startAutoSave(project: ProjectState, intervalMs: number = 30000): void {
     this.stopAutoSave();
