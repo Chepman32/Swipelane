@@ -516,7 +516,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
   },
   settingsButtonIcon: {
-    tintColor: '#000000',
+    tintColor: undefined,
   },
   gridContainer: {
     padding: 16,

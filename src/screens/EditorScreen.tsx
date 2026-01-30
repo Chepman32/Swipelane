@@ -2161,7 +2161,7 @@ const EditorScreen: React.FC = () => {
                           styles.textInput,
                           {
                             fontSize: currentSlide.fontSize,
-                            color: '#000000',
+                            color: currentSlide.color,
                             textAlign: currentSlide.textAlign,
                             fontWeight: activeFontOption?.supportsWeightToggle
                               ? currentSlide.fontWeight

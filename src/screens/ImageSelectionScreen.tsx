@@ -811,14 +811,14 @@ const ImageSelectionScreen: React.FC = () => {
               {t('edit_slide_subtitle')}
             </Text>
             <TextInput
-              style={styles.modalTextInput}
+              style={[styles.modalTextInput, { color: '#ffffff' }]}
               value={editingSlideDraft}
               onChangeText={setEditingSlideDraft}
               multiline
               autoFocus
               textAlignVertical="top"
               placeholder={t('home_placeholder')}
-              placeholderTextColor="#00000066"
+              placeholderTextColor="rgba(255, 255, 255, 0.5)"
             />
             <View style={styles.modalButtonRow}>
               <TouchableOpacity
@@ -1109,8 +1109,7 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.7)',
   },
   modalTextInput: {
-    backgroundColor: '#ffffff',
-    color: '#000000',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 14,
     paddingHorizontal: 14,
     paddingVertical: 12,
@@ -1118,6 +1117,8 @@ const styles = StyleSheet.create({
     maxHeight: 280,
     fontSize: 16,
     textAlignVertical: 'top',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   modalButtonRow: {
     flexDirection: 'row',
