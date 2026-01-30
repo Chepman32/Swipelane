@@ -477,7 +477,7 @@ const HomeScreen: React.FC = () => {
             backgroundColor: themeDefinition.colors.primary || '#007AFF',
             width: scale(56),
             height: scale(56),
-            bottom: scale(20),
+            bottom: scale(40),
             right: scale(20),
           },
         ]}
