@@ -727,7 +727,7 @@ const ImageSelectionScreen: React.FC = () => {
                   style={styles.editTextButton}
                   onPress={() => handleOpenTextEditor(index)}
                 >
-                  <Text style={styles.editTextButtonText}>Edit</Text>
+                  <Text style={styles.editTextButtonText}>{t('edit')}</Text>
                 </TouchableOpacity>
               </View>
 
@@ -765,7 +765,7 @@ const ImageSelectionScreen: React.FC = () => {
                       style={styles.plainBackgroundPlaceholder}
                     />
                     <View style={styles.plainBackgroundBadge}>
-                      <Text style={styles.plainBackgroundBadgeText}>Gradient</Text>
+                      <Text style={styles.plainBackgroundBadgeText}>{t('gradient')}</Text>
                     </View>
                   </TouchableOpacity>
                 ) : (
@@ -803,10 +803,12 @@ const ImageSelectionScreen: React.FC = () => {
           <Pressable style={styles.modalBackdrop} onPress={handleSaveEditingSlideText} />
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>
-              {editingSlideNumber ? `Edit Slide ${editingSlideNumber}` : 'Edit Slide'}
+              {editingSlideNumber
+                ? t('edit_slide_with_number', { number: editingSlideNumber })
+                : t('edit_slide')}
             </Text>
             <Text style={styles.modalSubtitle}>
-              Adjust the slide text before choosing images.
+              {t('edit_slide_subtitle')}
             </Text>
             <TextInput
               style={styles.modalTextInput}
@@ -823,13 +825,13 @@ const ImageSelectionScreen: React.FC = () => {
                 style={[styles.modalButton, styles.modalCancelButton]}
                 onPress={handleCancelEditingSlideText}
               >
-                <Text style={styles.modalCancelButtonText}>Cancel</Text>
+                <Text style={styles.modalCancelButtonText}>{t('cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.modalButton, styles.modalSaveButton]}
                 onPress={handleSaveEditingSlideText}
               >
-                <Text style={styles.modalSaveButtonText}>Save</Text>
+                <Text style={styles.modalSaveButtonText}>{t('save')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -845,11 +847,11 @@ const ImageSelectionScreen: React.FC = () => {
         <View style={styles.modalRoot}>
           <Pressable style={styles.modalBackdrop} onPress={handleCloseGradientModal} />
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Choose Gradient</Text>
+            <Text style={styles.modalTitle}>{t('choose_gradient')}</Text>
             <Text style={styles.modalSubtitle}>
               {gradientModalSlideNumber
-                ? `Slide ${gradientModalSlideNumber}`
-                : 'Select a gradient background'}
+                ? t('slide_number', { number: gradientModalSlideNumber })
+                : t('select_gradient_background')}
             </Text>
             <ScrollView
               style={styles.gradientScroll}

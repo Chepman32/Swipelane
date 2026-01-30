@@ -2565,7 +2565,7 @@ const EditorScreen: React.FC = () => {
                 }}
               >
                 <Text style={[styles.styleMenuIcon, { fontSize: scaleFont(12) }]}>
-                  {copiedStyle ? 'Style*' : 'Style'}
+                  {copiedStyle ? t('style_menu_copied') : t('style_menu')}
                 </Text>
               </TouchableOpacity>
 
@@ -2581,7 +2581,7 @@ const EditorScreen: React.FC = () => {
                     onPress={handleCopyStyleToAllSlides}
                   >
                     <Text style={styles.styleMenuItemText}>
-                      Copy style to all slides
+                      {t('copy_style_all')}
                     </Text>
                   </TouchableOpacity>
                   <View style={styles.styleMenuDivider} />
@@ -2627,7 +2627,7 @@ const EditorScreen: React.FC = () => {
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
                 <Text style={[styles.aiButtonText, { fontSize: scaleFont(14) }]}>
-                  AI
+                  {t('ai_button')}
                 </Text>
               )}
             </TouchableOpacity>

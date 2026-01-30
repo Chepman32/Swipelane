@@ -250,6 +250,14 @@ const resources = {
       image_selection_error_title: 'Error',
       image_selection_error_select_failed: 'Failed to select image. Please try again.',
       
+      // Dynamic Text keys
+      edit_slide: 'Edit Slide',
+      edit_slide_with_number: 'Edit Slide {{number}}',
+      edit_slide_subtitle: 'Adjust the slide text before choosing images.',
+      choose_gradient: 'Choose Gradient',
+      select_gradient_background: 'Select a gradient background',
+      gradient: 'Gradient',
+      
       // Editor Screen
       editor_title: 'Slide Editor',
       editor_slide: 'Slide {{current}} of {{total}}',
@@ -264,6 +272,21 @@ const resources = {
       editor_decrease_size: 'Decrease Size',
       editor_no_slides: 'No slides available',
       editor_check_input: 'Please check your input text.',
+
+      // Editor Menu & Controls
+      effects_pending: 'Effects Pending',
+      style_menu: 'Style',
+      style_menu_copied: 'Style*',
+      copy_style_all: 'Copy style to all slides',
+      copy_style: 'Copy style',
+      apply_style: 'Apply copied style',
+      ai_button: 'AI',
+      
+      // AI Suggestions
+      ai_no_image_title: 'Add an Image',
+      ai_no_image_body: 'Upload an image first so AI can analyze it.',
+      ai_failed_title: 'AI Suggestion Failed',
+      ai_failed_body: 'I could not analyze this image. Try a different image or try again.',
 
       // Preview Screen
       preview_title: 'Preview',
@@ -411,6 +434,7 @@ const resources = {
       continue: 'Продолжить',
       cancel: 'Отмена',
       save: 'Сохранить',
+      edit: 'Редактировать',
       export: 'Экспорт',
       
       // Splash Screen
@@ -428,6 +452,10 @@ const resources = {
       home_character_count: 'Символов: {{count}}',
       home_start_typing: 'Начните печатать, чтобы увидеть количество символов',
       home_error_empty: 'Пожалуйста, введите текст для создания слайдов',
+      slides_count_one: '{{count}} слайд',
+      slides_count_few: '{{count}} слайда',
+      slides_count_many: '{{count}} слайдов',
+      slides_count_other: '{{count}} слайда',
       
       // Image Selection Screen
       image_selection_title: 'Выберите изображения',
@@ -443,6 +471,15 @@ const resources = {
       image_selection_error_title: 'Ошибка',
       image_selection_error_select_failed: 'Не удалось выбрать изображение. Попробуйте еще раз.',
       
+      // Dynamic Text keys
+      slide_number: 'Слайд {{number}}',
+      edit_slide: 'Редактировать слайд',
+      edit_slide_with_number: 'Редактировать слайд {{number}}',
+      edit_slide_subtitle: 'Отредактируйте текст слайда перед выбором изображений.',
+      choose_gradient: 'Выбрать градиент',
+      select_gradient_background: 'Выберите градиентный фон',
+      gradient: 'Градиент',
+      
       // Editor Screen
       editor_title: 'Редактор слайдов',
       editor_slide: 'Слайд {{current}} из {{total}}',
@@ -457,6 +494,15 @@ const resources = {
       editor_decrease_size: 'Уменьшить размер',
       editor_no_slides: 'Нет доступных слайдов',
       editor_check_input: 'Пожалуйста, проверьте введённый текст.',
+
+      // Editor Menu & Controls
+      effects_pending: 'Эффекты в обработке',
+      style_menu: 'Стиль',
+      style_menu_copied: 'Стиль*',
+      copy_style_all: 'Скопировать стиль на все слайды',
+      copy_style: 'Скопировать стиль',
+      apply_style: 'Применить скопированный стиль',
+      ai_button: 'ИИ',
 
       // Preview Screen
       preview_title: 'Предварительный просмотр',
@@ -721,6 +767,13 @@ const resources = {
       image_selection_error: 'Bitte wählen Sie {{count}} Bilder für Ihre Folien aus',
       image_selection_error_title: 'Fehler',
       image_selection_error_select_failed: 'Bildauswahl fehlgeschlagen. Bitte versuchen Sie es erneut.',
+      
+      // Dynamic Text keys
+      edit_slide: 'Folie bearbeiten',
+      edit_slide_with_number: 'Folie {{number}} bearbeiten',
+      edit_slide_subtitle: 'Passen Sie den Folientext an, bevor Sie Bilder auswählen.',
+      choose_gradient: 'Verlauf auswählen',
+      select_gradient_background: 'Wählen Sie einen Verlaufshintergrund',
       
       // Editor Screen
       editor_title: 'Folien-Editor',
@@ -1001,6 +1054,13 @@ const resources = {
       image_selection_error_title: 'Erreur',
       image_selection_error_select_failed: 'Échec de la sélection d\'image. Veuillez réessayer.',
       
+      // Dynamic Text keys
+      edit_slide: 'Modifier la diapositive',
+      edit_slide_with_number: 'Modifier la diapositive {{number}}',
+      edit_slide_subtitle: 'Ajustez le texte de la diapositive avant de choisir des images.',
+      choose_gradient: 'Choisir un dégradé',
+      select_gradient_background: 'Sélectionnez un fond dégradé',
+      
       // Editor Screen
       editor_title: 'Éditeur de diapositives',
       editor_slide: 'Diapositive {{current}} sur {{total}}',
@@ -1280,6 +1340,13 @@ const resources = {
       image_selection_error: 'Por favor, selecione {{count}} imagens para seus slides',
       image_selection_error_title: 'Erro',
       image_selection_error_select_failed: 'Falha ao selecionar imagem. Tente novamente.',
+      
+      // Dynamic Text keys
+      edit_slide: 'Editar Slide',
+      edit_slide_with_number: 'Editar Slide {{number}}',
+      edit_slide_subtitle: 'Ajuste o texto do slide antes de escolher as imagens.',
+      choose_gradient: 'Escolher Gradiente',
+      select_gradient_background: 'Selecione um fundo gradiente',
 
       // Editor Screen
       editor_title: 'Editor de Slides',
@@ -1561,6 +1628,13 @@ const resources = {
       image_selection_error_title: 'エラー',
       image_selection_error_select_failed: '画像の選択に失敗しました。もう一度お試しください。',
       
+      // Dynamic Text keys
+      edit_slide: 'スライドを編集',
+      edit_slide_with_number: 'スライド {{number}} を編集',
+      edit_slide_subtitle: '画像を選択する前にスライドのテキストを調整してください。',
+      choose_gradient: 'グラデーションを選択',
+      select_gradient_background: 'グラデーション背景を選択',
+      
       // Editor Screen
       editor_title: 'スライドエディター',
       editor_slide: '{{total}}枚中{{current}}枚目',
@@ -1840,6 +1914,13 @@ const resources = {
       image_selection_error: '请为您的幻灯片选择{{count}}张图片',
       image_selection_error_title: '错误',
       image_selection_error_select_failed: '选择图片失败。请重试。',
+      
+      // Dynamic Text keys
+      edit_slide: '编辑幻灯片',
+      edit_slide_with_number: '编辑幻灯片 {{number}}',
+      edit_slide_subtitle: '在选择图片前调整幻灯片文本。',
+      choose_gradient: '选择渐变',
+      select_gradient_background: '选择渐变背景',
       
       // Editor Screen
       editor_title: '幻灯片编辑器',

@@ -5,6 +5,7 @@
 
 import React from 'react';
 import { View, Text, Platform, Dimensions } from 'react-native';
+import { useLanguage } from '../context/LanguageContext';
 import GraphicsService from '../services/GraphicsService';
 import TextEffectsEngine from '../services/TextEffectsEngine';
 import type { SlideFontId } from '../constants/fonts';
@@ -141,7 +142,7 @@ const SkiaSlideRenderer: React.FC<SkiaSlideRendererProps> = ({
           }}
         >
           <Text style={{ color: '#FFFFFF', fontSize: 10, fontWeight: '600' }}>
-            Effects Pending
+            {t('effects_pending')}
           </Text>
         </View>
       ) : null}
