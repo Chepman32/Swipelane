@@ -383,6 +383,33 @@ const HomeScreen: React.FC = () => {
     return renderProjectItem({ item, isCurrent: false, isLastOdd });
   };
 
+  const renderEmptyState = () => (
+    <View style={styles.emptyStateContainer}>
+      <Text
+        style={[
+          styles.emptyStateText,
+          {
+            color: themeDefinition.colors.text + '99',
+            fontSize: scaleFont(18),
+          },
+        ]}
+      >
+        {t('no_projects_yet')}
+      </Text>
+      <Text
+        style={[
+          styles.emptyStateHint,
+          {
+            color: themeDefinition.colors.text + '66',
+            fontSize: scaleFont(14),
+          },
+        ]}
+      >
+        {t('tap_plus_to_create')}
+      </Text>
+    </View>
+  );
+
   const keyExtractor = (item: GridItem, _index: number) => {
     if ('isCurrentProject' in item) return `current-${item.id}`;
     return item.id;
@@ -427,12 +454,14 @@ const HomeScreen: React.FC = () => {
         keyExtractor={keyExtractor}
         numColumns={gridColumns}
         key={`grid-${gridColumns}`}
+        ListEmptyComponent={renderEmptyState}
         contentContainerStyle={[
           styles.gridContainer,
           {
             padding: scale(16),
             paddingBottom: scale(100),
-          }
+          },
+          gridData.length === 0 && { flex: 1 }
         ]}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -559,6 +588,24 @@ const styles = StyleSheet.create({
   noPreviewText: {
     fontSize: 14,
     fontStyle: 'italic',
+  },
+  emptyStateContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+    paddingBottom: 100,
+  },
+  emptyStateText: {
+    fontSize: 18,
+    fontWeight: '500',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  emptyStateHint: {
+    fontSize: 14,
+    fontStyle: 'italic',
+    textAlign: 'center',
   },
   projectInfo: {
     padding: 12,
