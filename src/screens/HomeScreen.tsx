@@ -364,7 +364,7 @@ const HomeScreen: React.FC = () => {
                 { color: themeDefinition.colors.text + '66', fontSize: scaleFont(12) },
               ]}
             >
-              {item.slides.length} {t('slides_count', { count: item.slides.length })}
+              {t('slides_count', { count: item.slides.length })}
             </Text>
           </View>
         </View>
@@ -507,6 +507,7 @@ const styles = StyleSheet.create({
   },
   projectCardFullWidth: {
     flexBasis: '100%',
+    maxWidth: '100%',
   },
   currentProjectBadge: {
     position: 'absolute',
