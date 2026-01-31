@@ -1,4 +1,4 @@
-package com.texora.app
+package com.swipelane.app
 
 import android.app.Application
 import com.facebook.react.PackageList

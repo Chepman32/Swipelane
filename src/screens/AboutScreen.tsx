@@ -16,7 +16,7 @@ import { useResponsive } from '../hooks/useResponsive';
 import FeedbackService from '../services/FeedbackService';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 
-const appIcon = require('../assets/icons/Texora_icon_option_03.png');
+const appIcon = require('../assets/icons/Swipelane_icon.png');
 const APP_VERSION = '1.0.0';
 const COPYRIGHT_YEAR = 2026;
 
@@ -153,7 +153,7 @@ const AboutScreen: React.FC = () => {
               },
             ]}
           >
-            Texora
+            Swipelane
           </Text>
           <Text
             style={[

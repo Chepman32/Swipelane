@@ -9,7 +9,7 @@ node_require('react-native-permissions/scripts/setup.rb')
 
 platform :ios, min_ios_version_supported
 prepare_react_native_project!
-project 'Texora.xcodeproj'
+project 'Swipelane.xcodeproj'
 
 # Ensure codegen runs for New Architecture modules (e.g., RNShareSpec).
 ENV['RCT_SKIP_CODEGEN'] = '0'
@@ -29,7 +29,7 @@ if linkage != nil
   use_frameworks! :linkage => linkage.to_sym
 end
 
-target 'Texora' do
+target 'Swipelane' do
   config = use_native_modules!
 
   use_react_native!(

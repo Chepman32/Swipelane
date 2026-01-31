@@ -1,5 +1,5 @@
 {
-  "name": "Texora",
+  "name": "Swipelane",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -8,7 +8,7 @@
     "lint": "eslint .",
     "start": "react-native start",
     "test": "jest",
-    "build": "echo 'Building Text-to-Slides app...'",
+    "build": "echo 'Building Swipelane app...'",
     "clean": "react-native clean"
   },
   "dependencies": {

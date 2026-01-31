@@ -3095,9 +3095,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"Texora@workspace:.":
+"Swipelane@workspace:.":
   version: 0.0.0-use.local
-  resolution: "Texora@workspace:."
+  resolution: "Swipelane@workspace:."
   dependencies:
     "@babel/core": "npm:^7.25.2"
     "@babel/preset-env": "npm:^7.25.3"

@@ -25,7 +25,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     window = UIWindow(frame: UIScreen.main.bounds)
 
     factory.startReactNative(
-      withModuleName: "Texora",
+      withModuleName: "Swipelane",
       in: window,
       launchOptions: launchOptions
     )
@@ -38,7 +38,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
       return
     }
 
-    let bundleId = Bundle.main.bundleIdentifier ?? "com.texora.app"
+    let bundleId = Bundle.main.bundleIdentifier ?? "com.swipelane.app"
     let storageURL = appSupportURL
       .appendingPathComponent(bundleId, isDirectory: true)
       .appendingPathComponent("RCTAsyncLocalStorage_V1", isDirectory: true)

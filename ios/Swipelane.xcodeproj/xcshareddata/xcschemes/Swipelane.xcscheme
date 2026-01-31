@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-               BuildableName = "Texora.app"
-               BlueprintName = "Texora"
-               ReferencedContainer = "container:Texora.xcodeproj">
+               BuildableName = "Swipelane.app"
+               BlueprintName = "Swipelane"
+               ReferencedContainer = "container:Swipelane.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -44,9 +44,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "Texora.app"
-            BlueprintName = "Texora"
-            ReferencedContainer = "container:Texora.xcodeproj">
+            BuildableName = "Swipelane.app"
+            BlueprintName = "Swipelane"
+            ReferencedContainer = "container:Swipelane.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -61,9 +61,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "Texora.app"
-            BlueprintName = "Texora"
-            ReferencedContainer = "container:Texora.xcodeproj">
+            BuildableName = "Swipelane.app"
+            BlueprintName = "Swipelane"
+            ReferencedContainer = "container:Swipelane.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>
