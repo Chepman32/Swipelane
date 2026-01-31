@@ -41,6 +41,8 @@ import { isTextEffectSupported } from '../constants/textEffects';
 import GradientBackground from '../components/GradientBackground';
 import { captureRef } from 'react-native-view-shot';
 import { normalizeImageUri } from '../utils/imageUri';
+import { SkiaRoadmapRenderer } from '../components/roadmap';
+import { getRoadmapTemplateById } from '../constants/roadmapTemplates';
 
 // Skia font sources for each supported font
 const SKIA_FONT_SOURCES: Record<SlideFontId, number> = {
@@ -53,7 +55,7 @@ const SKIA_FONT_SOURCES: Record<SlideFontId, number> = {
 type RootStackParamList = {
   Home: undefined;
   Editor: { text: string; images: string[] };
-  Preview: { slides: any[] };
+  Preview: { slides: any[]; projectType?: 'text' | 'roadmap' };
   Export: {
     imageUri?: string;
     imageUris?: string[];
@@ -226,8 +228,9 @@ const SlideRenderer: React.FC<SlideRendererProps> = ({
 const PreviewScreen: React.FC = () => {
   const route = useRoute<PreviewRouteProp>();
   const navigation = useNavigation<PreviewNavigationProp>();
-  const { slides } = route.params;
+  const { slides, projectType = 'text' } = route.params;
   const insets = useSafeAreaInsets();
+  const isRoadmap = projectType === 'roadmap';
   const { themeDefinition } = useTheme();
   const { t } = useLanguage();
   const { scale, scaleFont } = useResponsive();
@@ -318,16 +321,44 @@ const PreviewScreen: React.FC = () => {
     }
   };
 
-  const renderSlide = ({ item, index }: { item: any; index: number }) => (
-    <SlideRenderer
-      item={item}
-      index={index}
-      slideSize={slideSize}
-      imageContainerHeight={imageContainerHeight}
-      themeColors={{ card: themeDefinition.colors.card }}
-      onRef={handleSlideRef}
-    />
-  );
+  const renderSlide = ({ item, index }: { item: any; index: number }) => {
+    if (isRoadmap) {
+      // Render roadmap slide
+      return (
+        <View
+          ref={(ref) => handleSlideRef(index, ref)}
+          style={[
+            styles.slideContainer,
+            {
+              width: slideSize,
+              height: imageContainerHeight,
+              marginHorizontal: 10,
+              backgroundColor: themeDefinition.colors.card,
+              borderRadius: 12,
+              overflow: 'hidden',
+            },
+          ]}
+        >
+          <SkiaRoadmapRenderer
+            slide={item}
+            style={{ flex: 1, borderRadius: 12 }}
+          />
+        </View>
+      );
+    }
+
+    // Render text slide
+    return (
+      <SlideRenderer
+        item={item}
+        index={index}
+        slideSize={slideSize}
+        imageContainerHeight={imageContainerHeight}
+        themeColors={{ card: themeDefinition.colors.card }}
+        onRef={handleSlideRef}
+      />
+    );
+  };
 
   const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
     if (viewableItems.length > 0) {
@@ -390,17 +421,38 @@ const PreviewScreen: React.FC = () => {
         }}
       >
         {slides.map((item, index) => (
-          <SlideRenderer
-            key={`hidden-${index}`}
-            item={item}
-            index={index}
-            slideSize={slideSize}
-            imageContainerHeight={imageContainerHeight}
-            themeColors={{ card: themeDefinition.colors.card }}
-            onRef={(idx, ref) => {
-              if (ref) hiddenSlideRefs.current[idx] = ref;
-            }}
-          />
+          isRoadmap ? (
+            <View
+              key={`hidden-${index}`}
+              ref={(ref) => {
+                if (ref) hiddenSlideRefs.current[index] = ref;
+              }}
+              style={{
+                width: slideSize,
+                height: imageContainerHeight,
+                backgroundColor: themeDefinition.colors.card,
+                borderRadius: 12,
+                overflow: 'hidden',
+              }}
+            >
+              <SkiaRoadmapRenderer
+                slide={item}
+                style={{ flex: 1, borderRadius: 12 }}
+              />
+            </View>
+          ) : (
+            <SlideRenderer
+              key={`hidden-${index}`}
+              item={item}
+              index={index}
+              slideSize={slideSize}
+              imageContainerHeight={imageContainerHeight}
+              themeColors={{ card: themeDefinition.colors.card }}
+              onRef={(idx, ref) => {
+                if (ref) hiddenSlideRefs.current[idx] = ref;
+              }}
+            />
+          )
         ))}
       </View>
 

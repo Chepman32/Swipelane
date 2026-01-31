@@ -13,7 +13,11 @@ import PreviewScreen from '../screens/PreviewScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import AboutScreen from '../screens/AboutScreen';
 import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
+import RoadmapTemplateScreen from '../screens/RoadmapTemplateScreen';
+import RoadmapBackgroundScreen from '../screens/RoadmapBackgroundScreen';
+import RoadmapEditorScreen from '../screens/RoadmapEditorScreen';
 import { useLanguage } from '../context/LanguageContext';
+import type { SlideBackgroundGradient } from '../services/StorageService';
 
 export type RootStackParamList = {
   Splash: undefined;
@@ -22,10 +26,14 @@ export type RootStackParamList = {
   NewProject: undefined;
   ImageSelection: { text: string; projectId: string; images?: string[] };
   Editor: { text: string; images: string[]; projectId: string };
-  Preview: { slides: any[] };
+  Preview: { slides: any[]; projectType?: 'text' | 'roadmap' };
   Settings: undefined;
   About: undefined;
   PrivacyPolicy: undefined;
+  // Roadmap screens
+  RoadmapTemplate: undefined;
+  RoadmapBackground: { templateId: string; projectId: string };
+  RoadmapEditor: { projectId: string; templateId?: string; backgroundGradient?: SlideBackgroundGradient };
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -131,6 +139,30 @@ const AppNavigator: React.FC = () => {
           options={{
             headerShown: true,
             title: t('privacy_policy_title'),
+          }}
+        />
+        <Stack.Screen
+          name="RoadmapTemplate"
+          component={RoadmapTemplateScreen}
+          options={{
+            headerShown: true,
+            title: t('roadmap_template_title') || 'Choose Template',
+          }}
+        />
+        <Stack.Screen
+          name="RoadmapBackground"
+          component={RoadmapBackgroundScreen}
+          options={{
+            headerShown: true,
+            title: t('roadmap_background_title') || 'Choose Background',
+          }}
+        />
+        <Stack.Screen
+          name="RoadmapEditor"
+          component={RoadmapEditorScreen}
+          options={{
+            headerShown: true,
+            title: t('roadmap_editor_title') || 'Edit Roadmap',
           }}
         />
       </Stack.Navigator>

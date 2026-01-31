@@ -73,7 +73,10 @@ class StorageService {
     RECENT_PROJECTS: '@TextToSlides:recentProjects',
     PREFERENCES: '@TextToSlides:preferences',
     APP_STATE: '@TextToSlides:appState',
-    FIRST_LAUNCH: '@TextToSlides:firstLaunch'
+    FIRST_LAUNCH: '@TextToSlides:firstLaunch',
+    // Roadmap storage keys
+    CURRENT_ROADMAP_PROJECT: '@Swipelane:currentRoadmapProject',
+    RECENT_ROADMAP_PROJECTS: '@Swipelane:recentRoadmapProjects',
   };
 
   private constructor() {}
@@ -563,6 +566,115 @@ class StorageService {
     } catch (error) {
       console.error('Error importing data:', error);
       throw error;
+    }
+  }
+
+  // ==================== ROADMAP PROJECT METHODS ====================
+
+  // Save current roadmap project
+  async saveCurrentRoadmapProject(project: any): Promise<void> {
+    return StorageInitializer.safeStorageOperation(
+      async () => {
+        const projectToSave = {
+          ...project,
+          lastModified: new Date().toISOString(),
+        };
+
+        await AsyncStorage.setItem(
+          this.STORAGE_KEYS.CURRENT_ROADMAP_PROJECT,
+          JSON.stringify(projectToSave)
+        );
+
+        // Add to recent roadmap projects
+        const hasContent = project.slide && project.slide.circles?.length > 0;
+        if (project.isCompleted || hasContent) {
+          await this.addToRecentRoadmapProjects(projectToSave);
+        }
+      },
+      undefined,
+      'saveCurrentRoadmapProject'
+    );
+  }
+
+  // Load current roadmap project
+  async loadCurrentRoadmapProject(): Promise<any | null> {
+    return StorageInitializer.safeStorageOperation(
+      async () => {
+        const projectData = await AsyncStorage.getItem(
+          this.STORAGE_KEYS.CURRENT_ROADMAP_PROJECT
+        );
+        if (projectData) {
+          return JSON.parse(projectData);
+        }
+        return null;
+      },
+      null,
+      'loadCurrentRoadmapProject'
+    );
+  }
+
+  // Clear current roadmap project
+  async clearCurrentRoadmapProject(): Promise<void> {
+    return StorageInitializer.safeStorageOperation(
+      async () => {
+        await AsyncStorage.removeItem(this.STORAGE_KEYS.CURRENT_ROADMAP_PROJECT);
+      },
+      undefined,
+      'clearCurrentRoadmapProject'
+    );
+  }
+
+  // Add to recent roadmap projects
+  private async addToRecentRoadmapProjects(project: any): Promise<void> {
+    try {
+      const recentProjects = await this.getRecentRoadmapProjects();
+
+      // Remove if already exists
+      const filteredProjects = recentProjects.filter((p: any) => p.id !== project.id);
+
+      // Add to beginning
+      filteredProjects.unshift(project);
+
+      // Keep only last 10 projects
+      const trimmedProjects = filteredProjects.slice(0, 10);
+
+      await AsyncStorage.setItem(
+        this.STORAGE_KEYS.RECENT_ROADMAP_PROJECTS,
+        JSON.stringify(trimmedProjects)
+      );
+    } catch (error) {
+      console.error('Error adding to recent roadmap projects:', error);
+    }
+  }
+
+  // Get recent roadmap projects
+  async getRecentRoadmapProjects(): Promise<any[]> {
+    try {
+      const projectsData = await AsyncStorage.getItem(
+        this.STORAGE_KEYS.RECENT_ROADMAP_PROJECTS
+      );
+      if (projectsData) {
+        return JSON.parse(projectsData);
+      }
+      return [];
+    } catch (error) {
+      console.error('Error getting recent roadmap projects:', error);
+      return [];
+    }
+  }
+
+  // Delete a recent roadmap project
+  async deleteRecentRoadmapProject(projectId: string): Promise<void> {
+    try {
+      const recentProjects = await this.getRecentRoadmapProjects();
+      const filteredProjects = recentProjects.filter((p: any) => p.id !== projectId);
+
+      await AsyncStorage.setItem(
+        this.STORAGE_KEYS.RECENT_ROADMAP_PROJECTS,
+        JSON.stringify(filteredProjects)
+      );
+    } catch (error) {
+      console.error('Error deleting recent roadmap project:', error);
     }
   }
 }

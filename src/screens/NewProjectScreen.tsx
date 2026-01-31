@@ -23,8 +23,11 @@ import StorageService from '../services/StorageService';
 import FeedbackService from '../services/FeedbackService';
 import { useResponsive } from '../hooks/useResponsive';
 
+type ProjectType = 'text' | 'roadmap';
+
 type RootStackParamList = {
   ImageSelection: { text: string; projectId: string };
+  RoadmapTemplate: undefined;
   Home: undefined;
 };
 
@@ -34,12 +37,18 @@ type NewProjectScreenNavigationProp = StackNavigationProp<
 >;
 
 const NewProjectScreen: React.FC = () => {
+  const [projectType, setProjectType] = useState<ProjectType>('roadmap');
   const [text, setText] = useState('');
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const navigation = useNavigation<NewProjectScreenNavigationProp>();
   const { themeDefinition } = useTheme();
   const { t } = useLanguage();
   const { scale, scaleFont } = useResponsive();
+
+  const handleSelectRoadmap = useCallback(() => {
+    FeedbackService.buttonTap();
+    navigation.navigate('RoadmapTemplate');
+  }, [navigation]);
 
   // Set translated navigation title
   useLayoutEffect(() => {
@@ -126,13 +135,113 @@ const NewProjectScreen: React.FC = () => {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <Text
-            style={[styles.subtitle, { color: themeDefinition.colors.text, fontSize: scaleFont(16) }]}
-          >
-            {t('home_subtitle')}
-          </Text>
+          {/* Project type selector */}
+          <View style={[styles.projectTypeSelector, { marginBottom: scale(20) }]}>
+            <TouchableOpacity
+              style={[
+                styles.projectTypeTab,
+                {
+                  backgroundColor:
+                    projectType === 'text'
+                      ? '#007AFF'
+                      : themeDefinition.colors.card,
+                  borderColor:
+                    projectType === 'text'
+                      ? '#007AFF'
+                      : themeDefinition.colors.border,
+                  paddingVertical: scale(12),
+                  paddingHorizontal: scale(20),
+                  borderTopLeftRadius: scale(8),
+                  borderBottomLeftRadius: scale(8),
+                },
+              ]}
+              onPress={() => {
+                FeedbackService.buttonTap();
+                setProjectType('text');
+              }}
+            >
+              <Text
+                style={[
+                  styles.projectTypeText,
+                  {
+                    color: projectType === 'text' ? '#FFFFFF' : themeDefinition.colors.text,
+                    fontSize: scaleFont(14),
+                  },
+                ]}
+              >
+                {t('project_type_text') || 'Text Carousel'}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.projectTypeTab,
+                {
+                  backgroundColor:
+                    projectType === 'roadmap'
+                      ? '#007AFF'
+                      : themeDefinition.colors.card,
+                  borderColor:
+                    projectType === 'roadmap'
+                      ? '#007AFF'
+                      : themeDefinition.colors.border,
+                  paddingVertical: scale(12),
+                  paddingHorizontal: scale(20),
+                  borderTopRightRadius: scale(8),
+                  borderBottomRightRadius: scale(8),
+                },
+              ]}
+              onPress={() => {
+                FeedbackService.buttonTap();
+                setProjectType('roadmap');
+              }}
+            >
+              <Text
+                style={[
+                  styles.projectTypeText,
+                  {
+                    color: projectType === 'roadmap' ? '#FFFFFF' : themeDefinition.colors.text,
+                    fontSize: scaleFont(14),
+                  },
+                ]}
+              >
+                {t('project_type_roadmap') || 'Roadmap'}
+              </Text>
+            </TouchableOpacity>
+          </View>
 
-          <View style={styles.textInputContainer}>
+          {/* Roadmap type: show button to go to template selection */}
+          {projectType === 'roadmap' ? (
+            <View style={styles.roadmapContainer}>
+              <Text
+                style={[
+                  styles.subtitle,
+                  { color: themeDefinition.colors.text, fontSize: scaleFont(16), marginBottom: scale(16) },
+                ]}
+              >
+                {t('roadmap_description') || 'Create beautiful roadmap slides with connected steps'}
+              </Text>
+              <TouchableOpacity
+                style={[
+                  styles.generateButton,
+                  { padding: scale(15), backgroundColor: '#007AFF' },
+                ]}
+                onPress={handleSelectRoadmap}
+              >
+                <Text style={[styles.generateButtonText, { fontSize: scaleFont(18) }]}>
+                  {t('roadmap_choose_template') || 'Choose Template'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <>
+              {/* Text carousel type: show text input */}
+              <Text
+                style={[styles.subtitle, { color: themeDefinition.colors.text, fontSize: scaleFont(16) }]}
+              >
+                {t('home_subtitle')}
+              </Text>
+
+              <View style={styles.textInputContainer}>
             <TextInput
               style={[
                 styles.textInput,
@@ -200,6 +309,8 @@ const NewProjectScreen: React.FC = () => {
               <Image source={require('../assets/icons/hideKeyboard.png')} style={{ width: 24, height: 24, opacity: 0.7 }} />
             </TouchableOpacity>
           )}
+            </>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -213,6 +324,21 @@ const styles = StyleSheet.create({
   },
   keyboardContainer: {
     flex: 1,
+  },
+  projectTypeSelector: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  projectTypeTab: {
+    borderWidth: 1,
+  },
+  projectTypeText: {
+    fontWeight: '600',
+  },
+  roadmapContainer: {
+    flex: 1,
+    alignItems: 'center',
+    paddingTop: 40,
   },
   header: {
     flexDirection: 'row',
