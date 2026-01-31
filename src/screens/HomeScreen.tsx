@@ -50,6 +50,7 @@ const filterSupportedEffects = (effects?: any[]) =>
 
 type RootStackParamList = {
   NewProject: undefined;
+  RoadmapTemplate: undefined;
   ImageSelection: { text: string; projectId: string; images?: string[] };
   Editor: { text: string; images: string[]; projectId: string };
   Settings: undefined;
@@ -57,7 +58,7 @@ type RootStackParamList = {
 
 type HomeScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
-  'NewProject'
+  'RoadmapTemplate'
 >;
 
 type GridItem = ProjectState | (ProjectState & { isCurrentProject: true });
@@ -256,7 +257,7 @@ const HomeScreen: React.FC = () => {
 
   const handleCreateNewProject = () => {
     FeedbackService.buttonTap();
-    navigation.navigate('NewProject');
+    navigation.navigate('RoadmapTemplate');
   };
 
   const handleOpenProject = (project: ProjectState) => {

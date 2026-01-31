@@ -92,7 +92,7 @@ const RoadmapEditorScreen: React.FC = () => {
 
   const template = useMemo(() => getRoadmapTemplateById(templateId), [templateId]);
 
-  // Initialize slide
+  // Initialize slide only once
   useEffect(() => {
     if (template && !slide) {
       const project = createRoadmapProject(template, projectId);
@@ -102,7 +102,8 @@ const RoadmapEditorScreen: React.FC = () => {
         backgroundGradient: routeBackground || ALL_BACKGROUNDS[0],
       });
     }
-  }, [template, projectId, routeBackground, slide]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [template, projectId]);
 
   useLayoutEffect(() => {
     navigation.setOptions({

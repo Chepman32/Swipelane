@@ -27,8 +27,8 @@ export const ROADMAP_BACKGROUNDS = [
     end: { x: 1, y: 1 },
   },
   {
-    id: 'deep_space',
-    name: 'Deep Space',
+    id: 'deep_void',
+    name: 'Deep Void',
     colors: ['#000000', '#1a1a2e', '#0d0d0d'],
     start: { x: 0.5, y: 0 },
     end: { x: 0.5, y: 1 },

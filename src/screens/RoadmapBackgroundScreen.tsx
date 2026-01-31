@@ -84,10 +84,11 @@ const RoadmapBackgroundScreen: React.FC = () => {
 
   const handleContinue = () => {
     FeedbackService.buttonTap();
-    // Store the project with selected background and navigate to editor
-    // The actual storage will happen in the editor screen
+    // Pass the selected background and templateId to the editor
     navigation.navigate('RoadmapEditor', {
       projectId,
+      templateId,
+      backgroundGradient: selectedGradient,
     });
   };
 
