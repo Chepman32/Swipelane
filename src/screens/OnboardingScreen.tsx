@@ -29,9 +29,9 @@ import FeedbackService from '../services/FeedbackService';
 
 import TextBloomAnimation from '../components/onboarding/TextBloomAnimation';
 import VoiceWaveAnimation from '../components/onboarding/VoiceWaveAnimation';
-import EffectsShowcaseAnimation from '../components/onboarding/EffectsShowcaseAnimation';
 import RoadmapPathAnimation from '../components/onboarding/RoadmapPathAnimation';
-import ShareLaunchAnimation from '../components/onboarding/ShareLaunchAnimation';
+import FlowTuneAnimation from '../components/onboarding/FlowTuneAnimation';
+import AutosaveShieldAnimation from '../components/onboarding/AutosaveShieldAnimation';
 
 const { width } = Dimensions.get('window');
 const SLIDE_COUNT = onboardingSlides.length;
@@ -70,9 +70,9 @@ const OnboardingScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const animationComponents = {
     TextBloomAnimation,
     VoiceWaveAnimation,
-    EffectsShowcaseAnimation,
+    FlowTuneAnimation,
     RoadmapPathAnimation,
-    ShareLaunchAnimation,
+    AutosaveShieldAnimation,
   };
 
   // Background color interpolates between accent colors as user scrolls

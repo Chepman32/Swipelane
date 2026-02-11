@@ -25,8 +25,8 @@ export const onboardingSlides: OnboardingSlide[] = [
     id: '3',
     titleKey: 'onboarding_slide_3_title',
     descriptionKey: 'onboarding_slide_3_description',
-    svgComponent: 'EffectsShowcaseAnimation',
-    accentColor: '#0d1f2d',
+    svgComponent: 'FlowTuneAnimation',
+    accentColor: '#10203a',
   },
   {
     id: '4',
@@ -39,7 +39,7 @@ export const onboardingSlides: OnboardingSlide[] = [
     id: '5',
     titleKey: 'onboarding_slide_5_title',
     descriptionKey: 'onboarding_slide_5_description',
-    svgComponent: 'ShareLaunchAnimation',
-    accentColor: '#1a0011',
+    svgComponent: 'AutosaveShieldAnimation',
+    accentColor: '#102d2d',
   },
 ];
