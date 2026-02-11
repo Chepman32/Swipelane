@@ -323,7 +323,7 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
                 const renderedLabelText = hideDefaultFifthStepLabel ? '' : labelText;
                 const linearLabelXOffset =
                   slide.templateId === 'linear_4_chain' && circle.id === 'c1'
-                    ? titleFontSize * 0.1
+                    ? titleFontSize * 0.35
                     : 0;
 
                 const linearLabelY = Math.min(
