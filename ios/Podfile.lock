@@ -77,7 +77,6 @@ PODS:
     - React-RCTText (= 0.81.4)
     - React-RCTVibration (= 0.81.4)
   - React-callinvoker (0.81.4)
-  - React-Codegen (0.1.0)
   - React-Core (0.81.4):
     - boost
     - DoubleConversion
@@ -1779,34 +1778,6 @@ PODS:
     - React-RCTFBReactNativeSpec
     - ReactCommon/turbomodule/core
     - SocketRocket
-  - react-native-cameraroll (7.10.2):
-    - boost
-    - DoubleConversion
-    - fast_float
-    - fmt
-    - glog
-    - hermes-engine
-    - RCT-Folly
-    - RCT-Folly/Fabric
-    - RCTRequired
-    - RCTTypeSafety
-    - React-Core
-    - React-debug
-    - React-Fabric
-    - React-featureflags
-    - React-graphics
-    - React-ImageManager
-    - React-jsi
-    - React-NativeModulesApple
-    - React-RCTFabric
-    - React-renderercss
-    - React-rendererdebug
-    - React-utils
-    - ReactCodegen
-    - ReactCommon/turbomodule/bridging
-    - ReactCommon/turbomodule/core
-    - SocketRocket
-    - Yoga
   - react-native-image-manipulator (1.0.6):
     - React
   - react-native-image-picker (8.2.1):
@@ -1937,63 +1908,6 @@ PODS:
     - RCTTypeSafety
     - React
     - React-callinvoker
-    - React-Core
-    - React-debug
-    - React-Fabric
-    - React-featureflags
-    - React-graphics
-    - React-ImageManager
-    - React-jsi
-    - React-NativeModulesApple
-    - React-RCTFabric
-    - React-renderercss
-    - React-rendererdebug
-    - React-utils
-    - ReactCodegen
-    - ReactCommon/turbomodule/bridging
-    - ReactCommon/turbomodule/core
-    - SocketRocket
-    - Yoga
-  - react-native-slider (5.0.1):
-    - boost
-    - DoubleConversion
-    - fast_float
-    - fmt
-    - glog
-    - hermes-engine
-    - RCT-Folly
-    - RCT-Folly/Fabric
-    - RCTRequired
-    - RCTTypeSafety
-    - React-Core
-    - React-debug
-    - React-Fabric
-    - React-featureflags
-    - React-graphics
-    - React-ImageManager
-    - React-jsi
-    - react-native-slider/common (= 5.0.1)
-    - React-NativeModulesApple
-    - React-RCTFabric
-    - React-renderercss
-    - React-rendererdebug
-    - React-utils
-    - ReactCodegen
-    - ReactCommon/turbomodule/bridging
-    - ReactCommon/turbomodule/core
-    - SocketRocket
-    - Yoga
-  - react-native-slider/common (5.0.1):
-    - boost
-    - DoubleConversion
-    - fast_float
-    - fmt
-    - glog
-    - hermes-engine
-    - RCT-Folly
-    - RCT-Folly/Fabric
-    - RCTRequired
-    - RCTTypeSafety
     - React-Core
     - React-debug
     - React-Fabric
@@ -2867,14 +2781,6 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - RNShare (10.2.1):
-    - RCT-Folly
-    - RCTRequired
-    - RCTTypeSafety
-    - React-Codegen
-    - React-Core
-    - React-RCTFabric
-    - ReactCommon/turbomodule/core
   - RNSound (0.12.0):
     - boost
     - DoubleConversion
@@ -3039,12 +2945,10 @@ DEPENDENCIES:
   - React-logger (from `../node_modules/react-native/ReactCommon/logger`)
   - React-Mapbuffer (from `../node_modules/react-native/ReactCommon`)
   - React-microtasksnativemodule (from `../node_modules/react-native/ReactCommon/react/nativemodule/microtasks`)
-  - "react-native-cameraroll (from `../node_modules/@react-native-camera-roll/camera-roll`)"
   - react-native-image-manipulator (from `../node_modules/react-native-image-manipulator`)
   - react-native-image-picker (from `../node_modules/react-native-image-picker`)
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
   - "react-native-skia (from `../node_modules/@shopify/react-native-skia`)"
-  - "react-native-slider (from `../node_modules/@react-native-community/slider`)"
   - react-native-view-shot (from `../node_modules/react-native-view-shot`)
   - "react-native-voice (from `../node_modules/@react-native-voice/voice`)"
   - react-native-webview (from `../node_modules/react-native-webview`)
@@ -3086,7 +2990,6 @@ DEPENDENCIES:
   - RNReactNativeHapticFeedback (from `../node_modules/react-native-haptic-feedback`)
   - RNReanimated (from `../node_modules/react-native-reanimated`)
   - RNScreens (from `../node_modules/react-native-screens`)
-  - RNShare (from `../node_modules/react-native-share`)
   - RNSound (from `../node_modules/react-native-sound`)
   - RNWorklets (from `../node_modules/react-native-worklets`)
   - SocketRocket (~> 0.7.1)
@@ -3094,7 +2997,6 @@ DEPENDENCIES:
 
 SPEC REPOS:
   trunk:
-    - React-Codegen
     - SocketRocket
 
 EXTERNAL SOURCES:
@@ -3183,8 +3085,6 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon"
   React-microtasksnativemodule:
     :path: "../node_modules/react-native/ReactCommon/react/nativemodule/microtasks"
-  react-native-cameraroll:
-    :path: "../node_modules/@react-native-camera-roll/camera-roll"
   react-native-image-manipulator:
     :path: "../node_modules/react-native-image-manipulator"
   react-native-image-picker:
@@ -3193,8 +3093,6 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-safe-area-context"
   react-native-skia:
     :path: "../node_modules/@shopify/react-native-skia"
-  react-native-slider:
-    :path: "../node_modules/@react-native-community/slider"
   react-native-view-shot:
     :path: "../node_modules/react-native-view-shot"
   react-native-voice:
@@ -3277,8 +3175,6 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-reanimated"
   RNScreens:
     :path: "../node_modules/react-native-screens"
-  RNShare:
-    :path: "../node_modules/react-native-share"
   RNSound:
     :path: "../node_modules/react-native-sound"
   RNWorklets:
@@ -3302,7 +3198,6 @@ SPEC CHECKSUMS:
   RCTTypeSafety: 4aefa8328ab1f86da273f08517f1f6b343f6c2cc
   React: 2073376f47c71b7e9a0af7535986a77522ce1049
   React-callinvoker: 751b6f2c83347a0486391c3f266f291f0f53b27e
-  React-Codegen: 4b8b4817cea7a54b83851d4c1f91f79aa73de30a
   React-Core: dff5d29973349b11dd6631c9498456d75f846d5e
   React-CoreModules: c0ae04452e4c5d30e06f8e94692a49107657f537
   React-cxxreact: 376fd672c95dfb64ad5cc246e6a1e9edb78dec4c
@@ -3330,12 +3225,10 @@ SPEC CHECKSUMS:
   React-logger: a3cb5b29c32b8e447b5a96919340e89334062b48
   React-Mapbuffer: 9d2434a42701d6144ca18f0ca1c4507808ca7696
   React-microtasksnativemodule: 75b6604b667d297292345302cc5bfb6b6aeccc1b
-  react-native-cameraroll: bb98380ee21115d5fe1ae0f8b80c86e044613746
   react-native-image-manipulator: 31643abf3d76d9a9c88f061ad8cee64337f3322f
   react-native-image-picker: 0314366753615115fa55c3cc937ac44cb7e75702
   react-native-safe-area-context: c6e2edd1c1da07bdce287fa9d9e60c5f7b514616
   react-native-skia: 7267799b233f9671ff6ee9e9912f754977aa2a41
-  react-native-slider: 663776e5683e257de8df8091abc2d93ff6ec67db
   react-native-view-shot: 6c008e58f4720de58370848201c5d4a082c6d4ca
   react-native-voice: 908a0eba96c8c3d643e4f98b7232c6557d0a6f9c
   react-native-webview: 654f794a7686b47491cf43aa67f7f428bea00eed
@@ -3377,7 +3270,6 @@ SPEC CHECKSUMS:
   RNReactNativeHapticFeedback: be4f1b4bf0398c30b59b76ed92ecb0a2ff3a69c6
   RNReanimated: 9de34f0313c4177a34c079ca9fce6f1f278bff24
   RNScreens: 0bbf16c074ae6bb1058a7bf2d1ae017f4306797c
-  RNShare: 268bd40f6f3830299d187b05d3c6f7bbbb3e9d85
   RNSound: 180aa1cfad34009ad7472c78d0340100ff948058
   RNWorklets: ad0606bee2a8103c14adb412149789c60b72bfb2
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748

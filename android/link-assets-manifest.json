@@ -10,64 +10,8 @@
       "sha1": "5c835f30129f22248b3d098214c8a4ec230ff94b"
     },
     {
-      "path": "src/assets/fonts/Bitcount_Ink/BitcountInk-VariableFont_CRSV,ELSH,ELXP,SZP1,SZP2,XPN1,XPN2,YPN1,YPN2,slnt,wght.ttf",
-      "sha1": "4067e4fe557e98e45650c78088b23b11d89f5b0c"
-    },
-    {
-      "path": "src/assets/fonts/Bitcount_Ink/README.txt",
-      "sha1": "9defebc3ff2fa5e00cd21a1d923828523c000958"
-    },
-    {
-      "path": "src/assets/fonts/Fira_Sans/FiraSans-Black.ttf",
-      "sha1": "d4f1f6397ae7e9ec9a079df6bf05164493216d2c"
-    },
-    {
-      "path": "src/assets/fonts/Fira_Sans/FiraSans-BlackItalic.ttf",
-      "sha1": "85b0ff494e9b259722175a6f7367e4c713849352"
-    },
-    {
       "path": "src/assets/fonts/Fira_Sans/FiraSans-Bold.ttf",
       "sha1": "bdb04cd9e835a3cf7ba22df0354f1472812df225"
-    },
-    {
-      "path": "src/assets/fonts/Fira_Sans/FiraSans-BoldItalic.ttf",
-      "sha1": "64ca0c2a17bc89e3e274ab93d0a34ccf557ed5ee"
-    },
-    {
-      "path": "src/assets/fonts/Fira_Sans/FiraSans-ExtraBold.ttf",
-      "sha1": "d9a480fc974e62445563aee389896c6e92c32edb"
-    },
-    {
-      "path": "src/assets/fonts/Fira_Sans/FiraSans-ExtraBoldItalic.ttf",
-      "sha1": "d2605b822cb69309d7408914062ae483b9e049bc"
-    },
-    {
-      "path": "src/assets/fonts/Fira_Sans/FiraSans-ExtraLight.ttf",
-      "sha1": "98749514f072dfed08fcf9ff5e77ecfbc5e48cd8"
-    },
-    {
-      "path": "src/assets/fonts/Fira_Sans/FiraSans-ExtraLightItalic.ttf",
-      "sha1": "87f5e101da6eb900e6dbcd0e2e0988bd02462558"
-    },
-    {
-      "path": "src/assets/fonts/Fira_Sans/FiraSans-Italic.ttf",
-      "sha1": "c584552cccc716eb287a95a23806be746f3cad73"
-    },
-    {
-      "path": "src/assets/fonts/Fira_Sans/FiraSans-Light.ttf",
-      "sha1": "d795fdfc99d1bad2c0e42eea5a9f06e49dd67b1b"
-    },
-    {
-      "path": "src/assets/fonts/Fira_Sans/FiraSans-LightItalic.ttf",
-      "sha1": "26d80b11b6b24499165341bce66c05126623052e"
-    },
-    {
-      "path": "src/assets/fonts/Fira_Sans/FiraSans-Medium.ttf",
-      "sha1": "9181432d76711ae510c9f20713465810cf09e63b"
-    },
-    {
-      "path": "src/assets/fonts/Fira_Sans/FiraSans-MediumItalic.ttf",
-      "sha1": "70985253068fcdd4774f198c6098c5f4946e548e"
     },
     {
       "path": "src/assets/fonts/Fira_Sans/FiraSans-Regular.ttf",
@@ -76,18 +20,6 @@
     {
       "path": "src/assets/fonts/Fira_Sans/FiraSans-SemiBold.ttf",
       "sha1": "7d6bc4d8ea78656ca2f234e41f0e74e676ad61e2"
-    },
-    {
-      "path": "src/assets/fonts/Fira_Sans/FiraSans-SemiBoldItalic.ttf",
-      "sha1": "925d03ef5fb51987cd0405f7cb717456ef24854a"
-    },
-    {
-      "path": "src/assets/fonts/Fira_Sans/FiraSans-Thin.ttf",
-      "sha1": "98d54288a6f354977e85bc4bb200e910d5045b8b"
-    },
-    {
-      "path": "src/assets/fonts/Fira_Sans/FiraSans-ThinItalic.ttf",
-      "sha1": "7e3a0aabbeb7122f3cb4d9e898cd55810a810ef9"
     },
     {
       "path": "src/assets/fonts/Homemade_Apple/HomemadeApple-Regular.ttf",
