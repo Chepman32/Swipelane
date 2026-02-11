@@ -9,7 +9,7 @@ import {
   Image,
   useImage,
 } from '@shopify/react-native-skia';
-import type { RoadmapSlide, RoadmapTemplate } from '../../types/roadmap';
+import type { RoadmapSlide } from '../../types/roadmap';
 import { getRoadmapTemplateById, ROADMAP_BACKGROUNDS } from '../../constants/roadmapTemplates';
 import RoadmapCircle from './RoadmapCircle';
 import RoadmapConnector from './RoadmapConnector';
@@ -22,6 +22,54 @@ interface SkiaRoadmapRendererProps {
   selectedCircleId?: string | null;
   onCircleTap?: (circleId: string, x: number, y: number) => void;
 }
+
+interface CornerImageLayerProps {
+  corner: RoadmapSlide['cornerImages'][number];
+  width: number;
+  height: number;
+}
+
+const CornerImageLayer: React.FC<CornerImageLayerProps> = ({ corner, width, height }) => {
+  const image = useImage(corner.imageUri ?? null);
+  if (!image) return null;
+
+  const minDimension = Math.min(width, height);
+  const imgSize = corner.size * minDimension;
+  const padding = corner.padding * minDimension;
+
+  let x = 0;
+  let y = 0;
+
+  switch (corner.position) {
+    case 'topLeft':
+      x = padding;
+      y = padding;
+      break;
+    case 'topRight':
+      x = width - imgSize - padding;
+      y = padding;
+      break;
+    case 'bottomLeft':
+      x = padding;
+      y = height - imgSize - padding;
+      break;
+    case 'bottomRight':
+      x = width - imgSize - padding;
+      y = height - imgSize - padding;
+      break;
+  }
+
+  return (
+    <Image
+      image={image}
+      x={x}
+      y={y}
+      width={imgSize}
+      height={imgSize}
+      fit="contain"
+    />
+  );
+};
 
 const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
   slide,
@@ -73,12 +121,6 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
       ? slide.backgroundImageUri
       : null
   );
-
-  // Load corner images
-  const cornerImages = slide.cornerImages.map(corner => ({
-    ...corner,
-    image: useImage(corner.imageUri),
-  }));
 
   // Handle tap to detect which circle was tapped
   const handleCanvasTap = useCallback((event: any) => {
@@ -185,46 +227,14 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
 
           {/* Corner images layer */}
           <Group>
-            {cornerImages.map((corner, index) => {
-              if (!corner.image) return null;
-
-              const imgSize = corner.size * Math.min(size.width, size.height);
-              const padding = corner.padding * Math.min(size.width, size.height);
-
-              let x = 0;
-              let y = 0;
-
-              switch (corner.position) {
-                case 'topLeft':
-                  x = padding;
-                  y = padding;
-                  break;
-                case 'topRight':
-                  x = size.width - imgSize - padding;
-                  y = padding;
-                  break;
-                case 'bottomLeft':
-                  x = padding;
-                  y = size.height - imgSize - padding;
-                  break;
-                case 'bottomRight':
-                  x = size.width - imgSize - padding;
-                  y = size.height - imgSize - padding;
-                  break;
-              }
-
-              return (
-                <Image
-                  key={`corner-${index}`}
-                  image={corner.image}
-                  x={x}
-                  y={y}
-                  width={imgSize}
-                  height={imgSize}
-                  fit="contain"
-                />
-              );
-            })}
+            {slide.cornerImages.map((corner, index) => (
+              <CornerImageLayer
+                key={`corner-${corner.position}-${corner.imageUri || index}`}
+                corner={corner}
+                width={size.width}
+                height={size.height}
+              />
+            ))}
           </Group>
         </Canvas>
       )}

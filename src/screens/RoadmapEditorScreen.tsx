@@ -121,7 +121,7 @@ const RoadmapEditorScreen: React.FC = () => {
   // Handle circle tap
   const handleCircleTap = useCallback((circleId: string) => {
     FeedbackService.buttonTap();
-    setSelectedCircleId(circleId);
+    setSelectedCircleId(prev => (prev === circleId ? null : circleId));
     setEditingLabel(false);
     setEditingContent(false);
   }, []);
