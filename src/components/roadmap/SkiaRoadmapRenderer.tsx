@@ -321,6 +321,10 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
                   circle.id === 'c5' &&
                   /^step\s*5$/i.test(labelText);
                 const renderedLabelText = hideDefaultFifthStepLabel ? '' : labelText;
+                const linearLabelXOffset =
+                  slide.templateId === 'linear_4_chain' && circle.id === 'c1'
+                    ? titleFontSize * 0.1
+                    : 0;
 
                 const linearLabelY = Math.min(
                   imageTemplateFrame.y + imageTemplateFrame.height - titleFontSize * 0.5,
@@ -353,7 +357,11 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
                       renderedLabelText &&
                       titleFont && (
                         <SkiaText
-                          x={cx - titleFont.measureText(renderedLabelText).width / 2}
+                          x={
+                            cx -
+                            titleFont.measureText(renderedLabelText).width / 2 +
+                            linearLabelXOffset
+                          }
                           y={linearLabelY}
                           text={renderedLabelText}
                           font={titleFont}
