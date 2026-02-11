@@ -126,10 +126,116 @@ export const DIAGONAL_3_CIRCLES_TEMPLATE: RoadmapTemplate = {
   defaultDashPattern: ROADMAP_DEFAULTS.dashPattern,
 };
 
+// Template 3: 5 circles alternating above/below a winding S-road
+// Matching IMG_0497: sinusoidal road with icons along the path
+export const WINDING_5_ROAD_TEMPLATE: RoadmapTemplate = {
+  id: 'winding_5_road',
+  name: '5-Step Winding Road',
+  description: 'Five steps along a winding road path',
+  circleCount: 5,
+  circles: [
+    { id: 'c1', position: { x: 0.14, y: 0.38 }, radius: ROADMAP_DEFAULTS.circleRadius, labelPosition: 'top' },
+    { id: 'c2', position: { x: 0.34, y: 0.60 }, radius: ROADMAP_DEFAULTS.circleRadius, labelPosition: 'bottom' },
+    { id: 'c3', position: { x: 0.50, y: 0.38 }, radius: ROADMAP_DEFAULTS.circleRadius, labelPosition: 'top' },
+    { id: 'c4', position: { x: 0.66, y: 0.60 }, radius: ROADMAP_DEFAULTS.circleRadius, labelPosition: 'bottom' },
+    { id: 'c5', position: { x: 0.84, y: 0.38 }, radius: ROADMAP_DEFAULTS.circleRadius, labelPosition: 'top' },
+  ],
+  connectors: [
+    // c1 to c2: curve down-right
+    {
+      from: 'c1',
+      to: 'c2',
+      controlPoints: [
+        { x: 0.20, y: 0.40 },
+        { x: 0.28, y: 0.58 },
+      ],
+    },
+    // c2 to c3: curve up-right
+    {
+      from: 'c2',
+      to: 'c3',
+      controlPoints: [
+        { x: 0.40, y: 0.62 },
+        { x: 0.44, y: 0.38 },
+      ],
+    },
+    // c3 to c4: curve down-right
+    {
+      from: 'c3',
+      to: 'c4',
+      controlPoints: [
+        { x: 0.56, y: 0.38 },
+        { x: 0.60, y: 0.58 },
+      ],
+    },
+    // c4 to c5: curve up-right
+    {
+      from: 'c4',
+      to: 'c5',
+      controlPoints: [
+        { x: 0.72, y: 0.62 },
+        { x: 0.78, y: 0.38 },
+      ],
+    },
+  ],
+  defaultStrokeColor: ROADMAP_DEFAULTS.strokeColor,
+  defaultStrokeWidth: ROADMAP_DEFAULTS.strokeWidth,
+  defaultDashPattern: ROADMAP_DEFAULTS.dashPattern,
+};
+
+// Template 4: 4 circles in a horizontal chain
+// Matching IMG_0498: linked circles connected by horizontal bar connectors
+export const LINEAR_4_CHAIN_TEMPLATE: RoadmapTemplate = {
+  id: 'linear_4_chain',
+  name: '4-Step Chain',
+  description: 'Four steps linked in a horizontal chain',
+  circleCount: 4,
+  circles: [
+    { id: 'c1', position: { x: 0.12, y: 0.45 }, radius: ROADMAP_DEFAULTS.circleRadius, labelPosition: 'bottom' },
+    { id: 'c2', position: { x: 0.37, y: 0.45 }, radius: ROADMAP_DEFAULTS.circleRadius, labelPosition: 'bottom' },
+    { id: 'c3', position: { x: 0.63, y: 0.45 }, radius: ROADMAP_DEFAULTS.circleRadius, labelPosition: 'bottom' },
+    { id: 'c4', position: { x: 0.88, y: 0.45 }, radius: ROADMAP_DEFAULTS.circleRadius, labelPosition: 'bottom' },
+  ],
+  connectors: [
+    // c1 to c2: horizontal
+    {
+      from: 'c1',
+      to: 'c2',
+      controlPoints: [
+        { x: 0.21, y: 0.45 },
+        { x: 0.28, y: 0.45 },
+      ],
+    },
+    // c2 to c3: horizontal
+    {
+      from: 'c2',
+      to: 'c3',
+      controlPoints: [
+        { x: 0.46, y: 0.45 },
+        { x: 0.54, y: 0.45 },
+      ],
+    },
+    // c3 to c4: horizontal
+    {
+      from: 'c3',
+      to: 'c4',
+      controlPoints: [
+        { x: 0.72, y: 0.45 },
+        { x: 0.79, y: 0.45 },
+      ],
+    },
+  ],
+  defaultStrokeColor: ROADMAP_DEFAULTS.strokeColor,
+  defaultStrokeWidth: ROADMAP_DEFAULTS.strokeWidth,
+  defaultDashPattern: ROADMAP_DEFAULTS.dashPattern,
+};
+
 // All available templates
 export const ROADMAP_TEMPLATES: RoadmapTemplate[] = [
   GRID_4_CIRCLES_TEMPLATE,
   DIAGONAL_3_CIRCLES_TEMPLATE,
+  WINDING_5_ROAD_TEMPLATE,
+  LINEAR_4_CHAIN_TEMPLATE,
 ];
 
 // Get template by ID

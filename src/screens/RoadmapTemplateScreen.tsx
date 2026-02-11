@@ -22,6 +22,8 @@ import type { RoadmapTemplate } from '../types/roadmap';
 const TEMPLATE_IMAGES: Record<string, any> = {
   grid_4_circles: require('../assets/templates/template_4_circles.png'),
   diagonal_3_circles: require('../assets/templates/template_3_circles.png'),
+  winding_5_road: require('../assets/templates/IMG_0497.png'),
+  linear_4_chain: require('../assets/templates/IMG_0498.png'),
 };
 
 type RootStackParamList = {
