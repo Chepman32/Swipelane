@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,61 +8,53 @@ import {
   StatusBar,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  Platform,
 } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   useAnimatedScrollHandler,
-  interpolate,
+  useDerivedValue,
+  interpolateColor,
   withTiming,
   withSpring,
-  runOnJS,
+  withDelay,
+  Easing,
 } from 'react-native-reanimated';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { onboardingSlides } from '../constants/onboarding';
 import StorageService from '../services/StorageService';
 import { useLanguage } from '../context/LanguageContext';
 import FeedbackService from '../services/FeedbackService';
 
-// Import animation components
-import TextTransformAnimation from '../components/onboarding/TextTransformAnimation';
-import AIDesignAnimation from '../components/onboarding/AIDesignAnimation';
-import VoiceToSlideAnimation from '../components/onboarding/VoiceToSlideAnimation';
-import ProfessionalSlidesAnimation from '../components/onboarding/ProfessionalSlidesAnimation';
-import TextToVisualAnimation from '../components/onboarding/TextToVisualAnimation';
-import PocketDesignerAnimation from '../components/onboarding/PocketDesignerAnimation';
-import DesignTeamAnimation from '../components/onboarding/DesignTeamAnimation';
-import UniqueDesignAnimation from '../components/onboarding/UniqueDesignAnimation';
+import TextBloomAnimation from '../components/onboarding/TextBloomAnimation';
+import VoiceWaveAnimation from '../components/onboarding/VoiceWaveAnimation';
+import EffectsShowcaseAnimation from '../components/onboarding/EffectsShowcaseAnimation';
+import RoadmapPathAnimation from '../components/onboarding/RoadmapPathAnimation';
+import ShareLaunchAnimation from '../components/onboarding/ShareLaunchAnimation';
 
 const { width } = Dimensions.get('window');
+const SLIDE_COUNT = onboardingSlides.length;
+const ACCENT_COLORS = onboardingSlides.map((s) => s.accentColor);
 
-const DotIndicator: React.FC<{ 
-  index: number; 
-  isActive: boolean; 
+// Pill-style dot indicator
+const DotIndicator: React.FC<{
+  index: number;
+  isActive: boolean;
   onPress: () => void;
-  scrollX: any;
-}> = ({ index, isActive, onPress, scrollX }) => {
-  const dotStyle = useAnimatedStyle(() => {
-    const scale = interpolate(
-      scrollX.value / width,
-      [index - 1, index, index + 1],
-      [0.8, 1.2, 0.8]
-    );
-    
-    return {
-      width: withTiming(isActive ? 24 : 8, { duration: 300 }),
-      backgroundColor: withTiming(isActive ? '#3b82f6' : '#d1d5db', { duration: 300 }),
-      transform: [{ scale: withTiming(isActive ? scale : 1, { duration: 300 }) }],
-    };
-  });
+  color: string;
+}> = ({ index, isActive, onPress, color }) => {
+  const dotStyle = useAnimatedStyle(() => ({
+    width: withTiming(isActive ? 28 : 8, { duration: 250, easing: Easing.out(Easing.ease) }),
+    opacity: withTiming(isActive ? 1 : 0.35, { duration: 250 }),
+  }));
 
   return (
     <TouchableOpacity
-      style={styles.dot}
+      style={styles.dotHitArea}
       onPress={onPress}
       activeOpacity={0.7}
     >
-      <Animated.View style={[styles.dotInner, dotStyle]} />
+      <Animated.View style={[styles.dot, { backgroundColor: '#ffffff' }, dotStyle]} />
     </TouchableOpacity>
   );
 };
@@ -71,40 +63,52 @@ const OnboardingScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const scrollX = useSharedValue(0);
   const buttonScale = useSharedValue(1);
-  const titleOpacity = useSharedValue(1);
-  const animationOpacity = useSharedValue(1);
+  const textTranslateY = useSharedValue(20);
+  const textOpacity = useSharedValue(1);
   const { t } = useLanguage();
-  
   const flatListRef = useRef<any>(null);
 
   const animationComponents = {
-    TextTransformAnimation,
-    AIDesignAnimation,
-    VoiceToSlideAnimation,
-    ProfessionalSlidesAnimation,
-    TextToVisualAnimation,
-    PocketDesignerAnimation,
-    DesignTeamAnimation,
-    UniqueDesignAnimation,
+    TextBloomAnimation,
+    VoiceWaveAnimation,
+    EffectsShowcaseAnimation,
+    RoadmapPathAnimation,
+    ShareLaunchAnimation,
   };
+
+  // Background color interpolates between accent colors as user scrolls
+  const bgColor = useDerivedValue(() =>
+    interpolateColor(
+      scrollX.value / width,
+      ACCENT_COLORS.map((_, i) => i),
+      ACCENT_COLORS,
+    ),
+  );
+
+  const bgStyle = useAnimatedStyle(() => ({
+    backgroundColor: bgColor.value,
+  }));
 
   const handleScroll = useAnimatedScrollHandler({
     onScroll: (event) => {
       scrollX.value = event.contentOffset.x;
-      
-      // Update opacity based on scroll
-      const index = Math.round(event.contentOffset.x / width);
-      titleOpacity.value = withTiming(1 - Math.abs((event.contentOffset.x / width) - index) * 0.5);
-      animationOpacity.value = withTiming(1 - Math.abs((event.contentOffset.x / width) - index) * 0.3);
     },
   });
 
+  const animateTextIn = () => {
+    textOpacity.value = 0;
+    textTranslateY.value = 28;
+    textOpacity.value = withDelay(80, withTiming(1, { duration: 380, easing: Easing.out(Easing.ease) }));
+    textTranslateY.value = withDelay(80, withSpring(0, { damping: 18, stiffness: 180 }));
+  };
+
   const handleNext = () => {
     FeedbackService.buttonTap();
-    if (currentIndex < onboardingSlides.length - 1) {
-      const nextIndex = currentIndex + 1;
-      flatListRef.current?.scrollToIndex({ index: nextIndex, animated: true });
-      setCurrentIndex(nextIndex);
+    if (currentIndex < SLIDE_COUNT - 1) {
+      const next = currentIndex + 1;
+      flatListRef.current?.scrollToIndex({ index: next, animated: true });
+      setCurrentIndex(next);
+      animateTextIn();
     } else {
       handleComplete();
     }
@@ -124,217 +128,231 @@ const OnboardingScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     FeedbackService.buttonTap();
     flatListRef.current?.scrollToIndex({ index, animated: true });
     setCurrentIndex(index);
+    animateTextIn();
   };
 
   const handleScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const nextIndex = Math.round(event.nativeEvent.contentOffset.x / width);
-    const clampedIndex = Math.max(0, Math.min(onboardingSlides.length - 1, nextIndex));
-
-    if (clampedIndex !== currentIndex) {
-      setCurrentIndex(clampedIndex);
+    const clamped = Math.max(0, Math.min(SLIDE_COUNT - 1, nextIndex));
+    if (clamped !== currentIndex) {
+      setCurrentIndex(clamped);
+      animateTextIn();
     }
   };
 
-  const nextButtonStyle = useAnimatedStyle(() => ({
+  const buttonAnimStyle = useAnimatedStyle(() => ({
     transform: [{ scale: buttonScale.value }],
   }));
 
-  const panGesture = Gesture.Pan()
-    .onUpdate((event) => {
-      if (Math.abs(event.translationX) > 50) {
-        if (event.translationX > 0 && currentIndex > 0) {
-          runOnJS(handleDotPress)(currentIndex - 1);
-        } else if (event.translationX < 0 && currentIndex < onboardingSlides.length - 1) {
-          runOnJS(handleDotPress)(currentIndex + 1);
-        }
-      }
-    });
+  const textContainerStyle = useAnimatedStyle(() => ({
+    opacity: textOpacity.value,
+    transform: [{ translateY: textTranslateY.value }],
+  }));
 
-  const renderSlide = ({ item }: { item: any; index: number }) => {
+  // Animate text in on mount
+  useEffect(() => {
+    textOpacity.value = 0;
+    textTranslateY.value = 28;
+    textOpacity.value = withDelay(300, withTiming(1, { duration: 500, easing: Easing.out(Easing.ease) }));
+    textTranslateY.value = withDelay(300, withSpring(0, { damping: 18, stiffness: 160 }));
+  }, []);
+
+  const isLast = currentIndex === SLIDE_COUNT - 1;
+
+  const renderSlide = ({ item }: { item: typeof onboardingSlides[0] }) => {
     const AnimationComponent = animationComponents[item.svgComponent as keyof typeof animationComponents];
-    
     return (
       <View style={[styles.slide, { width }]}>
-        <Animated.View style={[styles.animationContainer, { opacity: animationOpacity }]}>
+        <View style={styles.animationContainer}>
           {AnimationComponent && <AnimationComponent />}
-        </Animated.View>
-        
-        <Animated.View style={[styles.textContainer, { opacity: titleOpacity }]}>
-          <Text style={styles.title}>{t(item.titleKey)}</Text>
-          <Text style={styles.description}>{t(item.descriptionKey)}</Text>
-        </Animated.View>
+        </View>
       </View>
     );
   };
 
-  const renderDot = (index: number) => {
-    return (
-      <DotIndicator
-        key={index}
-        index={index}
-        isActive={currentIndex === index}
-        onPress={() => handleDotPress(index)}
-        scrollX={scrollX}
-      />
-    );
-  };
-
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
-      
-      <GestureDetector gesture={panGesture}>
-        <View style={styles.content}>
-          {/* Skip button */}
-          <TouchableOpacity
-            style={styles.skipButton}
-            onPress={handleSkip}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.skipText}>{t('onboarding_skip')}</Text>
-          </TouchableOpacity>
+    <Animated.View style={[styles.container, bgStyle]}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
-          {/* Slides */}
-          <Animated.FlatList
-            ref={flatListRef}
-            data={onboardingSlides}
-            renderItem={renderSlide}
-            keyExtractor={(item) => item.id}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            pagingEnabled
-            onScroll={handleScroll}
-            onMomentumScrollEnd={handleScrollEnd}
-            onScrollEndDrag={handleScrollEnd}
-            scrollEventThrottle={16}
-            bounces={false}
-          />
+      {/* Skip button */}
+      <TouchableOpacity
+        style={styles.skipButton}
+        onPress={handleSkip}
+        activeOpacity={0.7}
+      >
+        <Text style={styles.skipText}>{t('onboarding_skip')}</Text>
+      </TouchableOpacity>
 
-          {/* Dots indicator */}
-          <View style={styles.dotsContainer}>
-            {onboardingSlides.map((_, index) => renderDot(index))}
-          </View>
+      {/* Slide animations */}
+      <Animated.FlatList
+        ref={flatListRef}
+        data={onboardingSlides}
+        renderItem={renderSlide}
+        keyExtractor={(item) => item.id}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        pagingEnabled
+        onScroll={handleScroll}
+        onMomentumScrollEnd={handleScrollEnd}
+        onScrollEndDrag={handleScrollEnd}
+        scrollEventThrottle={16}
+        bounces={false}
+        style={styles.flatList}
+      />
 
-          {/* Next/Get Started button */}
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={[
-                styles.nextButton,
-                currentIndex === onboardingSlides.length - 1 && styles.getStartedButton,
-              ]}
-              onPress={handleNext}
-              activeOpacity={0.8}
-              onPressIn={() => {
-                buttonScale.value = withSpring(0.95);
-              }}
-              onPressOut={() => {
-                buttonScale.value = withSpring(1);
-              }}
-            >
-              <Animated.Text style={[styles.nextButtonText, nextButtonStyle]}>
-                {currentIndex === onboardingSlides.length - 1
-                  ? t('onboarding_get_started')
-                  : t('onboarding_next')}
-              </Animated.Text>
-            </TouchableOpacity>
-          </View>
+      {/* Text content — separate from FlatList so it can animate independently */}
+      <Animated.View style={[styles.textContainer, textContainerStyle]}>
+        <Text style={styles.title} numberOfLines={3}>
+          {t(onboardingSlides[currentIndex].titleKey)}
+        </Text>
+        <Text style={styles.description} numberOfLines={3}>
+          {t(onboardingSlides[currentIndex].descriptionKey)}
+        </Text>
+      </Animated.View>
+
+      {/* Bottom bar: dots + button */}
+      <View style={styles.bottomBar}>
+        {/* Dots */}
+        <View style={styles.dotsRow}>
+          {onboardingSlides.map((_, i) => (
+            <DotIndicator
+              key={i}
+              index={i}
+              isActive={currentIndex === i}
+              onPress={() => handleDotPress(i)}
+              color={ACCENT_COLORS[currentIndex]}
+            />
+          ))}
         </View>
-      </GestureDetector>
-    </View>
+
+        {/* CTA button */}
+        <TouchableOpacity
+          onPress={handleNext}
+          activeOpacity={0.85}
+          onPressIn={() => { buttonScale.value = withSpring(0.95, { damping: 12 }); }}
+          onPressOut={() => { buttonScale.value = withSpring(1, { damping: 12 }); }}
+        >
+          <Animated.View
+            style={[
+              styles.ctaButton,
+              isLast ? styles.ctaButtonLast : styles.ctaButtonDefault,
+              buttonAnimStyle,
+            ]}
+          >
+            <Text style={[styles.ctaText, isLast && styles.ctaTextLast]}>
+              {isLast ? t('onboarding_get_started') : t('onboarding_next')}
+            </Text>
+          </Animated.View>
+        </TouchableOpacity>
+      </View>
+    </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
   },
-  content: {
+  flatList: {
     flex: 1,
-  },
-  skipButton: {
-    position: 'absolute',
-    top: 50,
-    right: 20,
-    zIndex: 1,
-    padding: 10,
-  },
-  skipText: {
-    fontSize: 16,
-    color: '#6b7280',
-    fontWeight: '500',
+    marginTop: Platform.OS === 'ios' ? 52 : 32,
   },
   slide: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
   },
   animationContainer: {
-    flex: 2,
+    width: 300,
+    height: 260,
     justifyContent: 'center',
     alignItems: 'center',
-    width: '100%',
+  },
+  skipButton: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 56 : 36,
+    right: 24,
+    zIndex: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  skipText: {
+    fontSize: 15,
+    color: 'rgba(255,255,255,0.6)',
+    fontFamily: 'FiraSans-SemiBold',
+    letterSpacing: 0.2,
   },
   textContainer: {
-    flex: 1,
-    justifyContent: 'center',
+    paddingHorizontal: 32,
+    paddingTop: 24,
+    paddingBottom: 8,
     alignItems: 'center',
-    paddingHorizontal: 30,
-    marginTop: 40,
+    minHeight: 130,
+    justifyContent: 'flex-start',
   },
   title: {
     fontSize: 28,
-    fontWeight: '700',
-    color: '#1f2937',
+    color: '#ffffff',
     textAlign: 'center',
     lineHeight: 36,
-    marginBottom: 16,
+    marginBottom: 12,
+    fontFamily: 'ArchivoBlack-Regular',
+    letterSpacing: -0.3,
   },
   description: {
     fontSize: 16,
-    color: '#6b7280',
+    color: 'rgba(255,255,255,0.68)',
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: 23,
+    fontFamily: 'FiraSans-Regular',
   },
-  dotsContainer: {
+  bottomBar: {
+    paddingHorizontal: 24,
+    paddingBottom: Platform.OS === 'ios' ? 44 : 28,
+    paddingTop: 16,
     flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  dotsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  dotHitArea: {
+    padding: 4,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 20,
   },
   dot: {
-    marginHorizontal: 4,
-    padding: 4,
-  },
-  dotInner: {
     height: 8,
     borderRadius: 4,
   },
-  buttonContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
-  },
-  nextButton: {
-    backgroundColor: '#3b82f6',
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 12,
+  ctaButton: {
+    paddingVertical: 14,
+    paddingHorizontal: 28,
+    borderRadius: 30,
+    minWidth: 130,
     alignItems: 'center',
-    shadowColor: '#3b82f6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    justifyContent: 'center',
   },
-  getStartedButton: {
-    backgroundColor: '#10b981',
-    shadowColor: '#10b981',
+  ctaButtonDefault: {
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.35)',
   },
-  nextButtonText: {
-    fontSize: 18,
-    fontWeight: '600',
+  ctaButtonLast: {
+    backgroundColor: '#ffffff',
+    borderWidth: 0,
+  },
+  ctaText: {
+    fontSize: 16,
+    fontFamily: 'FiraSans-SemiBold',
     color: '#ffffff',
+    letterSpacing: 0.3,
+  },
+  ctaTextLast: {
+    color: '#1a1a2e',
   },
 });
 

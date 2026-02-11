@@ -7,7 +7,6 @@ import {
   useFont,
   Image,
   useImage,
-  ClipOp,
   Skia,
 } from '@shopify/react-native-skia';
 import type { RoadmapCircleDefinition, RoadmapCircleContent } from '../../types/roadmap';
@@ -40,18 +39,26 @@ const RoadmapCircle: React.FC<RoadmapCircleProps> = ({
   const image = useImage(content.contentType === 'image' && content.imageUri ? content.imageUri : null);
 
   const dimensions = useMemo(() => {
-    const minDimension = Math.min(width, height);
-    const cx = circle.position.x * width;
-    const cy = circle.position.y * height;
-    const r = circle.radius * minDimension;
+    const safeWidth = Number.isFinite(width) ? width : 0;
+    const safeHeight = Number.isFinite(height) ? height : 0;
+    const minDimension = Math.max(0, Math.min(safeWidth, safeHeight));
+    const rawCx = circle.position.x * safeWidth;
+    const rawCy = circle.position.y * safeHeight;
+    const rawR = circle.radius * minDimension;
+    const cx = Number.isFinite(rawCx) ? rawCx : 0;
+    const cy = Number.isFinite(rawCy) ? rawCy : 0;
+    const r = Number.isFinite(rawR) ? Math.max(0, rawR) : 0;
 
     // Label badge dimensions
-    const badgeWidth = r * 1.4;
-    const badgeHeight = r * 0.45;
+    const badgeWidth = Math.max(0, r * 1.4);
+    const badgeHeight = Math.max(0, r * 0.45);
     const badgeY = circle.labelPosition === 'bottom'
       ? cy + r - badgeHeight * 0.3
       : cy - r - badgeHeight * 0.7;
     const badgeX = cx - badgeWidth / 2;
+
+    const rawBadgeRadius = badgeHeight / 2;
+    const badgeRadius = Math.max(0, Math.min(rawBadgeRadius, badgeWidth / 2, badgeHeight / 2));
 
     return {
       cx,
@@ -61,13 +68,16 @@ const RoadmapCircle: React.FC<RoadmapCircleProps> = ({
       badgeY,
       badgeWidth,
       badgeHeight,
-      badgeRadius: badgeHeight / 2,
+      badgeRadius,
     };
   }, [circle, width, height]);
 
   const clipPath = useMemo(() => {
     const path = Skia.Path.Make();
-    path.addCircle(dimensions.cx, dimensions.cy, dimensions.r - strokeWidth);
+    const clipRadius = Math.max(0, dimensions.r - strokeWidth);
+    if (clipRadius > 0) {
+      path.addCircle(dimensions.cx, dimensions.cy, clipRadius);
+    }
     return path;
   }, [dimensions, strokeWidth]);
 
@@ -114,7 +124,7 @@ const RoadmapCircle: React.FC<RoadmapCircleProps> = ({
       />
 
       {/* Image content (clipped to circle) */}
-      {content.contentType === 'image' && image && (
+      {content.contentType === 'image' && image && dimensions.r > 0 && (
         <Group clip={clipPath} invertClip={false}>
           <Image
             image={image}
@@ -139,14 +149,16 @@ const RoadmapCircle: React.FC<RoadmapCircleProps> = ({
       )}
 
       {/* Label badge background */}
-      <RoundedRect
-        x={dimensions.badgeX}
-        y={dimensions.badgeY}
-        width={dimensions.badgeWidth}
-        height={dimensions.badgeHeight}
-        r={dimensions.badgeRadius}
-        color={ROADMAP_DEFAULTS.labelBadgeColor}
-      />
+      {dimensions.badgeWidth > 0 && dimensions.badgeHeight > 0 && (
+        <RoundedRect
+          x={dimensions.badgeX}
+          y={dimensions.badgeY}
+          width={dimensions.badgeWidth}
+          height={dimensions.badgeHeight}
+          r={dimensions.badgeRadius}
+          color={ROADMAP_DEFAULTS.labelBadgeColor}
+        />
+      )}
 
       {/* Label text */}
       {font && content.label && (

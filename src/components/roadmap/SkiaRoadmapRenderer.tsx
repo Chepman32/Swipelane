@@ -23,6 +23,26 @@ import RoadmapConnector from './RoadmapConnector';
 type Size = { width: number; height: number };
 type RectFrame = { x: number; y: number; width: number; height: number };
 type FontMeasurer = { measureText: (text: string) => { width: number } };
+type SafeRoundedRectInput = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  radius: number;
+};
+
+const toSafeRoundedRect = ({
+  x,
+  y,
+  width,
+  height,
+  radius,
+}: SafeRoundedRectInput) => {
+  if (![x, y, width, height, radius].every(Number.isFinite)) return null;
+  if (width <= 0 || height <= 0) return null;
+  const safeRadius = Math.max(0, Math.min(radius, width / 2, height / 2));
+  return Skia.RRectXY(Skia.XYWHRect(x, y, width, height), safeRadius, safeRadius);
+};
 
 function wrapTextToLines(text: string, font: FontMeasurer, maxWidth: number): string[] {
   const result: string[] = [];
@@ -407,8 +427,16 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
             {/* Swipe button pill */}
             {boldFont && cover.buttonText && (() => {
               const bw = boldFont.measureText(cover.buttonText).width + buttonPad * 2;
+              const btnRRect = toSafeRoundedRect({
+                x: panelX + pad,
+                y: buttonY,
+                width: bw,
+                height: buttonH,
+                radius: buttonH / 2,
+              });
+              if (!btnRRect) return null;
               const btnPath = Skia.Path.Make();
-              btnPath.addRRect(Skia.RRectXY(Skia.XYWHRect(panelX + pad, buttonY, bw, buttonH), buttonH / 2, buttonH / 2));
+              btnPath.addRRect(btnRRect);
               return (
                 <>
                   <Path path={btnPath} color={cd.accentColor} />
