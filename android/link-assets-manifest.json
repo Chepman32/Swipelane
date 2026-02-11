@@ -6,10 +6,6 @@
       "sha1": "5b6c44432da2e1330ad30153eddf98c739013b88"
     },
     {
-      "path": "src/assets/fonts/Archivo_Black/OFL.txt",
-      "sha1": "5c835f30129f22248b3d098214c8a4ec230ff94b"
-    },
-    {
       "path": "src/assets/fonts/Fira_Sans/FiraSans-Bold.ttf",
       "sha1": "bdb04cd9e835a3cf7ba22df0354f1472812df225"
     },
@@ -24,10 +20,6 @@
     {
       "path": "src/assets/fonts/Homemade_Apple/HomemadeApple-Regular.ttf",
       "sha1": "88dc81aaf3c0ead0e40fb1d8295de879ef2e19ed"
-    },
-    {
-      "path": "src/assets/fonts/Homemade_Apple/LICENSE.txt",
-      "sha1": "47b573e3824cd5e02a1a3ae99e2735b49e0256e4"
     }
   ]
 }
