@@ -15,6 +15,7 @@ import { useLanguage } from '../context/LanguageContext';
 import FeedbackService from '../services/FeedbackService';
 import { useResponsive } from '../hooks/useResponsive';
 import { getRoadmapTemplateById, ROADMAP_BACKGROUNDS } from '../constants/roadmapTemplates';
+import { getRoadmapImageBackedTemplateConfig } from '../constants/roadmapTemplateAssets';
 import { GRADIENT_VARIANTS } from '../constants/gradients';
 import { SkiaRoadmapRenderer } from '../components/roadmap';
 import { createRoadmapProject } from '../types/roadmap';
@@ -23,7 +24,11 @@ import GradientBackground from '../components/GradientBackground';
 
 type RootStackParamList = {
   RoadmapBackground: { templateId: string; projectId: string };
-  RoadmapEditor: { projectId: string };
+  RoadmapEditor: {
+    projectId: string;
+    templateId?: string;
+    backgroundGradient?: SlideBackgroundGradient;
+  };
   Home: undefined;
 };
 
@@ -51,13 +56,17 @@ const RoadmapBackgroundScreen: React.FC = () => {
   const { themeDefinition } = useTheme();
   const { t } = useLanguage();
   const { scale, scaleFont } = useResponsive();
-  const { width, height } = useWindowDimensions();
+  const { width } = useWindowDimensions();
 
   const [selectedGradient, setSelectedGradient] = useState<SlideBackgroundGradient>(
     ALL_BACKGROUNDS[0]
   );
 
   const template = useMemo(() => getRoadmapTemplateById(templateId), [templateId]);
+  const imageTemplateConfig = useMemo(
+    () => getRoadmapImageBackedTemplateConfig(templateId),
+    [templateId],
+  );
 
   // Create a preview slide with the selected background
   const previewSlide = useMemo(() => {
@@ -93,7 +102,9 @@ const RoadmapBackgroundScreen: React.FC = () => {
   };
 
   const previewWidth = width - scale(40);
-  const previewHeight = previewWidth * 1.2;
+  const previewHeight = imageTemplateConfig
+    ? previewWidth * (imageTemplateConfig.originalHeight / imageTemplateConfig.originalWidth)
+    : previewWidth * 1.2;
   const swatchSize = scale(48);
 
   if (!template || !previewSlide) {
@@ -127,48 +138,52 @@ const RoadmapBackgroundScreen: React.FC = () => {
           />
         </View>
 
-        {/* Background selector */}
-        <Text
-          style={[
-            styles.sectionTitle,
-            {
-              color: themeDefinition.colors.text,
-              fontSize: scaleFont(16),
-              marginTop: scale(24),
-              marginBottom: scale(12),
-            },
-          ]}
-        >
-          {t('roadmap_background_select') || 'Select Background'}
-        </Text>
-
-        <View style={styles.gradientGrid}>
-          {ALL_BACKGROUNDS.map(gradient => (
-            <TouchableOpacity
-              key={gradient.id}
+        {!imageTemplateConfig && (
+          <>
+            {/* Background selector */}
+            <Text
               style={[
-                styles.gradientSwatch,
+                styles.sectionTitle,
                 {
-                  width: swatchSize,
-                  height: swatchSize,
-                  borderRadius: scale(8),
-                  borderColor:
-                    selectedGradient.id === gradient.id
-                      ? '#007AFF'
-                      : themeDefinition.colors.border,
-                  borderWidth: selectedGradient.id === gradient.id ? 3 : 1,
+                  color: themeDefinition.colors.text,
+                  fontSize: scaleFont(16),
+                  marginTop: scale(24),
+                  marginBottom: scale(12),
                 },
               ]}
-              onPress={() => handleSelectGradient(gradient)}
-              activeOpacity={0.8}
             >
-              <GradientBackground
-                gradient={gradient}
-                style={[styles.swatchGradient, { borderRadius: scale(6) }]}
-              />
-            </TouchableOpacity>
-          ))}
-        </View>
+              {t('roadmap_background_select') || 'Select Background'}
+            </Text>
+
+            <View style={styles.gradientGrid}>
+              {ALL_BACKGROUNDS.map(gradient => (
+                <TouchableOpacity
+                  key={gradient.id}
+                  style={[
+                    styles.gradientSwatch,
+                    {
+                      width: swatchSize,
+                      height: swatchSize,
+                      borderRadius: scale(8),
+                      borderColor:
+                        selectedGradient.id === gradient.id
+                          ? '#007AFF'
+                          : themeDefinition.colors.border,
+                      borderWidth: selectedGradient.id === gradient.id ? 3 : 1,
+                    },
+                  ]}
+                  onPress={() => handleSelectGradient(gradient)}
+                  activeOpacity={0.8}
+                >
+                  <GradientBackground
+                    gradient={gradient}
+                    style={[styles.swatchGradient, { borderRadius: scale(6) }]}
+                  />
+                </TouchableOpacity>
+              ))}
+            </View>
+          </>
+        )}
 
         {/* Continue button */}
         <TouchableOpacity
@@ -176,7 +191,7 @@ const RoadmapBackgroundScreen: React.FC = () => {
             styles.continueButton,
             {
               padding: scale(15),
-              marginTop: scale(24),
+              marginTop: scale(imageTemplateConfig ? 20 : 24),
               backgroundColor: '#007AFF',
             },
           ]}

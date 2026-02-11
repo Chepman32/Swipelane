@@ -16,15 +16,8 @@ import { useLanguage } from '../context/LanguageContext';
 import FeedbackService from '../services/FeedbackService';
 import { useResponsive } from '../hooks/useResponsive';
 import { ROADMAP_TEMPLATES } from '../constants/roadmapTemplates';
+import { getRoadmapTemplateImageSource } from '../constants/roadmapTemplateAssets';
 import type { RoadmapTemplate } from '../types/roadmap';
-
-// Template preview images
-const TEMPLATE_IMAGES: Record<string, any> = {
-  grid_4_circles: require('../assets/templates/template_4_circles.png'),
-  diagonal_3_circles: require('../assets/templates/template_3_circles.png'),
-  winding_5_road: require('../assets/templates/IMG_0497.png'),
-  linear_4_chain: require('../assets/templates/IMG_0498.png'),
-};
 
 type RootStackParamList = {
   RoadmapBackground: { templateId: string; projectId: string };
@@ -62,46 +55,51 @@ const RoadmapTemplateScreen: React.FC = () => {
   const cardWidth = (width - scale(60)) / 2;
   const cardHeight = cardWidth * 1.2;
 
-  const renderTemplateCard = ({ item }: { item: RoadmapTemplate }) => (
-    <TouchableOpacity
-      style={[
-        styles.templateCard,
-        {
-          width: cardWidth,
-          height: cardHeight,
-          backgroundColor: themeDefinition.colors.card,
-          borderColor: themeDefinition.colors.border,
-          marginBottom: scale(16),
-        },
-      ]}
-      onPress={() => handleSelectTemplate(item)}
-      activeOpacity={0.8}
-    >
-      <Image
-        source={TEMPLATE_IMAGES[item.id]}
-        style={[styles.templateImage, { height: cardHeight - scale(60) }]}
-        resizeMode="contain"
-      />
-      <View style={styles.templateInfo}>
-        <Text
-          style={[
-            styles.templateName,
-            { color: themeDefinition.colors.text, fontSize: scaleFont(14) },
-          ]}
-        >
-          {item.name}
-        </Text>
-        <Text
-          style={[
-            styles.templateDescription,
-            { color: themeDefinition.colors.text + '99', fontSize: scaleFont(12) },
-          ]}
-        >
-          {item.circleCount} steps
-        </Text>
-      </View>
-    </TouchableOpacity>
-  );
+  const renderTemplateCard = ({ item }: { item: RoadmapTemplate }) => {
+    const templateImageSource = getRoadmapTemplateImageSource(item.id);
+    if (!templateImageSource) return null;
+
+    return (
+      <TouchableOpacity
+        style={[
+          styles.templateCard,
+          {
+            width: cardWidth,
+            height: cardHeight,
+            backgroundColor: themeDefinition.colors.card,
+            borderColor: themeDefinition.colors.border,
+            marginBottom: scale(16),
+          },
+        ]}
+        onPress={() => handleSelectTemplate(item)}
+        activeOpacity={0.8}
+      >
+        <Image
+          source={templateImageSource}
+          style={[styles.templateImage, { height: cardHeight - scale(60) }]}
+          resizeMode="contain"
+        />
+        <View style={styles.templateInfo}>
+          <Text
+            style={[
+              styles.templateName,
+              { color: themeDefinition.colors.text, fontSize: scaleFont(14) },
+            ]}
+          >
+            {item.name}
+          </Text>
+          <Text
+            style={[
+              styles.templateDescription,
+              { color: themeDefinition.colors.text + '99', fontSize: scaleFont(12) },
+            ]}
+          >
+            {item.circleCount} steps
+          </Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <SafeAreaView

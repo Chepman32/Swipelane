@@ -15,7 +15,6 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -25,7 +24,8 @@ import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import FeedbackService from '../services/FeedbackService';
 import { useResponsive } from '../hooks/useResponsive';
-import { getRoadmapTemplateById, ROADMAP_BACKGROUNDS, ROADMAP_DEFAULTS } from '../constants/roadmapTemplates';
+import { getRoadmapTemplateById, ROADMAP_BACKGROUNDS } from '../constants/roadmapTemplates';
+import { getRoadmapImageBackedTemplateConfig } from '../constants/roadmapTemplateAssets';
 import { GRADIENT_VARIANTS } from '../constants/gradients';
 import { SkiaRoadmapRenderer } from '../components/roadmap';
 import {
@@ -78,19 +78,23 @@ const RoadmapEditorScreen: React.FC = () => {
   const { themeDefinition } = useTheme();
   const { t } = useLanguage();
   const { scale, scaleFont } = useResponsive();
-  const { width, height } = useWindowDimensions();
+  const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
 
   // State
-  const [templateId, setTemplateId] = useState(routeTemplateId || 'grid_4_circles');
+  const [templateId] = useState(routeTemplateId || 'grid_4_circles');
   const [selectedCircleId, setSelectedCircleId] = useState<string | null>(null);
   const [slide, setSlide] = useState<RoadmapSlide | null>(null);
-  const [editingLabel, setEditingLabel] = useState(false);
-  const [editingContent, setEditingContent] = useState(false);
   const [showBackgroundPicker, setShowBackgroundPicker] = useState(false);
-  const [showColorPicker, setShowColorPicker] = useState(false);
 
   const template = useMemo(() => getRoadmapTemplateById(templateId), [templateId]);
+  const imageTemplateConfig = useMemo(
+    () => getRoadmapImageBackedTemplateConfig(templateId),
+    [templateId],
+  );
+  const isImageBackedTemplate = Boolean(imageTemplateConfig);
+  const isLinearChainTemplate = templateId === 'linear_4_chain';
+  const isWindingRoadTemplate = templateId === 'winding_5_road';
 
   // Initialize slide only once
   useEffect(() => {
@@ -122,8 +126,6 @@ const RoadmapEditorScreen: React.FC = () => {
   const handleCircleTap = useCallback((circleId: string) => {
     FeedbackService.buttonTap();
     setSelectedCircleId(prev => (prev === circleId ? null : circleId));
-    setEditingLabel(false);
-    setEditingContent(false);
   }, []);
 
   // Update circle content
@@ -205,7 +207,6 @@ const RoadmapEditorScreen: React.FC = () => {
       if (!prev) return prev;
       return { ...prev, strokeColor: color };
     });
-    setShowColorPicker(false);
   }, []);
 
   // Handle corner image
@@ -245,7 +246,9 @@ const RoadmapEditorScreen: React.FC = () => {
   }, [slide, navigation]);
 
   const previewWidth = width - scale(32);
-  const previewHeight = previewWidth * 1.2;
+  const previewHeight = imageTemplateConfig
+    ? previewWidth * (imageTemplateConfig.originalHeight / imageTemplateConfig.originalWidth)
+    : previewWidth * 1.2;
 
   if (!template || !slide) {
     return null;
@@ -360,7 +363,11 @@ const RoadmapEditorScreen: React.FC = () => {
                 { color: themeDefinition.colors.text + '99', fontSize: scaleFont(12), marginBottom: scale(4) },
               ]}
             >
-              {t('roadmap_label') || 'Label'}
+              {isLinearChainTemplate
+                ? 'Text Under Arrow'
+                : isWindingRoadTemplate
+                  ? 'Text Above Circle'
+                  : t('roadmap_label') || 'Label'}
             </Text>
             <TextInput
               style={[
@@ -376,206 +383,253 @@ const RoadmapEditorScreen: React.FC = () => {
               ]}
               value={selectedCircleContent.label}
               onChangeText={handleLabelChange}
-              placeholder="Step 1"
+              placeholder={isWindingRoadTemplate ? 'Top text...' : 'Step 1'}
               placeholderTextColor={themeDefinition.colors.text + '66'}
             />
 
-            {/* Content type toggle */}
+            {isWindingRoadTemplate && (
+              <>
+                <Text
+                  style={[
+                    styles.inputLabel,
+                    {
+                      color: themeDefinition.colors.text + '99',
+                      fontSize: scaleFont(12),
+                      marginBottom: scale(4),
+                      marginTop: scale(8),
+                    },
+                  ]}
+                >
+                  Text Under Circle
+                </Text>
+                <TextInput
+                  style={[
+                    styles.textInput,
+                    {
+                      backgroundColor: themeDefinition.colors.background,
+                      color: themeDefinition.colors.text,
+                      borderColor: themeDefinition.colors.border,
+                      fontSize: scaleFont(14),
+                      padding: scale(12),
+                      minHeight: scale(60),
+                    },
+                  ]}
+                  value={selectedCircleContent.text || ''}
+                  onChangeText={handleContentTextChange}
+                  placeholder="Bottom text..."
+                  placeholderTextColor={themeDefinition.colors.text + '66'}
+                  multiline
+                />
+              </>
+            )}
+
+            {!isImageBackedTemplate && (
+              <>
+                {/* Content type toggle */}
+                <Text
+                  style={[
+                    styles.inputLabel,
+                    {
+                      color: themeDefinition.colors.text + '99',
+                      fontSize: scaleFont(12),
+                      marginBottom: scale(8),
+                      marginTop: scale(4),
+                    },
+                  ]}
+                >
+                  {t('roadmap_content') || 'Content'}
+                </Text>
+                <View style={styles.contentTypeRow}>
+                  <TouchableOpacity
+                    style={[
+                      styles.contentTypeButton,
+                      {
+                        backgroundColor:
+                          selectedCircleContent.contentType === 'text'
+                            ? '#007AFF'
+                            : themeDefinition.colors.background,
+                        borderColor: themeDefinition.colors.border,
+                        paddingVertical: scale(8),
+                        paddingHorizontal: scale(16),
+                        marginRight: scale(8),
+                      },
+                    ]}
+                    onPress={() => updateCircleContent(selectedCircleId!, { contentType: 'text' })}
+                  >
+                    <Text
+                      style={{
+                        color:
+                          selectedCircleContent.contentType === 'text'
+                            ? '#FFFFFF'
+                            : themeDefinition.colors.text,
+                        fontSize: scaleFont(14),
+                      }}
+                    >
+                      Text
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.contentTypeButton,
+                      {
+                        backgroundColor:
+                          selectedCircleContent.contentType === 'image'
+                            ? '#007AFF'
+                            : themeDefinition.colors.background,
+                        borderColor: themeDefinition.colors.border,
+                        paddingVertical: scale(8),
+                        paddingHorizontal: scale(16),
+                      },
+                    ]}
+                    onPress={handleSelectCircleImage}
+                  >
+                    <Text
+                      style={{
+                        color:
+                          selectedCircleContent.contentType === 'image'
+                            ? '#FFFFFF'
+                            : themeDefinition.colors.text,
+                        fontSize: scaleFont(14),
+                      }}
+                    >
+                      Image
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Text content input */}
+                {selectedCircleContent.contentType === 'text' && (
+                  <TextInput
+                    style={[
+                      styles.textInput,
+                      {
+                        backgroundColor: themeDefinition.colors.background,
+                        color: themeDefinition.colors.text,
+                        borderColor: themeDefinition.colors.border,
+                        fontSize: scaleFont(14),
+                        padding: scale(12),
+                        marginTop: scale(12),
+                        minHeight: scale(60),
+                      },
+                    ]}
+                    value={selectedCircleContent.text || ''}
+                    onChangeText={handleContentTextChange}
+                    placeholder="Enter text..."
+                    placeholderTextColor={themeDefinition.colors.text + '66'}
+                    multiline
+                  />
+                )}
+              </>
+            )}
+          </View>
+        )}
+
+        {/* Style options */}
+        {!isImageBackedTemplate && (
+          <View
+            style={[
+              styles.editSection,
+              {
+                backgroundColor: themeDefinition.colors.card,
+                borderColor: themeDefinition.colors.border,
+                padding: scale(16),
+                marginTop: scale(16),
+                borderRadius: scale(12),
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.sectionTitle,
+                { color: themeDefinition.colors.text, fontSize: scaleFont(16), marginBottom: scale(12) },
+              ]}
+            >
+              {t('roadmap_style') || 'Style'}
+            </Text>
+
+            {/* Stroke color */}
             <Text
               style={[
                 styles.inputLabel,
                 { color: themeDefinition.colors.text + '99', fontSize: scaleFont(12), marginBottom: scale(8) },
               ]}
             >
-              {t('roadmap_content') || 'Content'}
+              {t('roadmap_stroke_color') || 'Stroke Color'}
             </Text>
-            <View style={styles.contentTypeRow}>
-              <TouchableOpacity
-                style={[
-                  styles.contentTypeButton,
-                  {
-                    backgroundColor:
-                      selectedCircleContent.contentType === 'text'
-                        ? '#007AFF'
-                        : themeDefinition.colors.background,
-                    borderColor: themeDefinition.colors.border,
-                    paddingVertical: scale(8),
-                    paddingHorizontal: scale(16),
-                    marginRight: scale(8),
-                  },
-                ]}
-                onPress={() => updateCircleContent(selectedCircleId!, { contentType: 'text' })}
-              >
-                <Text
-                  style={{
-                    color:
-                      selectedCircleContent.contentType === 'text'
-                        ? '#FFFFFF'
-                        : themeDefinition.colors.text,
-                    fontSize: scaleFont(14),
-                  }}
-                >
-                  Text
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.contentTypeButton,
-                  {
-                    backgroundColor:
-                      selectedCircleContent.contentType === 'image'
-                        ? '#007AFF'
-                        : themeDefinition.colors.background,
-                    borderColor: themeDefinition.colors.border,
-                    paddingVertical: scale(8),
-                    paddingHorizontal: scale(16),
-                  },
-                ]}
-                onPress={handleSelectCircleImage}
-              >
-                <Text
-                  style={{
-                    color:
-                      selectedCircleContent.contentType === 'image'
-                        ? '#FFFFFF'
-                        : themeDefinition.colors.text,
-                    fontSize: scaleFont(14),
-                  }}
-                >
-                  Image
-                </Text>
-              </TouchableOpacity>
-            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={styles.colorRow}>
+                {COLOR_OPTIONS.map(color => (
+                  <TouchableOpacity
+                    key={color}
+                    style={[
+                      styles.colorSwatch,
+                      {
+                        backgroundColor: color,
+                        width: scale(36),
+                        height: scale(36),
+                        borderRadius: scale(18),
+                        borderWidth: slide.strokeColor === color ? 3 : 1,
+                        borderColor: slide.strokeColor === color ? '#007AFF' : themeDefinition.colors.border,
+                        marginRight: scale(8),
+                      },
+                    ]}
+                    onPress={() => handleStrokeColorChange(color)}
+                  />
+                ))}
+              </View>
+            </ScrollView>
 
-            {/* Text content input */}
-            {selectedCircleContent.contentType === 'text' && (
-              <TextInput
-                style={[
-                  styles.textInput,
-                  {
-                    backgroundColor: themeDefinition.colors.background,
-                    color: themeDefinition.colors.text,
-                    borderColor: themeDefinition.colors.border,
-                    fontSize: scaleFont(14),
-                    padding: scale(12),
-                    marginTop: scale(12),
-                    minHeight: scale(60),
-                  },
-                ]}
-                value={selectedCircleContent.text || ''}
-                onChangeText={handleContentTextChange}
-                placeholder="Enter text..."
-                placeholderTextColor={themeDefinition.colors.text + '66'}
-                multiline
-              />
+            {/* Background picker toggle */}
+            <TouchableOpacity
+              style={[
+                styles.optionButton,
+                {
+                  backgroundColor: themeDefinition.colors.background,
+                  borderColor: themeDefinition.colors.border,
+                  padding: scale(12),
+                  marginTop: scale(16),
+                },
+              ]}
+              onPress={() => setShowBackgroundPicker(!showBackgroundPicker)}
+            >
+              <Text style={[styles.optionButtonText, { color: themeDefinition.colors.text, fontSize: scaleFont(14) }]}>
+                {t('roadmap_change_background') || 'Change Background'}
+              </Text>
+            </TouchableOpacity>
+
+            {/* Background picker */}
+            {showBackgroundPicker && (
+              <View style={[styles.backgroundGrid, { marginTop: scale(12) }]}>
+                {ALL_BACKGROUNDS.map(gradient => (
+                  <TouchableOpacity
+                    key={gradient.id}
+                    style={[
+                      styles.backgroundSwatch,
+                      {
+                        width: scale(48),
+                        height: scale(48),
+                        borderRadius: scale(8),
+                        borderWidth: slide.backgroundGradient?.id === gradient.id ? 3 : 1,
+                        borderColor:
+                          slide.backgroundGradient?.id === gradient.id
+                            ? '#007AFF'
+                            : themeDefinition.colors.border,
+                        marginRight: scale(8),
+                        marginBottom: scale(8),
+                      },
+                    ]}
+                    onPress={() => handleBackgroundChange(gradient)}
+                  >
+                    <GradientBackground
+                      gradient={gradient}
+                      style={[styles.swatchGradient, { borderRadius: scale(6) }]}
+                    />
+                  </TouchableOpacity>
+                ))}
+              </View>
             )}
           </View>
         )}
-
-        {/* Style options */}
-        <View
-          style={[
-            styles.editSection,
-            {
-              backgroundColor: themeDefinition.colors.card,
-              borderColor: themeDefinition.colors.border,
-              padding: scale(16),
-              marginTop: scale(16),
-              borderRadius: scale(12),
-            },
-          ]}
-        >
-          <Text
-            style={[
-              styles.sectionTitle,
-              { color: themeDefinition.colors.text, fontSize: scaleFont(16), marginBottom: scale(12) },
-            ]}
-          >
-            {t('roadmap_style') || 'Style'}
-          </Text>
-
-          {/* Stroke color */}
-          <Text
-            style={[
-              styles.inputLabel,
-              { color: themeDefinition.colors.text + '99', fontSize: scaleFont(12), marginBottom: scale(8) },
-            ]}
-          >
-            {t('roadmap_stroke_color') || 'Stroke Color'}
-          </Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View style={styles.colorRow}>
-              {COLOR_OPTIONS.map(color => (
-                <TouchableOpacity
-                  key={color}
-                  style={[
-                    styles.colorSwatch,
-                    {
-                      backgroundColor: color,
-                      width: scale(36),
-                      height: scale(36),
-                      borderRadius: scale(18),
-                      borderWidth: slide.strokeColor === color ? 3 : 1,
-                      borderColor: slide.strokeColor === color ? '#007AFF' : themeDefinition.colors.border,
-                      marginRight: scale(8),
-                    },
-                  ]}
-                  onPress={() => handleStrokeColorChange(color)}
-                />
-              ))}
-            </View>
-          </ScrollView>
-
-          {/* Background picker toggle */}
-          <TouchableOpacity
-            style={[
-              styles.optionButton,
-              {
-                backgroundColor: themeDefinition.colors.background,
-                borderColor: themeDefinition.colors.border,
-                padding: scale(12),
-                marginTop: scale(16),
-              },
-            ]}
-            onPress={() => setShowBackgroundPicker(!showBackgroundPicker)}
-          >
-            <Text style={[styles.optionButtonText, { color: themeDefinition.colors.text, fontSize: scaleFont(14) }]}>
-              {t('roadmap_change_background') || 'Change Background'}
-            </Text>
-          </TouchableOpacity>
-
-          {/* Background picker */}
-          {showBackgroundPicker && (
-            <View style={[styles.backgroundGrid, { marginTop: scale(12) }]}>
-              {ALL_BACKGROUNDS.map(gradient => (
-                <TouchableOpacity
-                  key={gradient.id}
-                  style={[
-                    styles.backgroundSwatch,
-                    {
-                      width: scale(48),
-                      height: scale(48),
-                      borderRadius: scale(8),
-                      borderWidth: slide.backgroundGradient?.id === gradient.id ? 3 : 1,
-                      borderColor:
-                        slide.backgroundGradient?.id === gradient.id
-                          ? '#007AFF'
-                          : themeDefinition.colors.border,
-                      marginRight: scale(8),
-                      marginBottom: scale(8),
-                    },
-                  ]}
-                  onPress={() => handleBackgroundChange(gradient)}
-                >
-                  <GradientBackground
-                    gradient={gradient}
-                    style={[styles.swatchGradient, { borderRadius: scale(6) }]}
-                  />
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-        </View>
 
         {/* Corner images */}
         <View
