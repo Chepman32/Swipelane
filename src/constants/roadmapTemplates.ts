@@ -232,12 +232,26 @@ export const LINEAR_4_CHAIN_TEMPLATE: RoadmapTemplate = {
   defaultDashPattern: ROADMAP_DEFAULTS.dashPattern,
 };
 
+// Template 5: Multi-panel swipeable carousel
+export const CAROUSEL_TEMPLATE: RoadmapTemplate = {
+  id: 'carousel',
+  name: 'LinkedIn Carousel',
+  description: 'Multi-panel swipeable carousel (2–5 panels)',
+  circleCount: 0,
+  circles: [],
+  connectors: [],
+  defaultStrokeColor: '#F5A623',
+  defaultStrokeWidth: 0,
+  defaultDashPattern: [],
+};
+
 // All available templates
 export const ROADMAP_TEMPLATES: RoadmapTemplate[] = [
   GRID_4_CIRCLES_TEMPLATE,
   DIAGONAL_3_CIRCLES_TEMPLATE,
   WINDING_5_ROAD_TEMPLATE,
   LINEAR_4_CHAIN_TEMPLATE,
+  CAROUSEL_TEMPLATE,
 ];
 
 // Get template by ID

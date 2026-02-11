@@ -15,12 +15,14 @@ import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import FeedbackService from '../services/FeedbackService';
 import { useResponsive } from '../hooks/useResponsive';
-import { ROADMAP_TEMPLATES } from '../constants/roadmapTemplates';
+import { ROADMAP_TEMPLATES, ROADMAP_BACKGROUNDS } from '../constants/roadmapTemplates';
 import { getRoadmapTemplateImageSource } from '../constants/roadmapTemplateAssets';
 import type { RoadmapTemplate } from '../types/roadmap';
+import type { SlideBackgroundGradient } from '../services/StorageService';
 
 type RootStackParamList = {
   RoadmapBackground: { templateId: string; projectId: string };
+  RoadmapEditor: { projectId: string; templateId?: string; backgroundGradient?: SlideBackgroundGradient };
   Home: undefined;
 };
 
@@ -46,6 +48,14 @@ const RoadmapTemplateScreen: React.FC = () => {
   const handleSelectTemplate = (template: RoadmapTemplate) => {
     FeedbackService.buttonTap();
     const projectId = `roadmap_${Date.now()}`;
+    if (template.id === 'carousel') {
+      navigation.navigate('RoadmapEditor', {
+        projectId,
+        templateId: template.id,
+        backgroundGradient: ROADMAP_BACKGROUNDS[0] as SlideBackgroundGradient,
+      });
+      return;
+    }
     navigation.navigate('RoadmapBackground', {
       templateId: template.id,
       projectId,
@@ -57,7 +67,10 @@ const RoadmapTemplateScreen: React.FC = () => {
 
   const renderTemplateCard = ({ item }: { item: RoadmapTemplate }) => {
     const templateImageSource = getRoadmapTemplateImageSource(item.id);
-    if (!templateImageSource) return null;
+    const isCarousel = item.id === 'carousel';
+    if (!templateImageSource && !isCarousel) return null;
+
+    const previewHeight = cardHeight - scale(60);
 
     return (
       <TouchableOpacity
@@ -74,11 +87,43 @@ const RoadmapTemplateScreen: React.FC = () => {
         onPress={() => handleSelectTemplate(item)}
         activeOpacity={0.8}
       >
-        <Image
-          source={templateImageSource}
-          style={[styles.templateImage, { height: cardHeight - scale(60) }]}
-          resizeMode="contain"
-        />
+        {isCarousel ? (
+          <View style={[styles.carouselPreview, { height: previewHeight }]}>
+            {[0, 1, 2].map(i => (
+              <View
+                key={i}
+                style={[
+                  styles.carouselPreviewPanel,
+                  {
+                    backgroundColor: i === 0 ? '#C8841F' : '#F5A623',
+                    borderRightWidth: i < 2 ? 1 : 0,
+                    borderRightColor: '#D4920F',
+                  },
+                ]}
+              >
+                {i === 0 ? (
+                  <View style={styles.carouselPreviewCoverLines}>
+                    <View style={[styles.carouselPreviewLine, { width: '80%', backgroundColor: 'rgba(255,255,255,0.8)' }]} />
+                    <View style={[styles.carouselPreviewLine, { width: '90%', backgroundColor: 'rgba(255,255,255,0.9)', marginTop: 4 }]} />
+                    <View style={[styles.carouselPreviewLine, { width: '60%', backgroundColor: '#2E4BFF', marginTop: 4 }]} />
+                  </View>
+                ) : (
+                  <View style={styles.carouselPreviewStepLines}>
+                    <View style={[styles.carouselPreviewBadge, { backgroundColor: '#2E4BFF' }]} />
+                    <View style={[styles.carouselPreviewLine, { width: '75%', backgroundColor: 'rgba(255,255,255,0.8)', marginTop: 6 }]} />
+                    <View style={[styles.carouselPreviewLine, { width: '60%', backgroundColor: 'rgba(255,255,255,0.5)', marginTop: 3 }]} />
+                  </View>
+                )}
+              </View>
+            ))}
+          </View>
+        ) : (
+          <Image
+            source={templateImageSource!}
+            style={[styles.templateImage, { height: previewHeight }]}
+            resizeMode="contain"
+          />
+        )}
         <View style={styles.templateInfo}>
           <Text
             style={[
@@ -94,7 +139,7 @@ const RoadmapTemplateScreen: React.FC = () => {
               { color: themeDefinition.colors.text + '99', fontSize: scaleFont(12) },
             ]}
           >
-            {item.circleCount} steps
+            {item.circleCount > 0 ? `${item.circleCount} steps` : item.description}
           </Text>
         </View>
       </TouchableOpacity>
@@ -163,6 +208,30 @@ const styles = StyleSheet.create({
   },
   templateDescription: {
     marginTop: 4,
+  },
+  carouselPreview: {
+    flexDirection: 'row',
+    overflow: 'hidden',
+  },
+  carouselPreviewPanel: {
+    flex: 1,
+    padding: 8,
+    justifyContent: 'center',
+  },
+  carouselPreviewCoverLines: {
+    alignItems: 'flex-start',
+  },
+  carouselPreviewStepLines: {
+    alignItems: 'flex-start',
+  },
+  carouselPreviewLine: {
+    height: 4,
+    borderRadius: 2,
+  },
+  carouselPreviewBadge: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
   },
 });
 

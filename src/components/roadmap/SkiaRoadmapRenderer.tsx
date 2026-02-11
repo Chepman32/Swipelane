@@ -6,7 +6,9 @@ import {
   Group,
   Image,
   LinearGradient,
+  Path,
   Rect,
+  Skia,
   Text as SkiaText,
   useFont,
   useImage,
@@ -20,12 +22,34 @@ import RoadmapConnector from './RoadmapConnector';
 
 type Size = { width: number; height: number };
 type RectFrame = { x: number; y: number; width: number; height: number };
+type FontMeasurer = { measureText: (text: string) => { width: number } };
+
+function wrapTextToLines(text: string, font: FontMeasurer, maxWidth: number): string[] {
+  const result: string[] = [];
+  for (const paragraph of text.split('\n')) {
+    const words = paragraph.split(' ').filter(Boolean);
+    let current = '';
+    for (const word of words) {
+      const candidate = current ? `${current} ${word}` : word;
+      if (font.measureText(candidate).width <= maxWidth) {
+        current = candidate;
+      } else {
+        if (current) result.push(current);
+        current = word;
+      }
+    }
+    if (current) result.push(current);
+  }
+  return result;
+}
 
 interface SkiaRoadmapRendererProps {
   slide: RoadmapSlide;
   style?: StyleProp<ViewStyle>;
   selectedCircleId?: string | null;
   onCircleTap?: (circleId: string, x: number, y: number) => void;
+  selectedPanelIndex?: number;
+  onPanelTap?: (panelIndex: number) => void;
 }
 
 interface CornerImageLayerProps {
@@ -132,8 +156,11 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
   style,
   selectedCircleId,
   onCircleTap,
+  selectedPanelIndex,
+  onPanelTap,
 }) => {
   const [size, setSize] = useState<Size>({ width: 0, height: 0 });
+  const isCarousel = slide.templateId === 'carousel';
 
   const handleLayout = useCallback((event: any) => {
     const { width, height } = event.nativeEvent.layout;
@@ -172,13 +199,26 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
       imageTemplateFrame.height > 0,
   );
 
+  const effectivePanelWidth = useMemo(() => {
+    if (isCarousel && slide.carouselData) {
+      return size.width / slide.carouselData.panelCount;
+    }
+    return size.width;
+  }, [isCarousel, slide.carouselData, size.width]);
+
   const titleFontSize = useMemo(() => {
+    if (isCarousel) return Math.max(10, Math.min(20, effectivePanelWidth * 0.09));
     return Math.max(12, Math.min(24, size.width * 0.04));
-  }, [size.width]);
+  }, [isCarousel, effectivePanelWidth, size.width]);
 
   const bodyFontSize = useMemo(() => {
+    if (isCarousel) return Math.max(8, Math.min(16, effectivePanelWidth * 0.065));
     return Math.max(11, Math.min(20, size.width * 0.032));
-  }, [size.width]);
+  }, [isCarousel, effectivePanelWidth, size.width]);
+
+  const smallFontSize = useMemo(() => {
+    return Math.max(7, Math.min(12, effectivePanelWidth * 0.05));
+  }, [effectivePanelWidth]);
 
   const titleFont = useFont(
     require('../../assets/fonts/Fira_Sans/FiraSans-SemiBold.ttf'),
@@ -188,6 +228,18 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
     require('../../assets/fonts/Fira_Sans/FiraSans-Regular.ttf'),
     bodyFontSize,
   );
+  const boldFont = useFont(
+    require('../../assets/fonts/Fira_Sans/FiraSans-Bold.ttf'),
+    titleFontSize,
+  );
+  const smallFont = useFont(
+    require('../../assets/fonts/Fira_Sans/FiraSans-Regular.ttf'),
+    smallFontSize,
+  );
+
+  // Carousel-specific image hooks (always called, return null when not carousel)
+  const carouselMainImage = useImage(slide.carouselData?.cover.mainImageUri ?? null);
+  const carouselAvatarImage = useImage(slide.carouselData?.cover.authorAvatarUri ?? null);
 
   // Background gradient points
   const gradientPoints = useMemo(() => {
@@ -220,11 +272,23 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
       : null
   );
 
-  // Handle tap to detect which circle was tapped
+  // Handle tap to detect which circle or panel was tapped
   const handleCanvasTap = useCallback((event: any) => {
+    const { locationX, locationY } = event.nativeEvent;
+
+    // Carousel: detect which panel was tapped
+    if (isCarousel && slide.carouselData && onPanelTap) {
+      const panelWidth = size.width / slide.carouselData.panelCount;
+      const panelIdx = Math.max(0, Math.min(
+        slide.carouselData.panelCount - 1,
+        Math.floor(locationX / panelWidth),
+      ));
+      onPanelTap(panelIdx);
+      return;
+    }
+
     if (!template || !onCircleTap) return;
 
-    const { locationX, locationY } = event.nativeEvent;
     const frame =
       imageTemplateConfig && imageTemplateFrame
         ? imageTemplateFrame
@@ -244,6 +308,9 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
       }
     }
   }, [
+    isCarousel,
+    slide.carouselData,
+    onPanelTap,
     imageTemplateConfig,
     imageTemplateFrame,
     onCircleTap,
@@ -256,6 +323,212 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
     return null;
   }
 
+  // Render all carousel panels as Skia elements
+  const renderCarouselPanels = () => {
+    const cd = slide.carouselData!;
+    const panelWidth = size.width / cd.panelCount;
+    const panelHeight = size.height;
+    const pad = panelWidth * 0.08;
+    const textAreaWidth = panelWidth - 2 * pad;
+
+    return Array.from({ length: cd.panelCount }, (_, panelIndex) => {
+      const panelX = panelIndex * panelWidth;
+      const panelClip = Skia.XYWHRect(panelX, 0, panelWidth, panelHeight);
+
+      if (panelIndex === 0) {
+        const cover = cd.cover;
+        const effectiveTextW = carouselMainImage ? textAreaWidth * 0.88 : textAreaWidth;
+        const subtitleY = panelHeight * 0.14;
+        const titleY = panelHeight * 0.24;
+        const titleLineH = titleFontSize * 1.45;
+        const descTopY = titleY + titleLineH * 3 + titleFontSize * 0.3;
+        const descLineH = bodyFontSize * 1.5;
+        const descLines = bodyFont ? wrapTextToLines(cover.description, bodyFont, effectiveTextW) : [];
+        const buttonY = descTopY + descLines.length * descLineH + titleFontSize * 0.5;
+        const buttonH = titleFontSize * 1.6;
+        const buttonPad = titleFontSize * 0.5;
+        const avatarR = Math.min(panelWidth * 0.07, 16);
+        const avatarCx = panelX + pad + avatarR;
+        const avatarCy = panelHeight * 0.84;
+        const avatarClipPath = Skia.Path.Make();
+        avatarClipPath.addCircle(avatarCx, avatarCy, avatarR);
+
+        return (
+          <Group key="panel-0" clip={panelClip}>
+            {/* Cover background */}
+            {slide.backgroundType === 'image' && backgroundImage ? (
+              <Image image={backgroundImage} x={0} y={0} width={size.width} height={panelHeight} fit="cover" />
+            ) : slide.backgroundType === 'solid' && slide.backgroundColor ? (
+              <Rect x={0} y={0} width={size.width} height={panelHeight} color={slide.backgroundColor} />
+            ) : (
+              <Rect x={0} y={0} width={size.width} height={panelHeight}>
+                <LinearGradient start={gradientPoints.start} end={gradientPoints.end} colors={gradientPoints.colors} />
+              </Rect>
+            )}
+
+            {/* Main image */}
+            {carouselMainImage && (
+              <Image
+                image={carouselMainImage}
+                x={panelX + panelWidth * 0.5}
+                y={panelHeight * 0.08}
+                width={panelWidth * 0.52}
+                height={panelHeight * 0.78}
+                fit="contain"
+              />
+            )}
+
+            {/* Subtitle */}
+            {smallFont && cover.subtitle ? (
+              <SkiaText x={panelX + pad} y={subtitleY} text={cover.subtitle} font={smallFont} color="rgba(255,255,255,0.65)" />
+            ) : null}
+
+            {/* Title lines */}
+            {boldFont && [cover.titlePart1, cover.titlePart2, cover.titleHighlight].map((line, i) =>
+              line ? (
+                <SkiaText
+                  key={i}
+                  x={panelX + pad}
+                  y={titleY + i * titleLineH}
+                  text={line}
+                  font={boldFont}
+                  color={i === 2 ? cd.accentColor : '#FFFFFF'}
+                />
+              ) : null
+            )}
+
+            {/* Description */}
+            {bodyFont && descLines.map((line, i) =>
+              line ? (
+                <SkiaText key={i} x={panelX + pad} y={descTopY + i * descLineH} text={line} font={bodyFont} color="rgba(255,255,255,0.8)" />
+              ) : null
+            )}
+
+            {/* Swipe button pill */}
+            {boldFont && cover.buttonText && (() => {
+              const bw = boldFont.measureText(cover.buttonText).width + buttonPad * 2;
+              const btnPath = Skia.Path.Make();
+              btnPath.addRRect(Skia.RRectXY(Skia.XYWHRect(panelX + pad, buttonY, bw, buttonH), buttonH / 2, buttonH / 2));
+              return (
+                <>
+                  <Path path={btnPath} color={cd.accentColor} />
+                  <SkiaText x={panelX + pad + buttonPad} y={buttonY + buttonH * 0.68} text={cover.buttonText} font={boldFont} color="#FFFFFF" />
+                </>
+              );
+            })()}
+
+            {/* Author avatar */}
+            {carouselAvatarImage ? (
+              <Group clip={avatarClipPath} invertClip={false}>
+                <Image image={carouselAvatarImage} x={avatarCx - avatarR} y={avatarCy - avatarR} width={avatarR * 2} height={avatarR * 2} fit="cover" />
+              </Group>
+            ) : (
+              <Circle cx={avatarCx} cy={avatarCy} r={avatarR} color="rgba(255,255,255,0.2)" />
+            )}
+
+            {/* Author name */}
+            {smallFont && cover.authorName ? (
+              <SkiaText x={avatarCx + avatarR + pad * 0.6} y={avatarCy - avatarR * 0.1} text={cover.authorName} font={smallFont} color="#FFFFFF" />
+            ) : null}
+
+            {/* Author title */}
+            {smallFont && cover.authorTitle ? (
+              <SkiaText x={avatarCx + avatarR + pad * 0.6} y={avatarCy + avatarR * 0.9} text={cover.authorTitle} font={smallFont} color="rgba(255,255,255,0.65)" />
+            ) : null}
+
+            {/* Selected panel highlight */}
+            {selectedPanelIndex === 0 && (
+              <Rect x={panelX + 1} y={1} width={panelWidth - 2} height={panelHeight - 2} color="rgba(0,122,255,0.1)" />
+            )}
+
+            {/* Right divider */}
+            <Rect x={panelX + panelWidth - 1} y={0} width={2} height={panelHeight} color={cd.dividerColor} />
+          </Group>
+        );
+      }
+
+      // Step panel
+      const step = cd.steps[panelIndex - 1];
+      if (!step) return null;
+
+      const badgeR = Math.min(panelWidth * 0.09, 18);
+      const badgeCx = panelX + pad + badgeR;
+      const badgeCy = panelHeight * 0.14 + badgeR;
+      const part1W = boldFont ? boldFont.measureText(step.titlePart1).width : 0;
+      const highlightW = boldFont ? boldFont.measureText(step.titleHighlight).width : 0;
+      const titleFitsOneLine = part1W + titleFontSize * 0.3 + highlightW <= textAreaWidth;
+      const titleTopY = badgeCy + badgeR + titleFontSize * 1.5;
+      const titleTotalLines = titleFitsOneLine ? 1 : 2;
+      const descTopY = titleTopY + titleTotalLines * titleFontSize * 1.45 + titleFontSize * 0.3;
+      const descLineH = bodyFontSize * 1.5;
+      const descLines = bodyFont ? wrapTextToLines(step.description, bodyFont, textAreaWidth) : [];
+      const shapeR1 = panelWidth * 0.45;
+      const shape1Cx = panelX + panelWidth * 0.82;
+      const shape1Cy = panelHeight * 0.12;
+      const shapeR2 = panelWidth * 0.35;
+      const shape2Cx = panelX + panelWidth * 0.18;
+      const shape2Cy = panelHeight * 0.88;
+
+      return (
+        <Group key={`panel-${panelIndex}`} clip={panelClip}>
+          {/* Background */}
+          <Rect x={panelX} y={0} width={panelWidth} height={panelHeight} color={cd.backgroundColor} />
+
+          {/* Decorative shapes */}
+          {cd.showShapes && (
+            <>
+              <Circle cx={shape1Cx} cy={shape1Cy} r={shapeR1} color={cd.shapeColor} />
+              <Circle cx={shape2Cx} cy={shape2Cy} r={shapeR2} color={cd.shapeColor} />
+            </>
+          )}
+
+          {/* Selected panel highlight */}
+          {selectedPanelIndex === panelIndex && (
+            <Rect x={panelX + 1} y={1} width={panelWidth - 2} height={panelHeight - 2} color="rgba(0,122,255,0.1)" />
+          )}
+
+          {/* Number badge */}
+          <Circle cx={badgeCx} cy={badgeCy} r={badgeR} color={cd.accentColor} />
+          {boldFont && (
+            <SkiaText
+              x={badgeCx - boldFont.measureText(String(panelIndex)).width / 2}
+              y={badgeCy + titleFontSize * 0.38}
+              text={String(panelIndex)}
+              font={boldFont}
+              color="#FFFFFF"
+            />
+          )}
+
+          {/* Two-part title */}
+          {boldFont && (
+            <>
+              <SkiaText x={panelX + pad} y={titleTopY} text={step.titlePart1} font={boldFont} color="#FFFFFF" />
+              <SkiaText
+                x={titleFitsOneLine ? panelX + pad + part1W + titleFontSize * 0.3 : panelX + pad}
+                y={titleFitsOneLine ? titleTopY : titleTopY + titleFontSize * 1.45}
+                text={step.titleHighlight}
+                font={boldFont}
+                color={cd.accentColor}
+              />
+            </>
+          )}
+
+          {/* Description */}
+          {bodyFont && descLines.map((line, i) =>
+            line ? (
+              <SkiaText key={i} x={panelX + pad} y={descTopY + i * descLineH} text={line} font={bodyFont} color="rgba(255,255,255,0.82)" />
+            ) : null
+          )}
+
+          {/* Right divider (not on last panel) */}
+          {panelIndex < cd.panelCount - 1 && (
+            <Rect x={panelX + panelWidth - 1} y={0} width={2} height={panelHeight} color={cd.dividerColor} />
+          )}
+        </Group>
+      );
+    });
+  };
+
   return (
     <View
       style={[styles.container, style]}
@@ -266,6 +539,13 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
           style={{ width: size.width, height: size.height }}
           onTouchEnd={handleCanvasTap}
         >
+          {/* Carousel rendering */}
+          {isCarousel && slide.carouselData && renderCarouselPanels()}
+
+          {/* Non-carousel: background + template + circles */}
+          {!isCarousel && (
+            <>
+
           {/* Background layer */}
           {slide.backgroundType === 'image' && backgroundImage ? (
             <Image
@@ -434,6 +714,9 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
                 })}
               </Group>
             </>
+          )}
+
+            </> /* end !isCarousel */
           )}
 
           {/* Corner images layer */}

@@ -1,5 +1,37 @@
 import type { SlideBackgroundGradient } from '../services/StorageService';
 
+// ─── CAROUSEL TYPES ──────────────────────────────────────────────────────────
+
+export interface CarouselCoverContent {
+  subtitle: string;
+  titlePart1: string;
+  titlePart2: string;
+  titleHighlight: string;
+  description: string;
+  buttonText: string;
+  authorName: string;
+  authorTitle: string;
+  mainImageUri?: string;
+  authorAvatarUri?: string;
+}
+
+export interface CarouselStepContent {
+  titlePart1: string;
+  titleHighlight: string;
+  description: string;
+}
+
+export interface CarouselData {
+  panelCount: number;
+  backgroundColor: string;
+  dividerColor: string;
+  accentColor: string;
+  shapeColor: string;
+  showShapes: boolean;
+  cover: CarouselCoverContent;
+  steps: CarouselStepContent[];
+}
+
 // Circle position within a template (normalized 0-1 coordinates)
 export interface RoadmapCircleDefinition {
   id: string;
@@ -64,6 +96,7 @@ export interface RoadmapSlide {
   strokeWidth: number;
   circles: RoadmapCircleContent[];
   cornerImages: CornerImage[];
+  carouselData?: CarouselData;
 }
 
 // Roadmap project state (for storage)
@@ -105,6 +138,34 @@ export function createRoadmapSlideFromTemplate(
     strokeWidth: template.defaultStrokeWidth,
     circles: createDefaultCircleContent(template),
     cornerImages: [],
+  };
+}
+
+export function createDefaultCarouselData(panelCount: number = 3): CarouselData {
+  return {
+    panelCount,
+    backgroundColor: '#F5A623',
+    dividerColor: '#D4920F',
+    accentColor: '#2E4BFF',
+    shapeColor: '#D4920F30',
+    showShapes: true,
+    cover: {
+      subtitle: 'Learn how to turn an idea into a success',
+      titlePart1: 'Unlock Your',
+      titlePart2: 'Entrepreneurial',
+      titleHighlight: 'Potential',
+      description: 'Entrepreneurship is about taking risks, being creative and responding to the needs of customers.',
+      buttonText: 'Swipe >',
+      authorName: 'Your Name',
+      authorTitle: 'Your Title',
+      mainImageUri: undefined,
+      authorAvatarUri: undefined,
+    },
+    steps: Array.from({ length: panelCount - 1 }, (_, i) => ({
+      titlePart1: `Define Your`,
+      titleHighlight: `Step ${i + 1}`,
+      description: 'Add your description here to explain this step in detail.',
+    })),
   };
 }
 
