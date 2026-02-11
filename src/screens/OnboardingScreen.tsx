@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   NativeScrollEvent,
   NativeSyntheticEvent,
   Platform,
+  PanResponder,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -38,11 +39,9 @@ const ACCENT_COLORS = onboardingSlides.map((s) => s.accentColor);
 
 // Pill-style dot indicator
 const DotIndicator: React.FC<{
-  index: number;
   isActive: boolean;
   onPress: () => void;
-  color: string;
-}> = ({ index, isActive, onPress, color }) => {
+}> = ({ isActive, onPress }) => {
   const dotStyle = useAnimatedStyle(() => ({
     width: withTiming(isActive ? 28 : 8, { duration: 250, easing: Easing.out(Easing.ease) }),
     opacity: withTiming(isActive ? 1 : 0.35, { duration: 250 }),
@@ -95,21 +94,29 @@ const OnboardingScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     },
   });
 
-  const animateTextIn = () => {
+  const animateTextIn = useCallback(() => {
     textOpacity.value = 0;
     textTranslateY.value = 28;
     textOpacity.value = withDelay(80, withTiming(1, { duration: 380, easing: Easing.out(Easing.ease) }));
     textTranslateY.value = withDelay(80, withSpring(0, { damping: 18, stiffness: 180 }));
-  };
+  }, [textOpacity, textTranslateY]);
+
+  const goToSlide = useCallback((index: number, withFeedback = true) => {
+    const clamped = Math.max(0, Math.min(SLIDE_COUNT - 1, index));
+    if (clamped === currentIndex) return;
+    if (withFeedback) {
+      FeedbackService.buttonTap();
+    }
+    flatListRef.current?.scrollToIndex({ index: clamped, animated: true });
+    setCurrentIndex(clamped);
+    animateTextIn();
+  }, [animateTextIn, currentIndex]);
 
   const handleNext = () => {
-    FeedbackService.buttonTap();
     if (currentIndex < SLIDE_COUNT - 1) {
-      const next = currentIndex + 1;
-      flatListRef.current?.scrollToIndex({ index: next, animated: true });
-      setCurrentIndex(next);
-      animateTextIn();
+      goToSlide(currentIndex + 1, true);
     } else {
+      FeedbackService.buttonTap();
       handleComplete();
     }
   };
@@ -125,10 +132,7 @@ const OnboardingScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   };
 
   const handleDotPress = (index: number) => {
-    FeedbackService.buttonTap();
-    flatListRef.current?.scrollToIndex({ index, animated: true });
-    setCurrentIndex(index);
-    animateTextIn();
+    goToSlide(index, true);
   };
 
   const handleScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -149,13 +153,31 @@ const OnboardingScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     transform: [{ translateY: textTranslateY.value }],
   }));
 
+  const textSwipeResponder = useMemo(() =>
+    PanResponder.create({
+      onMoveShouldSetPanResponderCapture: (_, gestureState) =>
+        Math.abs(gestureState.dx) > Math.abs(gestureState.dy) && Math.abs(gestureState.dx) > 8,
+      onPanResponderTerminationRequest: () => false,
+      onPanResponderRelease: (_, gestureState) => {
+        const threshold = 40;
+        if (gestureState.dx < -threshold) {
+          goToSlide(currentIndex + 1, false);
+          return;
+        }
+        if (gestureState.dx > threshold) {
+          goToSlide(currentIndex - 1, false);
+        }
+      },
+    }),
+  [currentIndex, goToSlide]);
+
   // Animate text in on mount
   useEffect(() => {
     textOpacity.value = 0;
     textTranslateY.value = 28;
     textOpacity.value = withDelay(300, withTiming(1, { duration: 500, easing: Easing.out(Easing.ease) }));
     textTranslateY.value = withDelay(300, withSpring(0, { damping: 18, stiffness: 160 }));
-  }, []);
+  }, [textOpacity, textTranslateY]);
 
   const isLast = currentIndex === SLIDE_COUNT - 1;
 
@@ -201,7 +223,10 @@ const OnboardingScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       />
 
       {/* Text content — separate from FlatList so it can animate independently */}
-      <Animated.View style={[styles.textContainer, textContainerStyle]}>
+      <Animated.View
+        style={[styles.textContainer, textContainerStyle]}
+        {...textSwipeResponder.panHandlers}
+      >
         <Text style={styles.title} numberOfLines={3}>
           {t(onboardingSlides[currentIndex].titleKey)}
         </Text>
@@ -217,10 +242,8 @@ const OnboardingScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           {onboardingSlides.map((_, i) => (
             <DotIndicator
               key={i}
-              index={i}
               isActive={currentIndex === i}
               onPress={() => handleDotPress(i)}
-              color={ACCENT_COLORS[currentIndex]}
             />
           ))}
         </View>
