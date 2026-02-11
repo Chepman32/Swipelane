@@ -109,6 +109,28 @@ const RoadmapEditorScreen: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [template, projectId]);
 
+  // Normalize legacy defaults for winding template in already-open slides.
+  useEffect(() => {
+    if (!slide || slide.templateId !== 'winding_5_road') return;
+
+    const hasDefaultFifthStepLabel = slide.circles.some(
+      c => c.circleId === 'c5' && /^step\s*5$/i.test(c.label.trim()),
+    );
+    if (!hasDefaultFifthStepLabel) return;
+
+    setSlide(prev => {
+      if (!prev || prev.templateId !== 'winding_5_road') return prev;
+      return {
+        ...prev,
+        circles: prev.circles.map(c =>
+          c.circleId === 'c5' && /^step\s*5$/i.test(c.label.trim())
+            ? { ...c, label: '' }
+            : c,
+        ),
+      };
+    });
+  }, [slide]);
+
   useLayoutEffect(() => {
     navigation.setOptions({
       title: t('roadmap_editor_title') || 'Edit Roadmap',
@@ -366,7 +388,7 @@ const RoadmapEditorScreen: React.FC = () => {
               {isLinearChainTemplate
                 ? 'Text Under Arrow'
                 : isWindingRoadTemplate
-                  ? 'Text Above Circle'
+                  ? 'Step Text'
                   : t('roadmap_label') || 'Label'}
             </Text>
             <TextInput
@@ -383,7 +405,7 @@ const RoadmapEditorScreen: React.FC = () => {
               ]}
               value={selectedCircleContent.label}
               onChangeText={handleLabelChange}
-              placeholder={isWindingRoadTemplate ? 'Top text...' : 'Step 1'}
+              placeholder={isWindingRoadTemplate ? 'Step text...' : 'Step 1'}
               placeholderTextColor={themeDefinition.colors.text + '66'}
             />
 
@@ -525,111 +547,119 @@ const RoadmapEditorScreen: React.FC = () => {
         )}
 
         {/* Style options */}
-        {!isImageBackedTemplate && (
-          <View
+        <View
+          style={[
+            styles.editSection,
+            {
+              backgroundColor: themeDefinition.colors.card,
+              borderColor: themeDefinition.colors.border,
+              padding: scale(16),
+              marginTop: scale(16),
+              borderRadius: scale(12),
+            },
+          ]}
+        >
+          <Text
             style={[
-              styles.editSection,
-              {
-                backgroundColor: themeDefinition.colors.card,
-                borderColor: themeDefinition.colors.border,
-                padding: scale(16),
-                marginTop: scale(16),
-                borderRadius: scale(12),
-              },
+              styles.sectionTitle,
+              { color: themeDefinition.colors.text, fontSize: scaleFont(16), marginBottom: scale(12) },
             ]}
           >
-            <Text
-              style={[
-                styles.sectionTitle,
-                { color: themeDefinition.colors.text, fontSize: scaleFont(16), marginBottom: scale(12) },
-              ]}
-            >
-              {t('roadmap_style') || 'Style'}
-            </Text>
+            {isImageBackedTemplate
+              ? t('roadmap_background_select') || 'Background'
+              : t('roadmap_style') || 'Style'}
+          </Text>
 
-            {/* Stroke color */}
-            <Text
-              style={[
-                styles.inputLabel,
-                { color: themeDefinition.colors.text + '99', fontSize: scaleFont(12), marginBottom: scale(8) },
-              ]}
-            >
-              {t('roadmap_stroke_color') || 'Stroke Color'}
-            </Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <View style={styles.colorRow}>
-                {COLOR_OPTIONS.map(color => (
-                  <TouchableOpacity
-                    key={color}
-                    style={[
-                      styles.colorSwatch,
-                      {
-                        backgroundColor: color,
-                        width: scale(36),
-                        height: scale(36),
-                        borderRadius: scale(18),
-                        borderWidth: slide.strokeColor === color ? 3 : 1,
-                        borderColor: slide.strokeColor === color ? '#007AFF' : themeDefinition.colors.border,
-                        marginRight: scale(8),
-                      },
-                    ]}
-                    onPress={() => handleStrokeColorChange(color)}
-                  />
-                ))}
-              </View>
-            </ScrollView>
-
-            {/* Background picker toggle */}
-            <TouchableOpacity
-              style={[
-                styles.optionButton,
-                {
-                  backgroundColor: themeDefinition.colors.background,
-                  borderColor: themeDefinition.colors.border,
-                  padding: scale(12),
-                  marginTop: scale(16),
-                },
-              ]}
-              onPress={() => setShowBackgroundPicker(!showBackgroundPicker)}
-            >
-              <Text style={[styles.optionButtonText, { color: themeDefinition.colors.text, fontSize: scaleFont(14) }]}>
-                {t('roadmap_change_background') || 'Change Background'}
+          {!isImageBackedTemplate && (
+            <>
+              {/* Stroke color */}
+              <Text
+                style={[
+                  styles.inputLabel,
+                  {
+                    color: themeDefinition.colors.text + '99',
+                    fontSize: scaleFont(12),
+                    marginBottom: scale(8),
+                  },
+                ]}
+              >
+                {t('roadmap_stroke_color') || 'Stroke Color'}
               </Text>
-            </TouchableOpacity>
-
-            {/* Background picker */}
-            {showBackgroundPicker && (
-              <View style={[styles.backgroundGrid, { marginTop: scale(12) }]}>
-                {ALL_BACKGROUNDS.map(gradient => (
-                  <TouchableOpacity
-                    key={gradient.id}
-                    style={[
-                      styles.backgroundSwatch,
-                      {
-                        width: scale(48),
-                        height: scale(48),
-                        borderRadius: scale(8),
-                        borderWidth: slide.backgroundGradient?.id === gradient.id ? 3 : 1,
-                        borderColor:
-                          slide.backgroundGradient?.id === gradient.id
-                            ? '#007AFF'
-                            : themeDefinition.colors.border,
-                        marginRight: scale(8),
-                        marginBottom: scale(8),
-                      },
-                    ]}
-                    onPress={() => handleBackgroundChange(gradient)}
-                  >
-                    <GradientBackground
-                      gradient={gradient}
-                      style={[styles.swatchGradient, { borderRadius: scale(6) }]}
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                <View style={styles.colorRow}>
+                  {COLOR_OPTIONS.map(color => (
+                    <TouchableOpacity
+                      key={color}
+                      style={[
+                        styles.colorSwatch,
+                        {
+                          backgroundColor: color,
+                          width: scale(36),
+                          height: scale(36),
+                          borderRadius: scale(18),
+                          borderWidth: slide.strokeColor === color ? 3 : 1,
+                          borderColor: slide.strokeColor === color ? '#007AFF' : themeDefinition.colors.border,
+                          marginRight: scale(8),
+                        },
+                      ]}
+                      onPress={() => handleStrokeColorChange(color)}
                     />
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
-          </View>
-        )}
+                  ))}
+                </View>
+              </ScrollView>
+            </>
+          )}
+
+          {/* Background picker toggle */}
+          <TouchableOpacity
+            style={[
+              styles.optionButton,
+              {
+                backgroundColor: themeDefinition.colors.background,
+                borderColor: themeDefinition.colors.border,
+                padding: scale(12),
+                marginTop: scale(isImageBackedTemplate ? 0 : 16),
+              },
+            ]}
+            onPress={() => setShowBackgroundPicker(!showBackgroundPicker)}
+          >
+            <Text style={[styles.optionButtonText, { color: themeDefinition.colors.text, fontSize: scaleFont(14) }]}>
+              {t('roadmap_change_background') || 'Change Background'}
+            </Text>
+          </TouchableOpacity>
+
+          {/* Background picker */}
+          {showBackgroundPicker && (
+            <View style={[styles.backgroundGrid, { marginTop: scale(12) }]}>
+              {ALL_BACKGROUNDS.map(gradient => (
+                <TouchableOpacity
+                  key={gradient.id}
+                  style={[
+                    styles.backgroundSwatch,
+                    {
+                      width: scale(48),
+                      height: scale(48),
+                      borderRadius: scale(8),
+                      borderWidth: slide.backgroundGradient?.id === gradient.id ? 3 : 1,
+                      borderColor:
+                        slide.backgroundGradient?.id === gradient.id
+                          ? '#007AFF'
+                          : themeDefinition.colors.border,
+                      marginRight: scale(8),
+                      marginBottom: scale(8),
+                    },
+                  ]}
+                  onPress={() => handleBackgroundChange(gradient)}
+                >
+                  <GradientBackground
+                    gradient={gradient}
+                    style={[styles.swatchGradient, { borderRadius: scale(6) }]}
+                  />
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </View>
 
         {/* Corner images */}
         <View

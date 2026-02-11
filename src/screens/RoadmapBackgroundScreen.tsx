@@ -138,52 +138,48 @@ const RoadmapBackgroundScreen: React.FC = () => {
           />
         </View>
 
-        {!imageTemplateConfig && (
-          <>
-            {/* Background selector */}
-            <Text
+        {/* Background selector */}
+        <Text
+          style={[
+            styles.sectionTitle,
+            {
+              color: themeDefinition.colors.text,
+              fontSize: scaleFont(16),
+              marginTop: scale(24),
+              marginBottom: scale(12),
+            },
+          ]}
+        >
+          {t('roadmap_background_select') || 'Select Background'}
+        </Text>
+
+        <View style={styles.gradientGrid}>
+          {ALL_BACKGROUNDS.map(gradient => (
+            <TouchableOpacity
+              key={gradient.id}
               style={[
-                styles.sectionTitle,
+                styles.gradientSwatch,
                 {
-                  color: themeDefinition.colors.text,
-                  fontSize: scaleFont(16),
-                  marginTop: scale(24),
-                  marginBottom: scale(12),
+                  width: swatchSize,
+                  height: swatchSize,
+                  borderRadius: scale(8),
+                  borderColor:
+                    selectedGradient.id === gradient.id
+                      ? '#007AFF'
+                      : themeDefinition.colors.border,
+                  borderWidth: selectedGradient.id === gradient.id ? 3 : 1,
                 },
               ]}
+              onPress={() => handleSelectGradient(gradient)}
+              activeOpacity={0.8}
             >
-              {t('roadmap_background_select') || 'Select Background'}
-            </Text>
-
-            <View style={styles.gradientGrid}>
-              {ALL_BACKGROUNDS.map(gradient => (
-                <TouchableOpacity
-                  key={gradient.id}
-                  style={[
-                    styles.gradientSwatch,
-                    {
-                      width: swatchSize,
-                      height: swatchSize,
-                      borderRadius: scale(8),
-                      borderColor:
-                        selectedGradient.id === gradient.id
-                          ? '#007AFF'
-                          : themeDefinition.colors.border,
-                      borderWidth: selectedGradient.id === gradient.id ? 3 : 1,
-                    },
-                  ]}
-                  onPress={() => handleSelectGradient(gradient)}
-                  activeOpacity={0.8}
-                >
-                  <GradientBackground
-                    gradient={gradient}
-                    style={[styles.swatchGradient, { borderRadius: scale(6) }]}
-                  />
-                </TouchableOpacity>
-              ))}
-            </View>
-          </>
-        )}
+              <GradientBackground
+                gradient={gradient}
+                style={[styles.swatchGradient, { borderRadius: scale(6) }]}
+              />
+            </TouchableOpacity>
+          ))}
+        </View>
 
         {/* Continue button */}
         <TouchableOpacity
@@ -191,7 +187,7 @@ const RoadmapBackgroundScreen: React.FC = () => {
             styles.continueButton,
             {
               padding: scale(15),
-              marginTop: scale(imageTemplateConfig ? 20 : 24),
+              marginTop: scale(24),
               backgroundColor: '#007AFF',
             },
           ]}

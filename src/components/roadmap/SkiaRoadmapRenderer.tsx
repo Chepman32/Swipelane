@@ -267,25 +267,7 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
           onTouchEnd={handleCanvasTap}
         >
           {/* Background layer */}
-          {imageTemplateReady && imageTemplateConfig && imageTemplateFrame && imageTemplateAsset ? (
-            <>
-              <Rect
-                x={0}
-                y={0}
-                width={size.width}
-                height={size.height}
-                color={imageTemplateConfig.canvasBackgroundColor}
-              />
-              <Image
-                image={imageTemplateAsset}
-                x={imageTemplateFrame.x}
-                y={imageTemplateFrame.y}
-                width={imageTemplateFrame.width}
-                height={imageTemplateFrame.height}
-                fit="fill"
-              />
-            </>
-          ) : slide.backgroundType === 'image' && backgroundImage ? (
+          {slide.backgroundType === 'image' && backgroundImage ? (
             <Image
               image={backgroundImage}
               x={0}
@@ -312,6 +294,18 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
             </Rect>
           )}
 
+          {/* Image template asset on top of selected background */}
+          {imageTemplateReady && imageTemplateConfig && imageTemplateFrame && imageTemplateAsset && (
+            <Image
+              image={imageTemplateAsset}
+              x={imageTemplateFrame.x}
+              y={imageTemplateFrame.y}
+              width={imageTemplateFrame.width}
+              height={imageTemplateFrame.height}
+              fit="fill"
+            />
+          )}
+
           {/* Template overlays */}
           {imageTemplateReady && imageTemplateConfig && imageTemplateFrame ? (
             <Group>
@@ -322,18 +316,24 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
                 const { cx, cy, r } = getCircleGeometry(circle, imageTemplateFrame);
                 const labelText = content.label?.trim() || '';
                 const detailText = content.text?.trim() || '';
+                const hideDefaultFifthStepLabel =
+                  slide.templateId === 'winding_5_road' &&
+                  circle.id === 'c5' &&
+                  /^step\s*5$/i.test(labelText);
+                const renderedLabelText = hideDefaultFifthStepLabel ? '' : labelText;
 
                 const linearLabelY = Math.min(
                   imageTemplateFrame.y + imageTemplateFrame.height - titleFontSize * 0.5,
                   cy + r * 2.7,
                 );
-                const windingTopY = Math.max(
-                  imageTemplateFrame.y + titleFontSize,
-                  cy - r - titleFontSize * 0.5,
+                const windingTopCircleOffset = circle.position.y <= 0.45 ? r * 1.5 : 0;
+                const windingLabelBelowY = Math.min(
+                  imageTemplateFrame.y + imageTemplateFrame.height - titleFontSize * 0.5,
+                  cy + r + titleFontSize * 1.4 + windingTopCircleOffset,
                 );
-                const windingBottomY = Math.min(
+                const windingDetailY = Math.min(
                   imageTemplateFrame.y + imageTemplateFrame.height - bodyFontSize * 0.4,
-                  cy + r + bodyFontSize * 1.4,
+                  windingLabelBelowY + bodyFontSize * 1.4,
                 );
 
                 return (
@@ -350,12 +350,12 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
                     )}
 
                     {imageTemplateConfig.textMode === 'linear_under_arrows' &&
-                      labelText &&
+                      renderedLabelText &&
                       titleFont && (
                         <SkiaText
-                          x={cx - titleFont.measureText(labelText).width / 2}
+                          x={cx - titleFont.measureText(renderedLabelText).width / 2}
                           y={linearLabelY}
-                          text={labelText}
+                          text={renderedLabelText}
                           font={titleFont}
                           color="#2D2D2D"
                         />
@@ -363,11 +363,11 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
 
                     {imageTemplateConfig.textMode === 'winding_above_and_below' && (
                       <>
-                        {labelText && titleFont && (
+                        {renderedLabelText && titleFont && (
                           <SkiaText
-                            x={cx - titleFont.measureText(labelText).width / 2}
-                            y={windingTopY}
-                            text={labelText}
+                            x={cx - titleFont.measureText(renderedLabelText).width / 2}
+                            y={windingLabelBelowY}
+                            text={renderedLabelText}
                             font={titleFont}
                             color="#2D2D2D"
                           />
@@ -375,7 +375,7 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
                         {detailText && bodyFont && (
                           <SkiaText
                             x={cx - bodyFont.measureText(detailText).width / 2}
-                            y={windingBottomY}
+                            y={windingDetailY}
                             text={detailText}
                             font={bodyFont}
                             color="#3D3D3D"

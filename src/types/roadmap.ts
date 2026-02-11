@@ -83,7 +83,10 @@ export function createDefaultCircleContent(
 ): RoadmapCircleContent[] {
   return template.circles.map((circle, index) => ({
     circleId: circle.id,
-    label: `Step ${index + 1}`,
+    label:
+      template.id === 'winding_5_road' && index === template.circles.length - 1
+        ? ''
+        : `Step ${index + 1}`,
     contentType: 'empty' as const,
   }));
 }

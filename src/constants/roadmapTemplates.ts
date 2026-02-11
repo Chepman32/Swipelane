@@ -127,7 +127,7 @@ export const DIAGONAL_3_CIRCLES_TEMPLATE: RoadmapTemplate = {
 };
 
 // Template 3: 5 circles alternating above/below a winding S-road
-// Matching IMG_0497: sinusoidal road with icons along the path
+// Matching IMG_0498: sinusoidal road with icons along the path
 // Canvas is portrait 5:6; circles span x 14%-84%, y 36%-62% of canvas
 export const WINDING_5_ROAD_TEMPLATE: RoadmapTemplate = {
   id: 'winding_5_road',
@@ -135,11 +135,11 @@ export const WINDING_5_ROAD_TEMPLATE: RoadmapTemplate = {
   description: 'Five steps along a winding road path',
   circleCount: 5,
   circles: [
-    { id: 'c1', position: { x: 0.14, y: 0.36 }, radius: 0.09, labelPosition: 'top' },
+    { id: 'c1', position: { x: 0.14, y: 0.36 }, radius: 0.09, labelPosition: 'bottom' },
     { id: 'c2', position: { x: 0.34, y: 0.58 }, radius: 0.09, labelPosition: 'bottom' },
-    { id: 'c3', position: { x: 0.50, y: 0.36 }, radius: 0.09, labelPosition: 'top' },
+    { id: 'c3', position: { x: 0.50, y: 0.36 }, radius: 0.09, labelPosition: 'bottom' },
     { id: 'c4', position: { x: 0.66, y: 0.58 }, radius: 0.09, labelPosition: 'bottom' },
-    { id: 'c5', position: { x: 0.84, y: 0.36 }, radius: 0.09, labelPosition: 'top' },
+    { id: 'c5', position: { x: 0.84, y: 0.36 }, radius: 0.09, labelPosition: 'bottom' },
   ],
   connectors: [
     // c1 to c2: S-curve down-right
@@ -185,7 +185,7 @@ export const WINDING_5_ROAD_TEMPLATE: RoadmapTemplate = {
 };
 
 // Template 4: 4 circles in a horizontal chain
-// Matching IMG_0498: linked circles connected by horizontal bar connectors
+// Matching IMG_0497: linked circles connected by horizontal bar connectors
 // Canvas is portrait 5:6; radius 0.09 gives ~7% width gap between adjacent circles
 export const LINEAR_4_CHAIN_TEMPLATE: RoadmapTemplate = {
   id: 'linear_4_chain',
