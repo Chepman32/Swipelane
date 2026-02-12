@@ -42,7 +42,6 @@ import GradientBackground from '../components/GradientBackground';
 import { captureRef } from 'react-native-view-shot';
 import { normalizeImageUri } from '../utils/imageUri';
 import { SkiaRoadmapRenderer } from '../components/roadmap';
-import { getRoadmapTemplateById } from '../constants/roadmapTemplates';
 
 // Skia font sources for each supported font
 const SKIA_FONT_SOURCES: Record<SlideFontId, number> = {
@@ -240,7 +239,7 @@ const PreviewScreen: React.FC = () => {
   const scrollX = useRef(new Animated.Value(0)).current;
   const slideRefs = useRef<View[]>([]);
   const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
-  const slideSize = Math.min(screenWidth * 0.99, screenWidth - 10); // Use 99% of screen width
+  const slideSize = screenWidth;
 
   // Refs for hidden slides used for export
   const hiddenSlideRefs = useRef<View[]>([]);
@@ -332,7 +331,6 @@ const PreviewScreen: React.FC = () => {
             {
               width: slideSize,
               height: imageContainerHeight,
-              marginHorizontal: 10,
               backgroundColor: themeDefinition.colors.card,
               borderRadius: 12,
               overflow: 'hidden',
@@ -396,7 +394,7 @@ const PreviewScreen: React.FC = () => {
             onViewableItemsChanged={onViewableItemsChanged}
             viewabilityConfig={viewabilityConfig}
             decelerationRate="fast"
-            snapToInterval={slideSize + 20}
+            snapToInterval={slideSize}
           />
         ) : (
           <View style={styles.emptyContainer}>
@@ -516,7 +514,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     overflow: 'hidden',
     position: 'relative',
-    marginHorizontal: 10,
+    marginHorizontal: 0,
   },
   imageBackground: {
     width: '100%',

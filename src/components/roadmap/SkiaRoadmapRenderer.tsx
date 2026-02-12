@@ -27,6 +27,11 @@ import RoadmapConnector from './RoadmapConnector';
 type Size = { width: number; height: number };
 type RectFrame = { x: number; y: number; width: number; height: number };
 type FontMeasurer = { measureText: (text: string) => { width: number } };
+type BubbleTimelineNode = { cx: number; cy: number; r: number };
+type BubbleTimelineLayout = {
+  splitY: number;
+  nodes: BubbleTimelineNode[];
+};
 type SafeRoundedRectInput = {
   x: number;
   y: number;
@@ -133,6 +138,42 @@ const getCircleGeometry = (
   };
 };
 
+const parsePercentFromLabel = (label: string | undefined): number | null => {
+  if (!label) return null;
+  const numeric = Number(label.replace(/[^\d.]/g, ''));
+  if (!Number.isFinite(numeric)) return null;
+  return Math.max(0, Math.min(100, numeric));
+};
+
+const getBubbleTimelineLayout = (
+  width: number,
+  height: number,
+  circles: RoadmapSlide['circles'],
+): BubbleTimelineLayout => {
+  const safeCount = Math.max(2, Math.min(5, circles.length));
+  const splitY = height * 0.5;
+  const minDim = Math.min(width, height);
+  const minRadius = minDim * 0.055;
+  const maxRadius = minDim * 0.145;
+  const fallbackPercents = [61, 48, 3, 8, 54];
+  const percents = Array.from({ length: safeCount }, (_, i) => {
+    return parsePercentFromLabel(circles[i]?.label) ?? fallbackPercents[i % fallbackPercents.length];
+  });
+  const radii = percents.map(percent => minRadius + (percent / 100) * (maxRadius - minRadius));
+  const maxR = Math.max(...radii, minRadius);
+  const edgePadding = Math.max(12, maxR + minDim * 0.015);
+  const startX = edgePadding;
+  const endX = Math.max(startX, width - edgePadding);
+  const gap = safeCount > 1 ? (endX - startX) / (safeCount - 1) : 0;
+
+  const nodes = Array.from({ length: safeCount }, (_, i) => ({
+    cx: startX + i * gap,
+    cy: splitY,
+    r: radii[i],
+  }));
+  return { splitY, nodes };
+};
+
 const CornerImageLayer: React.FC<CornerImageLayerProps> = ({ corner, width, height }) => {
   const image = useImage(corner.imageUri ?? null);
   if (!image) return null;
@@ -185,6 +226,7 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
 }) => {
   const [size, setSize] = useState<Size>({ width: 0, height: 0 });
   const isCarousel = slide.templateId === 'carousel';
+  const isBubbleTimeline = slide.templateId === 'bubble_timeline_6';
 
   const handleLayout = useCallback((event: any) => {
     const { width, height } = event.nativeEvent.layout;
@@ -207,12 +249,22 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
 
   const imageTemplateFrame = useMemo(() => {
     if (!imageTemplateConfig) return null;
-    return getContainFrame(
+    const containedFrame = getContainFrame(
       size.width,
       size.height,
       imageTemplateConfig.originalWidth,
       imageTemplateConfig.originalHeight,
     );
+    const scale = imageTemplateConfig.contentScale ?? 1;
+    if (scale === 1) return containedFrame;
+    const scaledWidth = containedFrame.width * scale;
+    const scaledHeight = containedFrame.height * scale;
+    return {
+      x: containedFrame.x - (scaledWidth - containedFrame.width) / 2,
+      y: containedFrame.y - (scaledHeight - containedFrame.height) / 2,
+      width: scaledWidth,
+      height: scaledHeight,
+    };
   }, [imageTemplateConfig, size.height, size.width]);
 
   const imageTemplateReady = Boolean(
@@ -221,6 +273,11 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
       imageTemplateFrame &&
       imageTemplateFrame.width > 0 &&
       imageTemplateFrame.height > 0,
+  );
+
+  const bubbleTimelineLayout = useMemo(
+    () => getBubbleTimelineLayout(size.width, size.height, slide.circles),
+    [size.height, size.width, slide.circles],
   );
 
   const effectivePanelWidth = useMemo(() => {
@@ -260,6 +317,14 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
     require('../../assets/fonts/Fira_Sans/FiraSans-Regular.ttf'),
     smallFontSize,
   );
+  const bodyBoldFont = useFont(
+    require('../../assets/fonts/Fira_Sans/FiraSans-SemiBold.ttf'),
+    bodyFontSize,
+  );
+  const smallBoldFont = useFont(
+    require('../../assets/fonts/Fira_Sans/FiraSans-SemiBold.ttf'),
+    smallFontSize,
+  );
 
   const textSlotsByCircleId = useMemo(() => {
     const slotMap = new Map<string, NonNullable<typeof imageTemplateConfig>['textSlots'][number]>();
@@ -271,6 +336,10 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
 
   const getTemplateTextFont = useCallback((font: RoadmapImageTextFont | undefined) => {
     switch (font) {
+      case 'bodyBold':
+        return bodyBoldFont;
+      case 'smallBold':
+        return smallBoldFont;
       case 'small':
         return smallFont;
       case 'body':
@@ -279,10 +348,14 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
       default:
         return titleFont;
     }
-  }, [bodyFont, smallFont, titleFont]);
+  }, [bodyBoldFont, bodyFont, smallBoldFont, smallFont, titleFont]);
 
   const getTemplateTextFontSize = useCallback((font: RoadmapImageTextFont | undefined) => {
     switch (font) {
+      case 'bodyBold':
+        return bodyFontSize;
+      case 'smallBold':
+        return smallFontSize;
       case 'small':
         return smallFontSize;
       case 'body':
@@ -304,21 +377,65 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
       const trimmed = text.trim();
       if (!trimmed || !anchor) return null;
 
-      const textFont = getTemplateTextFont(anchor.font);
-      if (!textFont) return null;
+      const baseFontType = anchor.font;
+      const baseFont = getTemplateTextFont(baseFontType);
+      if (!baseFont) return null;
 
       const maxWidth = Math.max(1, anchor.maxWidth * frame.width);
-      const wrappedLines = wrapTextToLines(trimmed, textFont, maxWidth);
-      if (!wrappedLines.length) return null;
+      const baseColor = anchor.color || fallbackColor;
+      type TextLineConfig = {
+        text: string;
+        fontType: RoadmapImageTextFont | undefined;
+        color: string;
+      };
+      const preparedLines: TextLineConfig[] = [];
 
-      const lines = anchor.maxLines ? wrappedLines.slice(0, anchor.maxLines) : wrappedLines;
+      if (anchor.firstLineFont && trimmed.includes('\n')) {
+        const [firstRawLine, ...remainingParts] = trimmed.split('\n');
+        const firstLine = firstRawLine.trim();
+        if (firstLine) {
+          preparedLines.push({
+            text: firstLine,
+            fontType: anchor.firstLineFont,
+            color: anchor.firstLineColor || baseColor,
+          });
+        }
+        const remainingText = remainingParts.join('\n').trim();
+        if (remainingText) {
+          const remainingLines = wrapTextToLines(remainingText, baseFont, maxWidth);
+          for (const line of remainingLines) {
+            preparedLines.push({
+              text: line,
+              fontType: baseFontType,
+              color: baseColor,
+            });
+          }
+        }
+      } else {
+        const wrappedLines = wrapTextToLines(trimmed, baseFont, maxWidth);
+        for (const line of wrappedLines) {
+          preparedLines.push({
+            text: line,
+            fontType: baseFontType,
+            color: baseColor,
+          });
+        }
+      }
+
+      if (!preparedLines.length) return null;
+      const lines = anchor.maxLines ? preparedLines.slice(0, anchor.maxLines) : preparedLines;
       const anchorX = frame.x + anchor.x * frame.width;
       const anchorY = frame.y + anchor.y * frame.height;
-      const lineHeight =
-        getTemplateTextFontSize(anchor.font) * (anchor.lineHeightMultiplier ?? 1.25);
+      const lineHeightMultiplier = anchor.lineHeightMultiplier ?? 1.25;
 
+      let currentY = anchorY;
       return lines.map((line, index) => {
-        const lineWidth = textFont.measureText(line).width;
+        const lineFont = getTemplateTextFont(line.fontType) || baseFont;
+        const lineHeight = getTemplateTextFontSize(line.fontType) * lineHeightMultiplier;
+        const y = currentY;
+        currentY += lineHeight;
+
+        const lineWidth = lineFont.measureText(line.text).width;
         const align = anchor.align ?? 'left';
         let x = anchorX;
 
@@ -332,10 +449,10 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
           <SkiaText
             key={`${keyPrefix}-${index}`}
             x={x}
-            y={anchorY + index * lineHeight}
-            text={line}
-            font={textFont}
-            color={anchor.color || fallbackColor}
+            y={y}
+            text={line.text}
+            font={lineFont}
+            color={line.color}
           />
         );
       });
@@ -395,6 +512,22 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
 
     if (!template || !onCircleTap) return;
 
+    if (isBubbleTimeline) {
+      for (let i = 0; i < bubbleTimelineLayout.nodes.length; i += 1) {
+        const node = bubbleTimelineLayout.nodes[i];
+        const content = slide.circles[i];
+        if (!node || !content) continue;
+        const distance = Math.sqrt(
+          Math.pow(locationX - node.cx, 2) + Math.pow(locationY - node.cy, 2),
+        );
+        if (distance <= node.r * 1.08) {
+          onCircleTap(content.circleId, node.cx, node.cy);
+          return;
+        }
+      }
+      return;
+    }
+
     const frame =
       imageTemplateConfig && imageTemplateFrame
         ? imageTemplateFrame
@@ -416,7 +549,10 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
   }, [
     isCarousel,
     slide.carouselData,
+    slide.circles,
     onPanelTap,
+    isBubbleTimeline,
+    bubbleTimelineLayout.nodes,
     imageTemplateConfig,
     imageTemplateFrame,
     onCircleTap,
@@ -705,7 +841,11 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
           )}
 
           {/* Image template asset on top of selected background */}
-          {imageTemplateReady && imageTemplateConfig && imageTemplateFrame && imageTemplateAsset && (
+          {!isBubbleTimeline &&
+            imageTemplateReady &&
+            imageTemplateConfig &&
+            imageTemplateFrame &&
+            imageTemplateAsset && (
             <Image
               image={imageTemplateAsset}
               x={imageTemplateFrame.x}
@@ -717,7 +857,98 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
           )}
 
           {/* Template overlays */}
-          {imageTemplateReady && imageTemplateConfig && imageTemplateFrame ? (
+          {isBubbleTimeline ? (
+            <Group>
+              {bubbleTimelineLayout.nodes.map((node, index) => {
+                const content = slide.circles[index];
+                if (!content) return null;
+                const isTopText = index % 2 === 1;
+                const detailText = content.text?.trim() || '';
+                let yearLine = content.title?.trim() || '';
+                let bodyText = detailText;
+                if (!yearLine && detailText.includes('\n')) {
+                  const [firstLine, ...restLines] = detailText.split('\n');
+                  if (/^\d{4}$/.test(firstLine.trim())) {
+                    yearLine = firstLine.trim();
+                    bodyText = restLines.join('\n').trim();
+                  }
+                }
+                const bubbleColor = content.textStyle?.color || '#6F9E62';
+
+                const dotGap = Math.max(6, node.r * 0.22);
+                const segment = Math.max(3, Math.floor(node.r * 0.8 / dotGap));
+                const stemDirection = isTopText ? -1 : 1;
+                const stemStartY = node.cy + stemDirection * node.r;
+                const stemEndY = node.cy + stemDirection * (node.r + segment * dotGap);
+                const textAnchorY = isTopText
+                  ? Math.max(20, stemEndY - 50)
+                  : Math.min(size.height - 56, stemEndY + 54);
+
+                const yearFont = bodyBoldFont || titleFont;
+                const bodyFontResolved = smallFont || bodyFont;
+                const percentFont = node.r < Math.min(size.width, size.height) * 0.1 ? bodyBoldFont : titleFont;
+
+                return (
+                  <Group key={`bubble-${content.circleId}`}>
+                    <Circle cx={node.cx} cy={node.cy} r={node.r} color={bubbleColor} />
+                    {percentFont ? (
+                      <SkiaText
+                        x={node.cx - percentFont.measureText(content.label).width / 2}
+                        y={node.cy + getTemplateTextFontSize(node.r < Math.min(size.width, size.height) * 0.1 ? 'bodyBold' : 'title') * 0.35}
+                        text={content.label}
+                        font={percentFont}
+                        color="#F4F4F4"
+                      />
+                    ) : null}
+
+                    {Array.from({ length: segment }).map((_, dotIndex) => (
+                      <Circle
+                        key={`dot-${content.circleId}-${dotIndex}`}
+                        cx={node.cx}
+                        cy={stemStartY + stemDirection * dotGap * (dotIndex + 1)}
+                        r={Math.max(1.5, node.r * 0.05)}
+                        color="#E4E4E4"
+                      />
+                    ))}
+                    <Circle cx={node.cx} cy={stemEndY} r={Math.max(3, node.r * 0.1)} color="#E4E4E4" />
+
+                    {yearFont && yearLine?.trim() ? (
+                      <SkiaText
+                        x={node.cx - yearFont.measureText(yearLine.trim()).width / 2}
+                        y={textAnchorY}
+                        text={yearLine.trim()}
+                        font={yearFont}
+                        color="#F2F2F2"
+                      />
+                    ) : null}
+                    {bodyFontResolved && bodyText ? (
+                      renderTemplateTextLines(
+                        bodyText,
+                        {
+                          x: Math.max(0.1, Math.min(0.9, node.cx / Math.max(1, size.width))),
+                          y: isTopText
+                            ? (textAnchorY + 12) / Math.max(1, size.height)
+                            : (textAnchorY + 14) / Math.max(1, size.height),
+                          maxWidth:
+                            index === 0 || index === bubbleTimelineLayout.nodes.length - 1
+                              ? 0.24
+                              : 0.2,
+                          align: 'center',
+                          color: '#EDEDED',
+                          font: 'small',
+                          maxLines: 4,
+                          lineHeightMultiplier: 1.18,
+                        },
+                        `${content.circleId}-bubble-body`,
+                        { x: 0, y: 0, width: size.width, height: size.height },
+                        '#EDEDED',
+                      )
+                    ) : null}
+                  </Group>
+                );
+              })}
+            </Group>
+          ) : imageTemplateReady && imageTemplateConfig && imageTemplateFrame ? (
             <Group>
               {template.circles.map(circle => {
                 const content = slide.circles.find(c => c.circleId === circle.id);

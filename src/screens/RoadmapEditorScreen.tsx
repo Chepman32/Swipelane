@@ -21,6 +21,8 @@ import {
   Animated,
   LayoutAnimation,
   UIManager,
+  NativeSyntheticEvent,
+  TextInputSelectionChangeEventData,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -74,6 +76,17 @@ const CAROUSEL_COLOR_OPTIONS = [
   '#E91E63',
 ];
 
+const BUBBLE_TIMELINE_COLOR_OPTIONS = [
+  '#C6A574',
+  '#6F9E62',
+  '#4B79A6',
+  '#B9494D',
+  '#F28F29',
+  '#5B8FCA',
+  '#7C6BC9',
+  '#32A6BC',
+];
+
 type RootStackParamList = {
   RoadmapEditor: {
     projectId: string;
@@ -109,6 +122,7 @@ const RoadmapEditorScreen: React.FC = () => {
   const [selectedPanelIndex, setSelectedPanelIndex] = useState(0);
   const [slide, setSlide] = useState<RoadmapSlide | null>(null);
   const [showBackgroundPicker, setShowBackgroundPicker] = useState(false);
+  const [percentageSelection, setPercentageSelection] = useState({ start: 0, end: 0 });
   const backgroundAccordionAnim = useRef(new Animated.Value(0)).current;
 
   const isCarouselTemplate = templateId === 'carousel';
@@ -123,7 +137,13 @@ const RoadmapEditorScreen: React.FC = () => {
   const isInfinityLoopTemplate = templateId === 'diagonal_3_circles';
   const isHorizontalLoopTemplate = templateId === 'winding_5_road';
   const isLinearChainTemplate = templateId === 'linear_4_chain';
-  const supportsSecondaryText = isFigureEightTemplate || isInfinityLoopTemplate;
+  const isBubbleTimelineTemplate = templateId === 'bubble_timeline_6';
+  const isRibbonStepsTemplate = templateId === 'ribbon_steps_3';
+  const supportsSecondaryText =
+    isFigureEightTemplate ||
+    isInfinityLoopTemplate ||
+    isBubbleTimelineTemplate ||
+    isRibbonStepsTemplate;
 
   useEffect(() => {
     if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -159,6 +179,45 @@ const RoadmapEditorScreen: React.FC = () => {
     return slide.circles.find(c => c.circleId === selectedCircleId);
   }, [slide, selectedCircleId]);
 
+  const selectedBubbleTitle = useMemo(() => {
+    if (!selectedCircleContent) return '';
+    if (selectedCircleContent.title) return selectedCircleContent.title;
+    const raw = selectedCircleContent.text?.trim() || '';
+    if (!raw.includes('\n')) return '';
+    const [firstLine] = raw.split('\n');
+    return /^\d{4}$/.test(firstLine.trim()) ? firstLine.trim() : '';
+  }, [selectedCircleContent]);
+
+  const selectedBubbleDescription = useMemo(() => {
+    if (!selectedCircleContent) return '';
+    const raw = selectedCircleContent.text || '';
+    if (selectedCircleContent.title) return raw;
+    const trimmed = raw.trim();
+    if (!trimmed.includes('\n')) return raw;
+    const [firstLine, ...rest] = trimmed.split('\n');
+    if (/^\d{4}$/.test(firstLine.trim())) {
+      return rest.join('\n').trim();
+    }
+    return raw;
+  }, [selectedCircleContent]);
+
+  useEffect(() => {
+    if (!isBubbleTimelineTemplate || !slide) return;
+    if (!slide.circles.length) return;
+    const exists = selectedCircleId
+      ? slide.circles.some(c => c.circleId === selectedCircleId)
+      : false;
+    if (!exists) {
+      setSelectedCircleId(slide.circles[0].circleId);
+    }
+  }, [isBubbleTimelineTemplate, selectedCircleId, slide]);
+
+  useEffect(() => {
+    if (!isBubbleTimelineTemplate || !selectedCircleContent) return;
+    const cursor = Math.max(0, selectedCircleContent.label.length - 1);
+    setPercentageSelection({ start: cursor, end: cursor });
+  }, [isBubbleTimelineTemplate, selectedCircleContent]);
+
   // Handle circle tap
   const handleCircleTap = useCallback((circleId: string) => {
     FeedbackService.buttonTap();
@@ -192,10 +251,37 @@ const RoadmapEditorScreen: React.FC = () => {
   const handleLabelChange = useCallback(
     (text: string) => {
       if (selectedCircleId) {
+        if (isBubbleTimelineTemplate) {
+          const digitsOnly = text.replace(/[^\d]/g, '').slice(0, 3);
+          const numeric = Math.max(0, Math.min(100, Number(digitsOnly || '0')));
+          const normalized = `${numeric}%`;
+          updateCircleContent(selectedCircleId, { label: normalized });
+          const cursor = normalized.length - 1;
+          setPercentageSelection({ start: cursor, end: cursor });
+          return;
+        }
         updateCircleContent(selectedCircleId, { label: text });
       }
     },
-    [selectedCircleId, updateCircleContent]
+    [isBubbleTimelineTemplate, selectedCircleId, updateCircleContent]
+  );
+
+  const handlePercentageSelectionChange = useCallback(
+    (event: NativeSyntheticEvent<TextInputSelectionChangeEventData>) => {
+      if (!isBubbleTimelineTemplate || !selectedCircleContent) return;
+      const maxPos = Math.max(0, selectedCircleContent.label.length - 1);
+      const nextStart = Math.min(event.nativeEvent.selection.start, maxPos);
+      const nextEnd = Math.min(event.nativeEvent.selection.end, maxPos);
+      if (
+        nextStart !== event.nativeEvent.selection.start ||
+        nextEnd !== event.nativeEvent.selection.end
+      ) {
+        setPercentageSelection({ start: nextStart, end: nextEnd });
+        return;
+      }
+      setPercentageSelection({ start: nextStart, end: nextEnd });
+    },
+    [isBubbleTimelineTemplate, selectedCircleContent],
   );
 
   // Handle content text change
@@ -211,6 +297,58 @@ const RoadmapEditorScreen: React.FC = () => {
     },
     [selectedCircleId, updateCircleContent]
   );
+
+  const handleBubbleTitleChange = useCallback((title: string) => {
+    if (!selectedCircleId) return;
+    updateCircleContent(selectedCircleId, { title });
+  }, [selectedCircleId, updateCircleContent]);
+
+  const handleBubbleDescriptionChange = useCallback((text: string) => {
+    if (!selectedCircleId) return;
+    updateCircleContent(selectedCircleId, {
+      contentType: 'text',
+      text,
+      imageUri: undefined,
+    });
+  }, [selectedCircleId, updateCircleContent]);
+
+  const handleBubbleCountChange = useCallback((nextCount: number) => {
+    setSlide(prev => {
+      if (!prev) return prev;
+      const count = Math.max(2, Math.min(5, nextCount));
+      const current = prev.circles;
+      if (current.length === count) return prev;
+
+      const percentages = ['61%', '48%', '3%', '8%', '54%'];
+      const years = ['2012', '2013', '2014', '2015', '2016'];
+      const colors = ['#C6A574', '#6F9E62', '#4B79A6', '#B9494D', '#F28F29'];
+
+      const nextCircles: RoadmapCircleContent[] = Array.from({ length: count }, (_, index) => {
+        const existing = current[index];
+        if (existing) return existing;
+        return {
+          circleId: `c${index + 1}`,
+          label: percentages[index] || `${index + 1}%`,
+          title: years[index] || String(2012 + index),
+          contentType: 'text',
+          text: 'Lorem Ipsum is simply dummy text of the printing and typesetting industry.',
+          textStyle: { fontSize: 14, color: colors[index % colors.length] },
+        };
+      });
+
+      return { ...prev, circles: nextCircles };
+    });
+  }, []);
+
+  const handleBubbleColorChange = useCallback((color: string) => {
+    if (!selectedCircleId) return;
+    updateCircleContent(selectedCircleId, {
+      textStyle: {
+        ...(selectedCircleContent?.textStyle || { fontSize: 14 }),
+        color,
+      },
+    });
+  }, [selectedCircleContent?.textStyle, selectedCircleId, updateCircleContent]);
 
   // Handle image selection for circle
   const handleSelectCircleImage = useCallback(async () => {
@@ -415,15 +553,22 @@ const RoadmapEditorScreen: React.FC = () => {
     });
   }, [slide, navigation]);
 
-  const previewWidth = width - scale(32);
+  const horizontalContentPadding = scale(16);
+  const previewWidth = width;
   const previewHeight = isCarouselTemplate && slide?.carouselData
     ? previewWidth / (slide.carouselData.panelCount * 0.69)
+    : isBubbleTimelineTemplate
+      ? previewWidth * (2 / 3)
     : imageTemplateConfig
       ? previewWidth * (imageTemplateConfig.originalHeight / imageTemplateConfig.originalWidth)
       : previewWidth * 1.2;
 
   const circleLabelInputLabel = isLinearChainTemplate
     ? 'Text Under Arrow'
+    : isBubbleTimelineTemplate
+      ? 'Percentage'
+      : isRibbonStepsTemplate
+        ? 'Step Label'
     : isHorizontalLoopTemplate
       ? 'Zone Text'
       : supportsSecondaryText
@@ -432,6 +577,10 @@ const RoadmapEditorScreen: React.FC = () => {
 
   const circleLabelPlaceholder = isHorizontalLoopTemplate
     ? 'Zone text...'
+    : isBubbleTimelineTemplate
+      ? '61%'
+      : isRibbonStepsTemplate
+        ? 'STEP 01'
     : supportsSecondaryText
       ? 'Infographic 01'
       : 'Step 1';
@@ -453,7 +602,7 @@ const RoadmapEditorScreen: React.FC = () => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView
-        contentContainerStyle={[styles.content, { paddingHorizontal: scale(16) }]}
+        contentContainerStyle={[styles.content, { paddingHorizontal: horizontalContentPadding }]}
         showsVerticalScrollIndicator={false}
       >
         {/* Canvas Preview */}
@@ -466,6 +615,7 @@ const RoadmapEditorScreen: React.FC = () => {
               borderRadius: scale(12),
               borderColor: themeDefinition.colors.border,
               marginTop: scale(16),
+              marginHorizontal: -horizontalContentPadding,
             },
           ]}
         >
@@ -523,7 +673,9 @@ const RoadmapEditorScreen: React.FC = () => {
             style={[styles.circleTabs, { marginTop: scale(16) }]}
             contentContainerStyle={styles.circleTabsContent}
           >
-            {template.circles.map((circle, index) => {
+            {(isBubbleTimelineTemplate
+              ? slide.circles.map(c => ({ id: c.circleId }))
+              : template.circles.map(c => ({ id: c.id }))).map((circle, index) => {
               const content = slide.circles.find(c => c.circleId === circle.id);
               return (
                 <TouchableOpacity
@@ -747,6 +899,78 @@ const RoadmapEditorScreen: React.FC = () => {
               {t('roadmap_edit_circle') || 'Edit Circle'}
             </Text>
 
+            {isBubbleTimelineTemplate && (
+              <>
+                <Text
+                  style={[
+                    styles.inputLabel,
+                    { color: themeDefinition.colors.text + '99', fontSize: scaleFont(12), marginBottom: scale(8) },
+                  ]}
+                >
+                  Bubble Count
+                </Text>
+                <View style={[styles.contentTypeRow, { marginBottom: scale(12) }]}>
+                  {[2, 3, 4, 5].map(count => (
+                    <TouchableOpacity
+                      key={`bubble-count-${count}`}
+                      style={[
+                        styles.circleTab,
+                        {
+                          backgroundColor: slide.circles.length === count ? '#007AFF' : themeDefinition.colors.background,
+                          borderColor: slide.circles.length === count ? '#007AFF' : themeDefinition.colors.border,
+                          paddingHorizontal: scale(12),
+                          paddingVertical: scale(8),
+                          marginRight: scale(8),
+                        },
+                      ]}
+                      onPress={() => handleBubbleCountChange(count)}
+                    >
+                      <Text
+                        style={{
+                          color: slide.circles.length === count ? '#FFFFFF' : themeDefinition.colors.text,
+                          fontSize: scaleFont(13),
+                          fontWeight: '600',
+                        }}
+                      >
+                        {count}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                <Text
+                  style={[
+                    styles.inputLabel,
+                    { color: themeDefinition.colors.text + '99', fontSize: scaleFont(12), marginBottom: scale(8) },
+                  ]}
+                >
+                  Bubble Color
+                </Text>
+                <View style={[styles.colorGrid, { marginBottom: scale(12) }]}>
+                  {BUBBLE_TIMELINE_COLOR_OPTIONS.map(color => (
+                    <TouchableOpacity
+                      key={`bubble-color-${color}`}
+                      style={[
+                        styles.colorOption,
+                        {
+                          width: scale(28),
+                          height: scale(28),
+                          borderRadius: scale(14),
+                          backgroundColor: color,
+                          borderWidth: selectedCircleContent.textStyle?.color === color ? 3 : 1,
+                          borderColor:
+                            selectedCircleContent.textStyle?.color === color
+                              ? '#007AFF'
+                              : themeDefinition.colors.border,
+                        },
+                      ]}
+                      onPress={() => handleBubbleColorChange(color)}
+                    />
+                  ))}
+                </View>
+              </>
+            )}
+
             {/* Label input */}
             <Text
               style={[
@@ -772,10 +996,52 @@ const RoadmapEditorScreen: React.FC = () => {
               onChangeText={handleLabelChange}
               placeholder={circleLabelPlaceholder}
               placeholderTextColor={themeDefinition.colors.text + '66'}
+              keyboardType={isBubbleTimelineTemplate ? 'number-pad' : 'default'}
+              maxLength={isBubbleTimelineTemplate ? 4 : undefined}
+              selection={isBubbleTimelineTemplate ? percentageSelection : undefined}
+              onSelectionChange={handlePercentageSelectionChange}
+              onFocus={() => {
+                if (!isBubbleTimelineTemplate || !selectedCircleContent) return;
+                const cursor = Math.max(0, selectedCircleContent.label.length - 1);
+                setPercentageSelection({ start: cursor, end: cursor });
+              }}
             />
 
             {supportsSecondaryText && (
               <>
+                {isBubbleTimelineTemplate && (
+                  <>
+                    <Text
+                      style={[
+                        styles.inputLabel,
+                        {
+                          color: themeDefinition.colors.text + '99',
+                          fontSize: scaleFont(12),
+                          marginBottom: scale(4),
+                          marginTop: scale(8),
+                        },
+                      ]}
+                    >
+                      Title
+                    </Text>
+                    <TextInput
+                      style={[
+                        styles.textInput,
+                        {
+                          backgroundColor: themeDefinition.colors.background,
+                          color: themeDefinition.colors.text,
+                          borderColor: themeDefinition.colors.border,
+                          fontSize: scaleFont(14),
+                          padding: scale(12),
+                        },
+                      ]}
+                      value={selectedBubbleTitle}
+                      onChangeText={handleBubbleTitleChange}
+                      placeholder="2012"
+                      placeholderTextColor={themeDefinition.colors.text + '66'}
+                    />
+                  </>
+                )}
                 <Text
                   style={[
                     styles.inputLabel,
@@ -801,8 +1067,8 @@ const RoadmapEditorScreen: React.FC = () => {
                       minHeight: scale(60),
                     },
                   ]}
-                  value={selectedCircleContent.text || ''}
-                  onChangeText={handleContentTextChange}
+                  value={isBubbleTimelineTemplate ? selectedBubbleDescription : selectedCircleContent.text || ''}
+                  onChangeText={isBubbleTimelineTemplate ? handleBubbleDescriptionChange : handleContentTextChange}
                   placeholder="Description..."
                   placeholderTextColor={themeDefinition.colors.text + '66'}
                   multiline
@@ -810,7 +1076,7 @@ const RoadmapEditorScreen: React.FC = () => {
               </>
             )}
 
-            {!isImageBackedTemplate && (
+            {!isImageBackedTemplate && !isBubbleTimelineTemplate && (
               <>
                 {/* Content type toggle */}
                 <Text

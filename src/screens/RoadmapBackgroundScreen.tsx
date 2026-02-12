@@ -122,8 +122,11 @@ const RoadmapBackgroundScreen: React.FC = () => {
     });
   };
 
-  const previewWidth = width - scale(40);
-  const previewHeight = imageTemplateConfig
+  const horizontalContentPadding = scale(20);
+  const previewWidth = width;
+  const previewHeight = templateId === 'bubble_timeline_6'
+    ? previewWidth * (2 / 3)
+    : imageTemplateConfig
     ? previewWidth * (imageTemplateConfig.originalHeight / imageTemplateConfig.originalWidth)
     : previewWidth * 1.2;
   const swatchSize = scale(48);
@@ -138,7 +141,7 @@ const RoadmapBackgroundScreen: React.FC = () => {
       edges={['bottom']}
     >
       <ScrollView
-        contentContainerStyle={[styles.content, { padding: scale(20) }]}
+        contentContainerStyle={[styles.content, { padding: horizontalContentPadding }]}
         showsVerticalScrollIndicator={false}
       >
         {/* Preview */}
@@ -150,6 +153,7 @@ const RoadmapBackgroundScreen: React.FC = () => {
               height: previewHeight,
               borderRadius: scale(12),
               borderColor: themeDefinition.colors.border,
+              marginHorizontal: -horizontalContentPadding,
             },
           ]}
         >

@@ -150,7 +150,45 @@ export const LINEAR_4_CHAIN_TEMPLATE: RoadmapTemplate = {
   defaultDashPattern: ROADMAP_DEFAULTS.dashPattern,
 };
 
-// Template 5: Multi-panel swipeable carousel
+// Template 5: Bubble timeline with dynamic milestones
+// Drawn procedurally to support bubble count (2-5) and per-bubble colors.
+export const BUBBLE_TIMELINE_6_TEMPLATE: RoadmapTemplate = {
+  id: 'bubble_timeline_6',
+  name: 'Bubble Percentage',
+  description: 'Alternating year milestones with percentage bubbles (2–5)',
+  circleCount: 5,
+  circles: [
+    { id: 'c1', position: { x: 0.14, y: 0.52 }, radius: 0.09, labelPosition: 'bottom' },
+    { id: 'c2', position: { x: 0.32, y: 0.50 }, radius: 0.12, labelPosition: 'bottom' },
+    { id: 'c3', position: { x: 0.50, y: 0.53 }, radius: 0.075, labelPosition: 'bottom' },
+    { id: 'c4', position: { x: 0.68, y: 0.50 }, radius: 0.10, labelPosition: 'bottom' },
+    { id: 'c5', position: { x: 0.84, y: 0.51 }, radius: 0.13, labelPosition: 'bottom' },
+  ],
+  connectors: [],
+  defaultStrokeColor: ROADMAP_DEFAULTS.strokeColor,
+  defaultStrokeWidth: ROADMAP_DEFAULTS.strokeWidth,
+  defaultDashPattern: ROADMAP_DEFAULTS.dashPattern,
+};
+
+// Template 6: Diagonal ribbons with 3 steps
+// Image-backed; circles are used as editable tap targets on each colored ribbon.
+export const RIBBON_STEPS_3_TEMPLATE: RoadmapTemplate = {
+  id: 'ribbon_steps_3',
+  name: 'Ribbon Steps',
+  description: 'Three staggered ribbons with step labels and copy',
+  circleCount: 3,
+  circles: [
+    { id: 'c1', position: { x: 0.205, y: 0.43 }, radius: 0.09, labelPosition: 'bottom' },
+    { id: 'c2', position: { x: 0.465, y: 0.635 }, radius: 0.09, labelPosition: 'bottom' },
+    { id: 'c3', position: { x: 0.735, y: 0.84 }, radius: 0.09, labelPosition: 'bottom' },
+  ],
+  connectors: [],
+  defaultStrokeColor: ROADMAP_DEFAULTS.strokeColor,
+  defaultStrokeWidth: ROADMAP_DEFAULTS.strokeWidth,
+  defaultDashPattern: ROADMAP_DEFAULTS.dashPattern,
+};
+
+// Template 7: Multi-panel swipeable carousel
 export const CAROUSEL_TEMPLATE: RoadmapTemplate = {
   id: 'carousel',
   name: 'LinkedIn Carousel',
@@ -169,6 +207,8 @@ export const ROADMAP_TEMPLATES: RoadmapTemplate[] = [
   DIAGONAL_3_CIRCLES_TEMPLATE,
   WINDING_5_ROAD_TEMPLATE,
   LINEAR_4_CHAIN_TEMPLATE,
+  BUBBLE_TIMELINE_6_TEMPLATE,
+  RIBBON_STEPS_3_TEMPLATE,
   CAROUSEL_TEMPLATE,
 ];
 

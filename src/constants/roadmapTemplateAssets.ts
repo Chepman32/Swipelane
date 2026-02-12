@@ -1,5 +1,5 @@
 export type RoadmapImageTextAlign = 'left' | 'center' | 'right';
-export type RoadmapImageTextFont = 'title' | 'body' | 'small';
+export type RoadmapImageTextFont = 'title' | 'body' | 'small' | 'bodyBold' | 'smallBold';
 
 export interface RoadmapImageTextAnchorConfig {
   x: number;
@@ -8,6 +8,8 @@ export interface RoadmapImageTextAnchorConfig {
   align?: RoadmapImageTextAlign;
   color?: string;
   font?: RoadmapImageTextFont;
+  firstLineFont?: RoadmapImageTextFont;
+  firstLineColor?: string;
   lineHeightMultiplier?: number;
   maxLines?: number;
 }
@@ -22,6 +24,7 @@ export interface RoadmapImageBackedTemplateConfig {
   source: number;
   originalWidth: number;
   originalHeight: number;
+  contentScale?: number;
   canvasBackgroundColor?: string;
   textSlots: RoadmapImageTextSlotConfig[];
 }
@@ -31,13 +34,14 @@ export const ROADMAP_TEMPLATE_IMAGES = {
   diagonal_3_circles: require('../assets/templates/084C532A-15B3-478C-8F7B-724D433963B4.png'),
   winding_5_road: require('../assets/templates/C08B69DD-104A-4963-B5E0-D5D820319629.png'),
   linear_4_chain: require('../assets/templates/IMG_0497.png'),
+  bubble_timeline_6: require('../assets/templates/45982A3E-171A-4953-9D3C-623C72B2CC5B.png'),
+  ribbon_steps_3: require('../assets/templates/F24B4734-F6F7-4DD6-8344-4782A1F3BF1C.png'),
 } as const;
 
 type RoadmapTemplateImageId = keyof typeof ROADMAP_TEMPLATE_IMAGES;
 
-export const ROADMAP_IMAGE_BACKED_TEMPLATE_CONFIG: Record<
-  RoadmapTemplateImageId,
-  RoadmapImageBackedTemplateConfig
+export const ROADMAP_IMAGE_BACKED_TEMPLATE_CONFIG: Partial<
+  Record<RoadmapTemplateImageId, RoadmapImageBackedTemplateConfig>
 > = {
   grid_4_circles: {
     source: ROADMAP_TEMPLATE_IMAGES.grid_4_circles,
@@ -177,6 +181,55 @@ export const ROADMAP_IMAGE_BACKED_TEMPLATE_CONFIG: Record<
       { circleId: 'c2', label: { x: 0.37, y: 0.70, maxWidth: 0.16, align: 'center', color: '#FFFFFF', font: 'body' } },
       { circleId: 'c3', label: { x: 0.63, y: 0.70, maxWidth: 0.16, align: 'center', color: '#FFFFFF', font: 'body' } },
       { circleId: 'c4', label: { x: 0.88, y: 0.70, maxWidth: 0.16, align: 'center', color: '#FFFFFF', font: 'body' } },
+    ],
+  },
+  ribbon_steps_3: {
+    source: ROADMAP_TEMPLATE_IMAGES.ribbon_steps_3,
+    originalWidth: 1024,
+    originalHeight: 1024,
+    textSlots: [
+      {
+        circleId: 'c1',
+        label: { x: 0.205, y: 0.43, maxWidth: 0.14, align: 'center', color: '#FFFFFF', font: 'title' },
+        detail: {
+          x: 0.165,
+          y: 0.26,
+          maxWidth: 0.29,
+          align: 'left',
+          color: '#AD5838',
+          font: 'small',
+          lineHeightMultiplier: 1.2,
+          maxLines: 4,
+        },
+      },
+      {
+        circleId: 'c2',
+        label: { x: 0.465, y: 0.635, maxWidth: 0.14, align: 'center', color: '#FFFFFF', font: 'title' },
+        detail: {
+          x: 0.425,
+          y: 0.46,
+          maxWidth: 0.29,
+          align: 'left',
+          color: '#D79C45',
+          font: 'small',
+          lineHeightMultiplier: 1.2,
+          maxLines: 4,
+        },
+      },
+      {
+        circleId: 'c3',
+        label: { x: 0.735, y: 0.84, maxWidth: 0.14, align: 'center', color: '#FFFFFF', font: 'title' },
+        detail: {
+          x: 0.695,
+          y: 0.66,
+          maxWidth: 0.29,
+          align: 'left',
+          color: '#2E8E9C',
+          font: 'small',
+          lineHeightMultiplier: 1.2,
+          maxLines: 4,
+        },
+      },
     ],
   },
 };

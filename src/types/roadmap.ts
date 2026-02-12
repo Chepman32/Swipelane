@@ -64,6 +64,7 @@ export interface RoadmapTemplate {
 export interface RoadmapCircleContent {
   circleId: string;
   label: string;
+  title?: string;
   contentType: 'text' | 'image' | 'empty';
   text?: string;
   imageUri?: string;
@@ -114,6 +115,32 @@ export interface RoadmapProjectState {
 export function createDefaultCircleContent(
   template: RoadmapTemplate,
 ): RoadmapCircleContent[] {
+  if (template.id === 'bubble_timeline_6') {
+    const percentages = ['61%', '48%', '3%', '8%', '54%'];
+    const years = ['2012', '2013', '2014', '2015', '2016'];
+    const colors = ['#C6A574', '#6F9E62', '#4B79A6', '#B9494D', '#F28F29'];
+    return template.circles.map((circle, index) => {
+      const year = years[index] || String(2012 + index);
+      return {
+        circleId: circle.id,
+        label: percentages[index] || `${index + 1}%`,
+        title: year,
+        contentType: 'text' as const,
+        text: 'Lorem Ipsum is simply dummy text of the printing and typesetting industry.',
+        textStyle: { fontSize: 14, color: colors[index % colors.length] },
+      };
+    });
+  }
+
+  if (template.id === 'ribbon_steps_3') {
+    return template.circles.map((circle, index) => ({
+      circleId: circle.id,
+      label: `STEP\n${String(index + 1).padStart(2, '0')}`,
+      contentType: 'text' as const,
+      text: 'LOREM IPSUM\nLorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor.',
+    }));
+  }
+
   return template.circles.map((circle, index) => ({
     circleId: circle.id,
     label: `Step ${index + 1}`,
