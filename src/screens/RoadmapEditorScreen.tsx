@@ -4,6 +4,7 @@ import React, {
   useCallback,
   useMemo,
   useLayoutEffect,
+  useRef,
 } from 'react';
 import {
   View,
@@ -17,6 +18,9 @@ import {
   Platform,
   Image,
   Switch,
+  Animated,
+  LayoutAnimation,
+  UIManager,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -105,6 +109,7 @@ const RoadmapEditorScreen: React.FC = () => {
   const [selectedPanelIndex, setSelectedPanelIndex] = useState(0);
   const [slide, setSlide] = useState<RoadmapSlide | null>(null);
   const [showBackgroundPicker, setShowBackgroundPicker] = useState(false);
+  const backgroundAccordionAnim = useRef(new Animated.Value(0)).current;
 
   const isCarouselTemplate = templateId === 'carousel';
 
@@ -119,6 +124,12 @@ const RoadmapEditorScreen: React.FC = () => {
   const isHorizontalLoopTemplate = templateId === 'winding_5_road';
   const isLinearChainTemplate = templateId === 'linear_4_chain';
   const supportsSecondaryText = isFigureEightTemplate || isInfinityLoopTemplate;
+
+  useEffect(() => {
+    if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+      UIManager.setLayoutAnimationEnabledExperimental(true);
+    }
+  }, []);
 
   // Initialize slide only once
   useEffect(() => {
@@ -327,6 +338,38 @@ const RoadmapEditorScreen: React.FC = () => {
     }
   }, [t]);
 
+  const handleToggleBackgroundPicker = useCallback(() => {
+    FeedbackService.buttonTap();
+    const toValue = showBackgroundPicker ? 0 : 1;
+
+    LayoutAnimation.configureNext({
+      duration: 320,
+      create: {
+        type: 'easeInEaseOut',
+        property: 'opacity',
+      },
+      update: {
+        type: 'spring',
+        springDamping: 0.78,
+      },
+      delete: {
+        type: 'easeInEaseOut',
+        property: 'opacity',
+      },
+    });
+
+    Animated.spring(backgroundAccordionAnim, {
+      toValue,
+      velocity: showBackgroundPicker ? -3 : 3,
+      damping: 18,
+      stiffness: 190,
+      mass: 0.8,
+      useNativeDriver: true,
+    }).start();
+
+    setShowBackgroundPicker(prev => !prev);
+  }, [backgroundAccordionAnim, showBackgroundPicker]);
+
   // Handle stroke color change
   const handleStrokeColorChange = useCallback((color: string) => {
     FeedbackService.buttonTap();
@@ -396,6 +439,11 @@ const RoadmapEditorScreen: React.FC = () => {
   if (!template || !slide) {
     return null;
   }
+
+  const accordionChevronRotation = backgroundAccordionAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '180deg'],
+  });
 
   const cd = slide.carouselData;
 
@@ -1061,17 +1109,43 @@ const RoadmapEditorScreen: React.FC = () => {
                 marginTop: scale(isCarouselTemplate ? 8 : isImageBackedTemplate ? 0 : 16),
               },
             ]}
-            onPress={() => setShowBackgroundPicker(!showBackgroundPicker)}
+            onPress={handleToggleBackgroundPicker}
           >
-            <Text style={[styles.optionButtonText, { color: themeDefinition.colors.text, fontSize: scaleFont(14) }]}>
-              {isCarouselTemplate
-                ? 'Change Cover Background'
-                : t('roadmap_change_background') || 'Change Background'}
-            </Text>
+            <View style={styles.optionButtonRow}>
+              <Text style={[styles.optionButtonText, { color: themeDefinition.colors.text, fontSize: scaleFont(14) }]}>
+                {isCarouselTemplate
+                  ? 'Change Cover Background'
+                  : t('roadmap_change_background') || 'Change Background'}
+              </Text>
+              <Animated.Text
+                style={[
+                  styles.optionButtonIcon,
+                  {
+                    color: themeDefinition.colors.text + 'AA',
+                    transform: [{ rotate: accordionChevronRotation }],
+                  },
+                ]}
+              >
+                ⌄
+              </Animated.Text>
+            </View>
           </TouchableOpacity>
 
           {/* Background picker */}
           {showBackgroundPicker && (
+            <Animated.View
+              style={{
+                opacity: backgroundAccordionAnim,
+                transform: [
+                  {
+                    translateY: backgroundAccordionAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [-8, 0],
+                    }),
+                  },
+                ],
+              }}
+            >
             <View style={[styles.backgroundGrid, { marginTop: scale(12) }]}>
               {ROADMAP_BACKGROUND_OPTIONS.map(gradient => (
                 <TouchableOpacity
@@ -1145,6 +1219,7 @@ const RoadmapEditorScreen: React.FC = () => {
                 )}
               </TouchableOpacity>
             </View>
+            </Animated.View>
           )}
         </View>
 
@@ -1288,10 +1363,19 @@ const styles = StyleSheet.create({
   optionButton: {
     borderRadius: 8,
     borderWidth: 1,
+  },
+  optionButtonRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
   optionButtonText: {
     fontWeight: '500',
+  },
+  optionButtonIcon: {
+    fontSize: 18,
+    fontWeight: '600',
+    includeFontPadding: false,
   },
   backgroundGrid: {
     flexDirection: 'row',
