@@ -1,4 +1,5 @@
 import type { SlideBackgroundGradient } from '../services/StorageService';
+import { ROADMAP_BACKGROUNDS } from './roadmapTemplates';
 
 export const GRADIENT_VARIANTS: SlideBackgroundGradient[] = [
   {
@@ -77,10 +78,27 @@ export const GRADIENT_VARIANTS: SlideBackgroundGradient[] = [
 
 export const DEFAULT_GRADIENT: SlideBackgroundGradient = GRADIENT_VARIANTS[0];
 
+export const WHITE_BACKGROUND: SlideBackgroundGradient = {
+  id: 'white',
+  colors: ['#FFFFFF', '#FFFFFF'],
+  start: { x: 0, y: 0 },
+  end: { x: 1, y: 1 },
+};
+
+export const ROADMAP_BACKGROUND_OPTIONS: SlideBackgroundGradient[] = [
+  ...ROADMAP_BACKGROUNDS.filter(bg => bg.id !== 'deep_void' && bg.id !== 'charcoal').map(bg => ({
+    id: bg.id,
+    colors: bg.colors,
+    start: bg.start,
+    end: bg.end,
+  })),
+  WHITE_BACKGROUND,
+  ...GRADIENT_VARIANTS,
+];
+
 export const getGradientById = (id: string | undefined | null): SlideBackgroundGradient => {
   if (!id) {
     return DEFAULT_GRADIENT;
   }
   return GRADIENT_VARIANTS.find(gradient => gradient.id === id) ?? DEFAULT_GRADIENT;
 };
-

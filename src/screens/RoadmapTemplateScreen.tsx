@@ -25,7 +25,12 @@ import type { SlideBackgroundGradient } from '../services/StorageService';
 
 type RootStackParamList = {
   RoadmapBackground: { templateId: string; projectId: string };
-  RoadmapEditor: { projectId: string; templateId?: string; backgroundGradient?: SlideBackgroundGradient };
+  RoadmapEditor: {
+    projectId: string;
+    templateId?: string;
+    backgroundGradient?: SlideBackgroundGradient;
+    backgroundImageUri?: string;
+  };
   Home: undefined;
 };
 

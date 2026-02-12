@@ -25,9 +25,9 @@ import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import FeedbackService from '../services/FeedbackService';
 import { useResponsive } from '../hooks/useResponsive';
-import { getRoadmapTemplateById, ROADMAP_BACKGROUNDS } from '../constants/roadmapTemplates';
+import { getRoadmapTemplateById } from '../constants/roadmapTemplates';
 import { getRoadmapImageBackedTemplateConfig } from '../constants/roadmapTemplateAssets';
-import { GRADIENT_VARIANTS } from '../constants/gradients';
+import { ROADMAP_BACKGROUND_OPTIONS } from '../constants/gradients';
 import { SkiaRoadmapRenderer } from '../components/roadmap';
 import {
   createRoadmapProject,
@@ -71,7 +71,12 @@ const CAROUSEL_COLOR_OPTIONS = [
 ];
 
 type RootStackParamList = {
-  RoadmapEditor: { projectId: string; templateId?: string; backgroundGradient?: SlideBackgroundGradient };
+  RoadmapEditor: {
+    projectId: string;
+    templateId?: string;
+    backgroundGradient?: SlideBackgroundGradient;
+    backgroundImageUri?: string;
+  };
   Preview: { slides: any[]; projectType: 'roadmap' };
   Home: undefined;
 };
@@ -79,20 +84,15 @@ type RootStackParamList = {
 type RoadmapEditorRouteProp = RouteProp<RootStackParamList, 'RoadmapEditor'>;
 type RoadmapEditorNavigationProp = StackNavigationProp<RootStackParamList, 'Preview'>;
 
-const ALL_BACKGROUNDS: SlideBackgroundGradient[] = [
-  ...ROADMAP_BACKGROUNDS.map(bg => ({
-    id: bg.id,
-    colors: bg.colors,
-    start: bg.start,
-    end: bg.end,
-  })),
-  ...GRADIENT_VARIANTS,
-];
-
 const RoadmapEditorScreen: React.FC = () => {
   const navigation = useNavigation<RoadmapEditorNavigationProp>();
   const route = useRoute<RoadmapEditorRouteProp>();
-  const { projectId, templateId: routeTemplateId, backgroundGradient: routeBackground } = route.params;
+  const {
+    projectId,
+    templateId: routeTemplateId,
+    backgroundGradient: routeBackground,
+    backgroundImageUri: routeBackgroundImageUri,
+  } = route.params;
   const { themeDefinition } = useTheme();
   const { t } = useLanguage();
   const { scale, scaleFont } = useResponsive();
@@ -126,13 +126,14 @@ const RoadmapEditorScreen: React.FC = () => {
       const project = createRoadmapProject(template, projectId);
       setSlide({
         ...project.slide,
-        backgroundType: 'gradient',
-        backgroundGradient: routeBackground || ALL_BACKGROUNDS[0],
+        backgroundType: routeBackgroundImageUri ? 'image' : 'gradient',
+        backgroundGradient: routeBackground || ROADMAP_BACKGROUND_OPTIONS[0],
+        backgroundImageUri: routeBackgroundImageUri,
         ...(isCarouselTemplate ? { carouselData: createDefaultCarouselData(3) } : {}),
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [template, projectId]);
+  }, [projectId, routeBackground, routeBackgroundImageUri, template]);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -301,10 +302,30 @@ const RoadmapEditorScreen: React.FC = () => {
         ...prev,
         backgroundType: 'gradient',
         backgroundGradient: gradient,
+        backgroundImageUri: undefined,
       };
     });
     setShowBackgroundPicker(false);
   }, []);
+
+  const handleBackgroundImageChange = useCallback(async () => {
+    try {
+      const imageUri = await ImageService.pickFromGallery(t);
+      if (!imageUri) return;
+      FeedbackService.buttonTap();
+      setSlide(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          backgroundType: 'image',
+          backgroundImageUri: imageUri,
+        };
+      });
+      setShowBackgroundPicker(false);
+    } catch (error) {
+      console.error('Error picking background image:', error);
+    }
+  }, [t]);
 
   // Handle stroke color change
   const handleStrokeColorChange = useCallback((color: string) => {
@@ -1052,7 +1073,7 @@ const RoadmapEditorScreen: React.FC = () => {
           {/* Background picker */}
           {showBackgroundPicker && (
             <View style={[styles.backgroundGrid, { marginTop: scale(12) }]}>
-              {ALL_BACKGROUNDS.map(gradient => (
+              {ROADMAP_BACKGROUND_OPTIONS.map(gradient => (
                 <TouchableOpacity
                   key={gradient.id}
                   style={[
@@ -1061,8 +1082,13 @@ const RoadmapEditorScreen: React.FC = () => {
                       width: scale(48),
                       height: scale(48),
                       borderRadius: scale(8),
-                      borderWidth: slide.backgroundGradient?.id === gradient.id ? 3 : 1,
+                      borderWidth:
+                        slide.backgroundType === 'gradient' &&
+                        slide.backgroundGradient?.id === gradient.id
+                          ? 3
+                          : 1,
                       borderColor:
+                        slide.backgroundType === 'gradient' &&
                         slide.backgroundGradient?.id === gradient.id
                           ? '#007AFF'
                           : themeDefinition.colors.border,
@@ -1078,6 +1104,46 @@ const RoadmapEditorScreen: React.FC = () => {
                   />
                 </TouchableOpacity>
               ))}
+              <TouchableOpacity
+                style={[
+                  styles.backgroundSwatch,
+                  {
+                    width: scale(48),
+                    height: scale(48),
+                    borderRadius: scale(8),
+                    borderWidth: slide.backgroundType === 'image' ? 3 : 1,
+                    borderColor:
+                      slide.backgroundType === 'image'
+                        ? '#007AFF'
+                        : themeDefinition.colors.border,
+                    marginRight: scale(8),
+                    marginBottom: scale(8),
+                    backgroundColor: themeDefinition.colors.background,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  },
+                ]}
+                onPress={handleBackgroundImageChange}
+              >
+                {slide.backgroundType === 'image' && slide.backgroundImageUri ? (
+                  <Image
+                    source={{ uri: slide.backgroundImageUri }}
+                    style={[styles.imagePickerPreview, { borderRadius: scale(6) }]}
+                  />
+                ) : (
+                  <Text
+                    style={[
+                      styles.imagePickerText,
+                      {
+                        color: themeDefinition.colors.text + '99',
+                        fontSize: scaleFont(10),
+                      },
+                    ]}
+                  >
+                    Custom
+                  </Text>
+                )}
+              </TouchableOpacity>
             </View>
           )}
         </View>

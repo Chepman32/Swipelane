@@ -33,7 +33,12 @@ export type RootStackParamList = {
   // Roadmap screens
   RoadmapTemplate: undefined;
   RoadmapBackground: { templateId: string; projectId: string };
-  RoadmapEditor: { projectId: string; templateId?: string; backgroundGradient?: SlideBackgroundGradient };
+  RoadmapEditor: {
+    projectId: string;
+    templateId?: string;
+    backgroundGradient?: SlideBackgroundGradient;
+    backgroundImageUri?: string;
+  };
 };
 
 const Stack = createStackNavigator<RootStackParamList>();

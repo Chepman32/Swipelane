@@ -22,12 +22,12 @@ export interface RoadmapImageBackedTemplateConfig {
   source: number;
   originalWidth: number;
   originalHeight: number;
-  canvasBackgroundColor: string;
+  canvasBackgroundColor?: string;
   textSlots: RoadmapImageTextSlotConfig[];
 }
 
 export const ROADMAP_TEMPLATE_IMAGES = {
-  grid_4_circles: require('../assets/templates/694FFAFD-27CF-4DC0-94BA-6FF46B70664D.jpg'),
+  grid_4_circles: require('../assets/templates/694FFAFD-27CF-4DC0-94BA-6FF46B70664D.png'),
   diagonal_3_circles: require('../assets/templates/084C532A-15B3-478C-8F7B-724D433963B4.png'),
   winding_5_road: require('../assets/templates/C08B69DD-104A-4963-B5E0-D5D820319629.png'),
   linear_4_chain: require('../assets/templates/IMG_0497.png'),
@@ -43,7 +43,6 @@ export const ROADMAP_IMAGE_BACKED_TEMPLATE_CONFIG: Record<
     source: ROADMAP_TEMPLATE_IMAGES.grid_4_circles,
     originalWidth: 1044,
     originalHeight: 896,
-    canvasBackgroundColor: '#E7E7E7',
     textSlots: [
       {
         circleId: 'c1',
@@ -157,7 +156,6 @@ export const ROADMAP_IMAGE_BACKED_TEMPLATE_CONFIG: Record<
     source: ROADMAP_TEMPLATE_IMAGES.winding_5_road,
     originalWidth: 1536,
     originalHeight: 1024,
-    canvasBackgroundColor: '#E7E7E7',
     textSlots: [
       { circleId: 'c1', label: { x: 0.16, y: 0.39, maxWidth: 0.12, align: 'center', color: '#FFFFFF', font: 'body' } },
       { circleId: 'c2', label: { x: 0.40, y: 0.24, maxWidth: 0.12, align: 'center', color: '#FFFFFF', font: 'body' } },

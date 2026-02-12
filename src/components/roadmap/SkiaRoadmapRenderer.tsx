@@ -661,15 +661,7 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
             <>
 
           {/* Background layer */}
-          {imageTemplateConfig ? (
-            <Rect
-              x={0}
-              y={0}
-              width={size.width}
-              height={size.height}
-              color={imageTemplateConfig.canvasBackgroundColor}
-            />
-          ) : slide.backgroundType === 'image' && backgroundImage ? (
+          {slide.backgroundType === 'image' && backgroundImage ? (
             <Image
               image={backgroundImage}
               x={0}
@@ -685,6 +677,22 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
               width={size.width}
               height={size.height}
               color={slide.backgroundColor}
+            />
+          ) : slide.backgroundType === 'gradient' ? (
+            <Rect x={0} y={0} width={size.width} height={size.height}>
+              <LinearGradient
+                start={gradientPoints.start}
+                end={gradientPoints.end}
+                colors={gradientPoints.colors}
+              />
+            </Rect>
+          ) : imageTemplateConfig?.canvasBackgroundColor ? (
+            <Rect
+              x={0}
+              y={0}
+              width={size.width}
+              height={size.height}
+              color={imageTemplateConfig.canvasBackgroundColor}
             />
           ) : (
             <Rect x={0} y={0} width={size.width} height={size.height}>
