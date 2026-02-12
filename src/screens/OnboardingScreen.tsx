@@ -11,6 +11,7 @@ import {
   Platform,
   PanResponder,
 } from 'react-native';
+import LottieView from 'lottie-react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -26,12 +27,6 @@ import { onboardingSlides } from '../constants/onboarding';
 import StorageService from '../services/StorageService';
 import { useLanguage } from '../context/LanguageContext';
 import FeedbackService from '../services/FeedbackService';
-
-import TextBloomAnimation from '../components/onboarding/TextBloomAnimation';
-import VoiceWaveAnimation from '../components/onboarding/VoiceWaveAnimation';
-import RoadmapPathAnimation from '../components/onboarding/RoadmapPathAnimation';
-import FlowTuneAnimation from '../components/onboarding/FlowTuneAnimation';
-import AutosaveShieldAnimation from '../components/onboarding/AutosaveShieldAnimation';
 
 const { width } = Dimensions.get('window');
 const SLIDE_COUNT = onboardingSlides.length;
@@ -66,14 +61,6 @@ const OnboardingScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const textOpacity = useSharedValue(1);
   const { t } = useLanguage();
   const flatListRef = useRef<any>(null);
-
-  const animationComponents = {
-    TextBloomAnimation,
-    VoiceWaveAnimation,
-    FlowTuneAnimation,
-    RoadmapPathAnimation,
-    AutosaveShieldAnimation,
-  };
 
   // Background color interpolates between accent colors as user scrolls
   const bgColor = useDerivedValue(() =>
@@ -182,11 +169,16 @@ const OnboardingScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const isLast = currentIndex === SLIDE_COUNT - 1;
 
   const renderSlide = ({ item }: { item: typeof onboardingSlides[0] }) => {
-    const AnimationComponent = animationComponents[item.svgComponent as keyof typeof animationComponents];
     return (
       <View style={[styles.slide, { width }]}>
         <View style={styles.animationContainer}>
-          {AnimationComponent && <AnimationComponent />}
+          <LottieView
+            source={item.lottieSource}
+            autoPlay
+            loop
+            style={styles.lottie}
+            resizeMode="contain"
+          />
         </View>
       </View>
     );
@@ -290,6 +282,10 @@ const styles = StyleSheet.create({
     height: 260,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  lottie: {
+    width: '100%',
+    height: '100%',
   },
   skipButton: {
     position: 'absolute',

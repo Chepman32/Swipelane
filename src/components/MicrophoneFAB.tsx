@@ -6,13 +6,10 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
-import LottieView from 'lottie-react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useResponsive } from '../hooks/useResponsive';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
 import FeedbackService from '../services/FeedbackService';
-
-const recordingAnimation = require('../assets/animations/Recording bubble red.json');
 
 interface MicrophoneFABProps {
   onTextReceived: (text: string) => void;
@@ -73,13 +70,18 @@ export const MicrophoneFAB: React.FC<MicrophoneFABProps> = ({
         activeOpacity={0.7}
       >
         {isListening ? (
-          <LottieView
-            source={recordingAnimation}
-            autoPlay
-            loop
-            resizeMode="contain"
-            style={{ width: buttonSize * 1.6, height: buttonSize * 1.6 }}
-          />
+          <View
+            style={[
+              styles.recordingIndicator,
+              {
+                width: buttonSize * 1.08,
+                height: buttonSize * 1.08,
+                borderRadius: (buttonSize * 1.08) / 2,
+              },
+            ]}
+          >
+            <Text style={[styles.icon, { fontSize: scale(24) }]}>🎤</Text>
+          </View>
         ) : (
           <Text style={[styles.icon, { fontSize: scale(24) }]}>🎤</Text>
         )}
@@ -106,6 +108,13 @@ const styles = StyleSheet.create({
   },
   icon: {
     color: '#fff',
+  },
+  recordingIndicator: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#ef4444',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.9)',
   },
 });
 
