@@ -723,24 +723,12 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
                 const content = slide.circles.find(c => c.circleId === circle.id);
                 if (!content) return null;
 
-                const { cx, cy, r } = getCircleGeometry(circle, imageTemplateFrame);
                 const labelText = content.label?.trim() || '';
                 const detailText = content.text?.trim() || '';
                 const textSlot = textSlotsByCircleId.get(circle.id);
 
                 return (
                   <Group key={circle.id}>
-                    {selectedCircleId === circle.id && (
-                      <Circle
-                        cx={cx}
-                        cy={cy}
-                        r={r + 4}
-                        color="rgba(0, 122, 255, 0.75)"
-                        style="stroke"
-                        strokeWidth={Math.max(2, r * 0.08)}
-                      />
-                    )}
-
                     {renderTemplateTextLines(
                       labelText,
                       textSlot?.label,

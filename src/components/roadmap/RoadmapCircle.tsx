@@ -29,7 +29,7 @@ const RoadmapCircle: React.FC<RoadmapCircleProps> = ({
   height,
   strokeColor,
   strokeWidth,
-  isSelected = false,
+  isSelected: _isSelected = false,
 }) => {
   // Use built-in font or load custom font
   const font = useFont(require('../../assets/fonts/Fira_Sans/FiraSans-SemiBold.ttf'), 14);
@@ -101,18 +101,6 @@ const RoadmapCircle: React.FC<RoadmapCircleProps> = ({
 
   return (
     <Group>
-      {/* Selection highlight */}
-      {isSelected && (
-        <Circle
-          cx={dimensions.cx}
-          cy={dimensions.cy}
-          r={dimensions.r + strokeWidth * 2}
-          color="rgba(255, 255, 255, 0.3)"
-          style="stroke"
-          strokeWidth={strokeWidth}
-        />
-      )}
-
       {/* Circle outline */}
       <Circle
         cx={dimensions.cx}
