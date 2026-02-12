@@ -47,10 +47,10 @@ export const ROADMAP_IMAGE_BACKED_TEMPLATE_CONFIG: Record<
     textSlots: [
       {
         circleId: 'c1',
-        label: { x: 0.17, y: 0.30, maxWidth: 0.18, align: 'right', color: '#D85D4C', font: 'title' },
+        label: { x: 0.16, y: 0.33, maxWidth: 0.18, align: 'right', color: '#D85D4C', font: 'title' },
         detail: {
-          x: 0.17,
-          y: 0.35,
+          x: 0.16,
+          y: 0.38,
           maxWidth: 0.18,
           align: 'right',
           color: '#515151',
@@ -61,10 +61,10 @@ export const ROADMAP_IMAGE_BACKED_TEMPLATE_CONFIG: Record<
       },
       {
         circleId: 'c2',
-        label: { x: 0.82, y: 0.30, maxWidth: 0.16, align: 'left', color: '#3FAFC4', font: 'title' },
+        label: { x: 0.84, y: 0.31, maxWidth: 0.16, align: 'left', color: '#3FAFC4', font: 'title' },
         detail: {
-          x: 0.82,
-          y: 0.35,
+          x: 0.84,
+          y: 0.36,
           maxWidth: 0.16,
           align: 'left',
           color: '#515151',
@@ -89,9 +89,9 @@ export const ROADMAP_IMAGE_BACKED_TEMPLATE_CONFIG: Record<
       },
       {
         circleId: 'c4',
-        label: { x: 0.82, y: 0.66, maxWidth: 0.16, align: 'left', color: '#649366', font: 'title' },
+        label: { x: 0.84, y: 0.66, maxWidth: 0.16, align: 'left', color: '#649366', font: 'title' },
         detail: {
-          x: 0.82,
+          x: 0.84,
           y: 0.71,
           maxWidth: 0.16,
           align: 'left',
@@ -111,10 +111,10 @@ export const ROADMAP_IMAGE_BACKED_TEMPLATE_CONFIG: Record<
     textSlots: [
       {
         circleId: 'c1',
-        label: { x: 0.19, y: 0.76, maxWidth: 0.24, align: 'center', color: '#583BEE', font: 'title' },
+        label: { x: 0.19, y: 0.66, maxWidth: 0.24, align: 'center', color: '#583BEE', font: 'title' },
         detail: {
           x: 0.19,
-          y: 0.81,
+          y: 0.71,
           maxWidth: 0.26,
           align: 'center',
           color: '#F5F5F5',
@@ -125,10 +125,10 @@ export const ROADMAP_IMAGE_BACKED_TEMPLATE_CONFIG: Record<
       },
       {
         circleId: 'c2',
-        label: { x: 0.50, y: 0.88, maxWidth: 0.24, align: 'center', color: '#F23B67', font: 'title' },
+        label: { x: 0.50, y: 0.78, maxWidth: 0.24, align: 'center', color: '#F23B67', font: 'title' },
         detail: {
           x: 0.50,
-          y: 0.93,
+          y: 0.83,
           maxWidth: 0.26,
           align: 'center',
           color: '#F5F5F5',
@@ -139,10 +139,10 @@ export const ROADMAP_IMAGE_BACKED_TEMPLATE_CONFIG: Record<
       },
       {
         circleId: 'c3',
-        label: { x: 0.81, y: 0.76, maxWidth: 0.24, align: 'center', color: '#F78435', font: 'title' },
+        label: { x: 0.85, y: 0.66, maxWidth: 0.24, align: 'center', color: '#F78435', font: 'title' },
         detail: {
-          x: 0.81,
-          y: 0.81,
+          x: 0.85,
+          y: 0.71,
           maxWidth: 0.26,
           align: 'center',
           color: '#F5F5F5',
