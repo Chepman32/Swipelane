@@ -16,7 +16,11 @@ import {
 } from '@shopify/react-native-skia';
 import type { RoadmapCircleDefinition, RoadmapSlide } from '../../types/roadmap';
 import { getRoadmapTemplateById, ROADMAP_BACKGROUNDS } from '../../constants/roadmapTemplates';
-import { getRoadmapImageBackedTemplateConfig } from '../../constants/roadmapTemplateAssets';
+import {
+  getRoadmapImageBackedTemplateConfig,
+  type RoadmapImageTextAnchorConfig,
+  type RoadmapImageTextFont,
+} from '../../constants/roadmapTemplateAssets';
 import RoadmapCircle from './RoadmapCircle';
 import RoadmapConnector from './RoadmapConnector';
 
@@ -255,6 +259,88 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
   const smallFont = useFont(
     require('../../assets/fonts/Fira_Sans/FiraSans-Regular.ttf'),
     smallFontSize,
+  );
+
+  const textSlotsByCircleId = useMemo(() => {
+    const slotMap = new Map<string, NonNullable<typeof imageTemplateConfig>['textSlots'][number]>();
+    for (const slot of imageTemplateConfig?.textSlots ?? []) {
+      slotMap.set(slot.circleId, slot);
+    }
+    return slotMap;
+  }, [imageTemplateConfig]);
+
+  const getTemplateTextFont = useCallback((font: RoadmapImageTextFont | undefined) => {
+    switch (font) {
+      case 'small':
+        return smallFont;
+      case 'body':
+        return bodyFont;
+      case 'title':
+      default:
+        return titleFont;
+    }
+  }, [bodyFont, smallFont, titleFont]);
+
+  const getTemplateTextFontSize = useCallback((font: RoadmapImageTextFont | undefined) => {
+    switch (font) {
+      case 'small':
+        return smallFontSize;
+      case 'body':
+        return bodyFontSize;
+      case 'title':
+      default:
+        return titleFontSize;
+    }
+  }, [bodyFontSize, smallFontSize, titleFontSize]);
+
+  const renderTemplateTextLines = useCallback(
+    (
+      text: string,
+      anchor: RoadmapImageTextAnchorConfig | undefined,
+      keyPrefix: string,
+      frame: RectFrame,
+      fallbackColor: string,
+    ) => {
+      const trimmed = text.trim();
+      if (!trimmed || !anchor) return null;
+
+      const textFont = getTemplateTextFont(anchor.font);
+      if (!textFont) return null;
+
+      const maxWidth = Math.max(1, anchor.maxWidth * frame.width);
+      const wrappedLines = wrapTextToLines(trimmed, textFont, maxWidth);
+      if (!wrappedLines.length) return null;
+
+      const lines = anchor.maxLines ? wrappedLines.slice(0, anchor.maxLines) : wrappedLines;
+      const anchorX = frame.x + anchor.x * frame.width;
+      const anchorY = frame.y + anchor.y * frame.height;
+      const lineHeight =
+        getTemplateTextFontSize(anchor.font) * (anchor.lineHeightMultiplier ?? 1.25);
+
+      return lines.map((line, index) => {
+        const lineWidth = textFont.measureText(line).width;
+        const align = anchor.align ?? 'left';
+        let x = anchorX;
+
+        if (align === 'center') {
+          x = anchorX - lineWidth / 2;
+        } else if (align === 'right') {
+          x = anchorX - lineWidth;
+        }
+
+        return (
+          <SkiaText
+            key={`${keyPrefix}-${index}`}
+            x={x}
+            y={anchorY + index * lineHeight}
+            text={line}
+            font={textFont}
+            color={anchor.color || fallbackColor}
+          />
+        );
+      });
+    },
+    [getTemplateTextFont, getTemplateTextFontSize],
   );
 
   // Carousel-specific image hooks (always called, return null when not carousel)
@@ -575,7 +661,15 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
             <>
 
           {/* Background layer */}
-          {slide.backgroundType === 'image' && backgroundImage ? (
+          {imageTemplateConfig ? (
+            <Rect
+              x={0}
+              y={0}
+              width={size.width}
+              height={size.height}
+              color={imageTemplateConfig.canvasBackgroundColor}
+            />
+          ) : slide.backgroundType === 'image' && backgroundImage ? (
             <Image
               image={backgroundImage}
               x={0}
@@ -624,29 +718,7 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
                 const { cx, cy, r } = getCircleGeometry(circle, imageTemplateFrame);
                 const labelText = content.label?.trim() || '';
                 const detailText = content.text?.trim() || '';
-                const hideDefaultFifthStepLabel =
-                  slide.templateId === 'winding_5_road' &&
-                  circle.id === 'c5' &&
-                  /^step\s*5$/i.test(labelText);
-                const renderedLabelText = hideDefaultFifthStepLabel ? '' : labelText;
-                const linearLabelXOffset =
-                  slide.templateId === 'linear_4_chain' && circle.id === 'c1'
-                    ? titleFontSize * 0.35
-                    : 0;
-
-                const linearLabelY = Math.min(
-                  imageTemplateFrame.y + imageTemplateFrame.height - titleFontSize * 0.5,
-                  cy + r * 2.7,
-                );
-                const windingTopCircleOffset = circle.position.y <= 0.45 ? r * 1.5 : 0;
-                const windingLabelBelowY = Math.min(
-                  imageTemplateFrame.y + imageTemplateFrame.height - titleFontSize * 0.5,
-                  cy + r + titleFontSize * 1.4 + windingTopCircleOffset,
-                );
-                const windingDetailY = Math.min(
-                  imageTemplateFrame.y + imageTemplateFrame.height - bodyFontSize * 0.4,
-                  windingLabelBelowY + bodyFontSize * 1.4,
-                );
+                const textSlot = textSlotsByCircleId.get(circle.id);
 
                 return (
                   <Group key={circle.id}>
@@ -661,43 +733,19 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
                       />
                     )}
 
-                    {imageTemplateConfig.textMode === 'linear_under_arrows' &&
-                      renderedLabelText &&
-                      titleFont && (
-                        <SkiaText
-                          x={
-                            cx -
-                            titleFont.measureText(renderedLabelText).width / 2 +
-                            linearLabelXOffset
-                          }
-                          y={linearLabelY}
-                          text={renderedLabelText}
-                          font={titleFont}
-                          color="#2D2D2D"
-                        />
-                      )}
-
-                    {imageTemplateConfig.textMode === 'winding_above_and_below' && (
-                      <>
-                        {renderedLabelText && titleFont && (
-                          <SkiaText
-                            x={cx - titleFont.measureText(renderedLabelText).width / 2}
-                            y={windingLabelBelowY}
-                            text={renderedLabelText}
-                            font={titleFont}
-                            color="#2D2D2D"
-                          />
-                        )}
-                        {detailText && bodyFont && (
-                          <SkiaText
-                            x={cx - bodyFont.measureText(detailText).width / 2}
-                            y={windingDetailY}
-                            text={detailText}
-                            font={bodyFont}
-                            color="#3D3D3D"
-                          />
-                        )}
-                      </>
+                    {renderTemplateTextLines(
+                      labelText,
+                      textSlot?.label,
+                      `${circle.id}-label`,
+                      imageTemplateFrame,
+                      '#2D2D2D',
+                    )}
+                    {renderTemplateTextLines(
+                      detailText,
+                      textSlot?.detail,
+                      `${circle.id}-detail`,
+                      imageTemplateFrame,
+                      '#3D3D3D',
                     )}
                   </Group>
                 );

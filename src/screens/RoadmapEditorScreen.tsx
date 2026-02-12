@@ -114,8 +114,11 @@ const RoadmapEditorScreen: React.FC = () => {
     [templateId],
   );
   const isImageBackedTemplate = Boolean(imageTemplateConfig);
+  const isFigureEightTemplate = templateId === 'grid_4_circles';
+  const isInfinityLoopTemplate = templateId === 'diagonal_3_circles';
+  const isHorizontalLoopTemplate = templateId === 'winding_5_road';
   const isLinearChainTemplate = templateId === 'linear_4_chain';
-  const isWindingRoadTemplate = templateId === 'winding_5_road';
+  const supportsSecondaryText = isFigureEightTemplate || isInfinityLoopTemplate;
 
   // Initialize slide only once
   useEffect(() => {
@@ -130,28 +133,6 @@ const RoadmapEditorScreen: React.FC = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [template, projectId]);
-
-  // Normalize legacy defaults for winding template in already-open slides.
-  useEffect(() => {
-    if (!slide || slide.templateId !== 'winding_5_road') return;
-
-    const hasDefaultFifthStepLabel = slide.circles.some(
-      c => c.circleId === 'c5' && /^step\s*5$/i.test(c.label.trim()),
-    );
-    if (!hasDefaultFifthStepLabel) return;
-
-    setSlide(prev => {
-      if (!prev || prev.templateId !== 'winding_5_road') return prev;
-      return {
-        ...prev,
-        circles: prev.circles.map(c =>
-          c.circleId === 'c5' && /^step\s*5$/i.test(c.label.trim())
-            ? { ...c, label: '' }
-            : c,
-        ),
-      };
-    });
-  }, [slide]);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -376,6 +357,20 @@ const RoadmapEditorScreen: React.FC = () => {
     : imageTemplateConfig
       ? previewWidth * (imageTemplateConfig.originalHeight / imageTemplateConfig.originalWidth)
       : previewWidth * 1.2;
+
+  const circleLabelInputLabel = isLinearChainTemplate
+    ? 'Text Under Arrow'
+    : isHorizontalLoopTemplate
+      ? 'Zone Text'
+      : supportsSecondaryText
+        ? 'Heading'
+        : t('roadmap_label') || 'Label';
+
+  const circleLabelPlaceholder = isHorizontalLoopTemplate
+    ? 'Zone text...'
+    : supportsSecondaryText
+      ? 'Infographic 01'
+      : 'Step 1';
 
   if (!template || !slide) {
     return null;
@@ -690,11 +685,7 @@ const RoadmapEditorScreen: React.FC = () => {
                 { color: themeDefinition.colors.text + '99', fontSize: scaleFont(12), marginBottom: scale(4) },
               ]}
             >
-              {isLinearChainTemplate
-                ? 'Text Under Arrow'
-                : isWindingRoadTemplate
-                  ? 'Step Text'
-                  : t('roadmap_label') || 'Label'}
+              {circleLabelInputLabel}
             </Text>
             <TextInput
               style={[
@@ -710,11 +701,11 @@ const RoadmapEditorScreen: React.FC = () => {
               ]}
               value={selectedCircleContent.label}
               onChangeText={handleLabelChange}
-              placeholder={isWindingRoadTemplate ? 'Step text...' : 'Step 1'}
+              placeholder={circleLabelPlaceholder}
               placeholderTextColor={themeDefinition.colors.text + '66'}
             />
 
-            {isWindingRoadTemplate && (
+            {supportsSecondaryText && (
               <>
                 <Text
                   style={[
@@ -727,7 +718,7 @@ const RoadmapEditorScreen: React.FC = () => {
                     },
                   ]}
                 >
-                  Text Under Circle
+                  Description
                 </Text>
                 <TextInput
                   style={[
@@ -743,7 +734,7 @@ const RoadmapEditorScreen: React.FC = () => {
                   ]}
                   value={selectedCircleContent.text || ''}
                   onChangeText={handleContentTextChange}
-                  placeholder="Bottom text..."
+                  placeholder="Description..."
                   placeholderTextColor={themeDefinition.colors.text + '66'}
                   multiline
                 />

@@ -42,143 +42,61 @@ export const ROADMAP_BACKGROUNDS = [
   },
 ];
 
-// Template 1: 4 circles in 2x2 grid with S-curve connectors
-// Matching the first attached image
+// Template 1: Figure-8 loop with four side icons
+// Image-backed; circles are used as editable tap targets near icons.
 export const GRID_4_CIRCLES_TEMPLATE: RoadmapTemplate = {
   id: 'grid_4_circles',
-  name: '4-Step Journey',
-  description: 'Four steps in a 2x2 grid with flowing path',
+  name: 'Figure 8 Loop',
+  description: 'Big colorful 8 with icon-side content blocks',
   circleCount: 4,
   circles: [
-    { id: 'c1', position: { x: 0.22, y: 0.25 }, radius: ROADMAP_DEFAULTS.circleRadius, labelPosition: 'bottom' },
-    { id: 'c2', position: { x: 0.78, y: 0.25 }, radius: ROADMAP_DEFAULTS.circleRadius, labelPosition: 'bottom' },
-    { id: 'c3', position: { x: 0.22, y: 0.65 }, radius: ROADMAP_DEFAULTS.circleRadius, labelPosition: 'bottom' },
-    { id: 'c4', position: { x: 0.78, y: 0.75 }, radius: ROADMAP_DEFAULTS.circleRadius, labelPosition: 'bottom' },
+    { id: 'c1', position: { x: 0.23, y: 0.34 }, radius: 0.048, labelPosition: 'bottom' },
+    { id: 'c2', position: { x: 0.77, y: 0.34 }, radius: 0.048, labelPosition: 'bottom' },
+    { id: 'c3', position: { x: 0.23, y: 0.69 }, radius: 0.048, labelPosition: 'bottom' },
+    { id: 'c4', position: { x: 0.77, y: 0.69 }, radius: 0.048, labelPosition: 'bottom' },
   ],
-  connectors: [
-    // c1 to c2: horizontal curve going right
-    {
-      from: 'c1',
-      to: 'c2',
-      controlPoints: [
-        { x: 0.40, y: 0.18 },
-        { x: 0.60, y: 0.18 },
-      ],
-    },
-    // c2 to c3: diagonal S-curve going down-left
-    {
-      from: 'c2',
-      to: 'c3',
-      controlPoints: [
-        { x: 0.78, y: 0.45 },
-        { x: 0.22, y: 0.45 },
-      ],
-    },
-    // c3 to c4: curve going right and slightly down
-    {
-      from: 'c3',
-      to: 'c4',
-      controlPoints: [
-        { x: 0.40, y: 0.80 },
-        { x: 0.60, y: 0.70 },
-      ],
-    },
-  ],
+  connectors: [],
   defaultStrokeColor: ROADMAP_DEFAULTS.strokeColor,
   defaultStrokeWidth: ROADMAP_DEFAULTS.strokeWidth,
   defaultDashPattern: ROADMAP_DEFAULTS.dashPattern,
 };
 
-// Template 2: 3 circles in diagonal arrangement
-// Matching the second attached image
+// Template 2: Infinity loop with three colored circles
+// Image-backed; circles are used as editable tap targets.
 export const DIAGONAL_3_CIRCLES_TEMPLATE: RoadmapTemplate = {
   id: 'diagonal_3_circles',
-  name: '3-Step Path',
-  description: 'Three steps in a diagonal ascending path',
+  name: 'Infinity Loop',
+  description: 'Three circle callouts under an infinity path',
   circleCount: 3,
   circles: [
-    { id: 'c1', position: { x: 0.25, y: 0.70 }, radius: ROADMAP_DEFAULTS.circleRadius, labelPosition: 'bottom' },
-    { id: 'c2', position: { x: 0.55, y: 0.50 }, radius: ROADMAP_DEFAULTS.circleRadius, labelPosition: 'bottom' },
-    { id: 'c3', position: { x: 0.75, y: 0.25 }, radius: ROADMAP_DEFAULTS.circleRadius, labelPosition: 'bottom' },
+    { id: 'c1', position: { x: 0.19, y: 0.56 }, radius: 0.055, labelPosition: 'bottom' },
+    { id: 'c2', position: { x: 0.50, y: 0.69 }, radius: 0.055, labelPosition: 'bottom' },
+    { id: 'c3', position: { x: 0.81, y: 0.56 }, radius: 0.055, labelPosition: 'bottom' },
   ],
-  connectors: [
-    // c1 to c2: curve going up-right
-    {
-      from: 'c1',
-      to: 'c2',
-      controlPoints: [
-        { x: 0.35, y: 0.55 },
-        { x: 0.45, y: 0.55 },
-      ],
-    },
-    // c2 to c3: curve continuing up-right, with loop around c2
-    {
-      from: 'c2',
-      to: 'c3',
-      controlPoints: [
-        { x: 0.65, y: 0.60 },
-        { x: 0.70, y: 0.40 },
-      ],
-    },
-  ],
+  connectors: [],
   defaultStrokeColor: ROADMAP_DEFAULTS.strokeColor,
   defaultStrokeWidth: ROADMAP_DEFAULTS.strokeWidth,
   defaultDashPattern: ROADMAP_DEFAULTS.dashPattern,
 };
 
-// Template 3: 5 circles alternating above/below a winding S-road
-// Matching IMG_0498: sinusoidal road with icons along the path
-// Canvas is portrait 5:6; circles span x 14%-84%, y 36%-62% of canvas
+// Template 3: Horizontal looped track (infinity zones)
+// Image-backed; eight tap targets map to colored loop zones.
 export const WINDING_5_ROAD_TEMPLATE: RoadmapTemplate = {
   id: 'winding_5_road',
-  name: '5-Step Winding Road',
-  description: 'Five steps along a winding road path',
-  circleCount: 5,
+  name: 'Horizontal Loop Track',
+  description: 'Place text directly on colored infinity zones',
+  circleCount: 8,
   circles: [
-    { id: 'c1', position: { x: 0.14, y: 0.36 }, radius: 0.09, labelPosition: 'bottom' },
-    { id: 'c2', position: { x: 0.34, y: 0.58 }, radius: 0.09, labelPosition: 'bottom' },
-    { id: 'c3', position: { x: 0.50, y: 0.36 }, radius: 0.09, labelPosition: 'bottom' },
-    { id: 'c4', position: { x: 0.66, y: 0.58 }, radius: 0.09, labelPosition: 'bottom' },
-    { id: 'c5', position: { x: 0.84, y: 0.36 }, radius: 0.09, labelPosition: 'bottom' },
+    { id: 'c1', position: { x: 0.21, y: 0.25 }, radius: 0.055, labelPosition: 'bottom' },
+    { id: 'c2', position: { x: 0.38, y: 0.15 }, radius: 0.055, labelPosition: 'bottom' },
+    { id: 'c3', position: { x: 0.63, y: 0.15 }, radius: 0.055, labelPosition: 'bottom' },
+    { id: 'c4', position: { x: 0.80, y: 0.25 }, radius: 0.055, labelPosition: 'bottom' },
+    { id: 'c5', position: { x: 0.80, y: 0.50 }, radius: 0.055, labelPosition: 'bottom' },
+    { id: 'c6', position: { x: 0.63, y: 0.61 }, radius: 0.055, labelPosition: 'bottom' },
+    { id: 'c7', position: { x: 0.38, y: 0.61 }, radius: 0.055, labelPosition: 'bottom' },
+    { id: 'c8', position: { x: 0.21, y: 0.50 }, radius: 0.055, labelPosition: 'bottom' },
   ],
-  connectors: [
-    // c1 to c2: S-curve down-right
-    {
-      from: 'c1',
-      to: 'c2',
-      controlPoints: [
-        { x: 0.21, y: 0.39 },
-        { x: 0.27, y: 0.55 },
-      ],
-    },
-    // c2 to c3: S-curve up-right
-    {
-      from: 'c2',
-      to: 'c3',
-      controlPoints: [
-        { x: 0.41, y: 0.61 },
-        { x: 0.43, y: 0.36 },
-      ],
-    },
-    // c3 to c4: S-curve down-right
-    {
-      from: 'c3',
-      to: 'c4',
-      controlPoints: [
-        { x: 0.57, y: 0.36 },
-        { x: 0.59, y: 0.55 },
-      ],
-    },
-    // c4 to c5: S-curve up-right
-    {
-      from: 'c4',
-      to: 'c5',
-      controlPoints: [
-        { x: 0.73, y: 0.61 },
-        { x: 0.77, y: 0.36 },
-      ],
-    },
-  ],
+  connectors: [],
   defaultStrokeColor: ROADMAP_DEFAULTS.strokeColor,
   defaultStrokeWidth: ROADMAP_DEFAULTS.strokeWidth,
   defaultDashPattern: ROADMAP_DEFAULTS.dashPattern,

@@ -16,7 +16,10 @@ import { useLanguage } from '../context/LanguageContext';
 import FeedbackService from '../services/FeedbackService';
 import { useResponsive } from '../hooks/useResponsive';
 import { ROADMAP_TEMPLATES, ROADMAP_BACKGROUNDS } from '../constants/roadmapTemplates';
-import { getRoadmapTemplateImageSource } from '../constants/roadmapTemplateAssets';
+import {
+  getRoadmapTemplateImageSource,
+  getRoadmapImageBackedTemplateConfig,
+} from '../constants/roadmapTemplateAssets';
 import type { RoadmapTemplate } from '../types/roadmap';
 import type { SlideBackgroundGradient } from '../services/StorageService';
 
@@ -67,6 +70,7 @@ const RoadmapTemplateScreen: React.FC = () => {
 
   const renderTemplateCard = ({ item }: { item: RoadmapTemplate }) => {
     const templateImageSource = getRoadmapTemplateImageSource(item.id);
+    const imageTemplateConfig = getRoadmapImageBackedTemplateConfig(item.id);
     const isCarousel = item.id === 'carousel';
     if (!templateImageSource && !isCarousel) return null;
 
@@ -120,7 +124,14 @@ const RoadmapTemplateScreen: React.FC = () => {
         ) : (
           <Image
             source={templateImageSource!}
-            style={[styles.templateImage, { height: previewHeight }]}
+            style={[
+              styles.templateImage,
+              {
+                height: previewHeight,
+                backgroundColor:
+                  imageTemplateConfig?.canvasBackgroundColor ?? '#1a1a2e',
+              },
+            ]}
             resizeMode="contain"
           />
         )}
@@ -198,7 +209,6 @@ const styles = StyleSheet.create({
   },
   templateImage: {
     width: '100%',
-    backgroundColor: '#1a1a2e',
   },
   templateInfo: {
     padding: 12,
