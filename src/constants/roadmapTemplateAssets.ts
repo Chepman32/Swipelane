@@ -115,18 +115,18 @@ export const ROADMAP_IMAGE_BACKED_TEMPLATE_CONFIG: Partial<
     textSlots: [
       {
         circleId: 'c1',
-        label: { x: 0.23, y: 0.72, maxWidth: 0.16, align: 'center', color: '#FFFFFF', font: 'body' },
-        detail: { x: 0.23, y: 0.82, maxWidth: 0.20, align: 'center', color: '#F2F2F2', font: 'small', maxLines: 3 },
+        label: { x: 0.23, y: 0.72, maxWidth: 0.16, align: 'center', color: '#000000', font: 'body' },
+        detail: { x: 0.23, y: 0.82, maxWidth: 0.20, align: 'center', color: '#000000', font: 'small', maxLines: 3 },
       },
       {
         circleId: 'c2',
-        label: { x: 0.82, y: 0.39, maxWidth: 0.16, align: 'center', color: '#FFFFFF', font: 'body' },
-        detail: { x: 0.82, y: 0.49, maxWidth: 0.20, align: 'center', color: '#F2F2F2', font: 'small', maxLines: 3 },
+        label: { x: 0.82, y: 0.39, maxWidth: 0.16, align: 'center', color: '#000000', font: 'body' },
+        detail: { x: 0.82, y: 0.49, maxWidth: 0.20, align: 'center', color: '#000000', font: 'small', maxLines: 3 },
       },
       {
         circleId: 'c3',
-        label: { x: 0.66, y: 0.86, maxWidth: 0.16, align: 'center', color: '#FFFFFF', font: 'body' },
-        detail: { x: 0.66, y: 0.96, maxWidth: 0.20, align: 'center', color: '#F2F2F2', font: 'small', maxLines: 3 },
+        label: { x: 0.66, y: 0.86, maxWidth: 0.16, align: 'center', color: '#000000', font: 'body' },
+        detail: { x: 0.66, y: 0.96, maxWidth: 0.20, align: 'center', color: '#000000', font: 'small', maxLines: 3 },
       },
     ],
   },
@@ -137,23 +137,23 @@ export const ROADMAP_IMAGE_BACKED_TEMPLATE_CONFIG: Partial<
     textSlots: [
       {
         circleId: 'c1',
-        label: { x: 0.25, y: 0.41, maxWidth: 0.16, align: 'center', color: '#FFFFFF', font: 'body' },
-        detail: { x: 0.25, y: 0.51, maxWidth: 0.20, align: 'center', color: '#F2F2F2', font: 'small', maxLines: 3 },
+        label: { x: 0.19, y: 0.36, maxWidth: 0.16, align: 'center', color: '#000000', font: 'body' },
+        detail: { x: 0.19, y: 0.46, maxWidth: 0.20, align: 'center', color: '#000000', font: 'small', maxLines: 3 },
       },
       {
         circleId: 'c2',
-        label: { x: 0.75, y: 0.41, maxWidth: 0.16, align: 'center', color: '#FFFFFF', font: 'body' },
-        detail: { x: 0.75, y: 0.51, maxWidth: 0.20, align: 'center', color: '#F2F2F2', font: 'small', maxLines: 3 },
+        label: { x: 0.82, y: 0.39, maxWidth: 0.16, align: 'center', color: '#000000', font: 'body' },
+        detail: { x: 0.82, y: 0.49, maxWidth: 0.20, align: 'center', color: '#000000', font: 'small', maxLines: 3 },
       },
       {
         circleId: 'c3',
-        label: { x: 0.25, y: 0.79, maxWidth: 0.16, align: 'center', color: '#FFFFFF', font: 'body' },
-        detail: { x: 0.25, y: 0.89, maxWidth: 0.20, align: 'center', color: '#F2F2F2', font: 'small', maxLines: 3 },
+        label: { x: 0.21, y: 0.75, maxWidth: 0.16, align: 'center', color: '#000000', font: 'body' },
+        detail: { x: 0.21, y: 0.85, maxWidth: 0.20, align: 'center', color: '#000000', font: 'small', maxLines: 3 },
       },
       {
         circleId: 'c4',
-        label: { x: 0.75, y: 0.79, maxWidth: 0.16, align: 'center', color: '#FFFFFF', font: 'body' },
-        detail: { x: 0.75, y: 0.89, maxWidth: 0.20, align: 'center', color: '#F2F2F2', font: 'small', maxLines: 3 },
+        label: { x: 0.81, y: 0.81, maxWidth: 0.16, align: 'center', color: '#000000', font: 'body' },
+        detail: { x: 0.81, y: 0.91, maxWidth: 0.20, align: 'center', color: '#000000', font: 'small', maxLines: 3 },
       },
     ],
   },
