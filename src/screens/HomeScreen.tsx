@@ -392,7 +392,7 @@ const HomeScreen: React.FC = () => {
           >
             <SkiaRoadmapRenderer
               slide={item.slide}
-              style={{ flex: 1 }}
+              style={{ flex: 1, width: '100%' }}
             />
           </View>
         ) : (
