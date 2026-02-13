@@ -366,8 +366,8 @@ const HomeScreen: React.FC = () => {
           styles.projectCard,
           {
             backgroundColor: themeDefinition.colors.card,
-            borderColor: isCurrent ? themeDefinition.colors.primary || '#007AFF' : themeDefinition.colors.border,
-            borderWidth: isCurrent ? 2 : 1,
+            borderColor: themeDefinition.colors.border,
+            borderWidth: 1,
             margin: scale(8),
             minHeight: isPad ? 280 : 200,
           },
@@ -381,6 +381,7 @@ const HomeScreen: React.FC = () => {
         {/* Slide Preview */}
         {item.projectKind === 'roadmap' ? (
           <View
+            pointerEvents="none"
             style={[
               styles.slidePreview,
               {
