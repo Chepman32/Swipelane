@@ -194,6 +194,21 @@ const RoadmapEditorScreen: React.FC = () => {
 
       if (cancelled) return;
       setSlide(initialSlide);
+
+      // Persist the new project immediately so it appears on HomeScreen
+      const projectToSave = {
+        id: projectId,
+        type: 'roadmap' as const,
+        name: template.name,
+        templateId: initialSlide.templateId,
+        slide: initialSlide,
+        lastModified: new Date().toISOString(),
+        isCompleted: false,
+      };
+      StorageService.saveCurrentRoadmapProject(projectToSave).catch(error => {
+        console.error('Error saving initial roadmap project:', error);
+      });
+
       initialSlideSnapshotRef.current = JSON.stringify(initialSlide);
       lastSavedSnapshotRef.current = initialSlideSnapshotRef.current;
     };
@@ -204,6 +219,23 @@ const RoadmapEditorScreen: React.FC = () => {
     };
   }, [isCarouselTemplate, projectId, routeBackground, routeBackgroundImageUri, template, slide]);
 
+  // Build a project object for saving to storage.
+  const buildProjectToSave = useCallback(
+    (overrides: { isCompleted?: boolean } = {}) => {
+      if (!slide || !template) return null;
+      return {
+        id: projectId,
+        type: 'roadmap' as const,
+        name: template.name,
+        templateId: slide.templateId,
+        slide,
+        lastModified: new Date().toISOString(),
+        isCompleted: overrides.isCompleted ?? false,
+      };
+    },
+    [projectId, slide, template],
+  );
+
   // Autosave roadmap project after any edit (background/text/colors/etc).
   useEffect(() => {
     if (!slide || !template) return;
@@ -213,15 +245,8 @@ const RoadmapEditorScreen: React.FC = () => {
     if (snapshot === lastSavedSnapshotRef.current) return;
 
     const timeout = setTimeout(() => {
-      const projectToSave = {
-        id: projectId,
-        type: 'roadmap' as const,
-        name: template.name,
-        templateId: slide.templateId,
-        slide,
-        lastModified: new Date().toISOString(),
-        isCompleted: false,
-      };
+      const projectToSave = buildProjectToSave();
+      if (!projectToSave) return;
       StorageService.saveCurrentRoadmapProject(projectToSave).catch(error => {
         console.error('Error autosaving roadmap project:', error);
       });
@@ -229,7 +254,19 @@ const RoadmapEditorScreen: React.FC = () => {
     }, 180);
 
     return () => clearTimeout(timeout);
-  }, [projectId, slide, template]);
+  }, [projectId, slide, template, buildProjectToSave]);
+
+  // Save project when navigating away (e.g. back button)
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', () => {
+      const projectToSave = buildProjectToSave();
+      if (!projectToSave) return;
+      StorageService.saveCurrentRoadmapProject(projectToSave).catch(error => {
+        console.error('Error saving roadmap project on navigate away:', error);
+      });
+    });
+    return unsubscribe;
+  }, [navigation, buildProjectToSave]);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -609,14 +646,22 @@ const RoadmapEditorScreen: React.FC = () => {
   }, [slide, t]);
 
   // Handle preview
-  const handlePreview = useCallback(() => {
+  const handlePreview = useCallback(async () => {
     if (!slide) return;
     FeedbackService.buttonTap();
+
+    // Save project as completed before navigating to preview
+    const projectToSave = buildProjectToSave({ isCompleted: true });
+    if (projectToSave) {
+      await StorageService.saveCurrentRoadmapProject(projectToSave);
+      lastSavedSnapshotRef.current = JSON.stringify(slide);
+    }
+
     navigation.navigate('Preview', {
       slides: [slide],
       projectType: 'roadmap',
     });
-  }, [slide, navigation]);
+  }, [slide, navigation, buildProjectToSave]);
 
   const horizontalContentPadding = scale(16);
   const previewWidth = width;

@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useState, useMemo } from 'react';
+import React, { useLayoutEffect, useState, useMemo, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -92,6 +92,29 @@ const RoadmapBackgroundScreen: React.FC = () => {
       headerBackTitle: t('back'),
     });
   }, [navigation, t]);
+
+  // Save project when navigating away so it appears on HomeScreen
+  const saveProject = useCallback(() => {
+    if (!previewSlide || !template) return;
+    StorageService.saveCurrentRoadmapProject({
+      id: projectId,
+      type: 'roadmap',
+      name: template.name,
+      templateId,
+      slide: previewSlide,
+      isCompleted: false,
+      lastModified: new Date().toISOString(),
+    }).catch(error => {
+      console.error('Error saving roadmap project on navigate away:', error);
+    });
+  }, [previewSlide, template, projectId, templateId]);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', () => {
+      saveProject();
+    });
+    return unsubscribe;
+  }, [navigation, saveProject]);
 
   const handleSelectGradient = (gradient: SlideBackgroundGradient) => {
     FeedbackService.buttonTap();
