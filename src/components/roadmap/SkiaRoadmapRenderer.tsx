@@ -230,13 +230,14 @@ const CircleImageFill: React.FC<CircleImageFillProps> = ({ imageUri, circle, fra
     if (!circle || !frame) return { cx: 0, cy: 0, r: 0 };
     return getCircleGeometry(circle, frame);
   }, [circle, frame, rawGeometry]);
+  const fillRadius = geometry.r * 1.06;
   const clipPath = useMemo(() => {
     const path = Skia.Path.Make();
-    if (geometry.r > 0) {
-      path.addCircle(geometry.cx, geometry.cy, geometry.r);
+    if (fillRadius > 0) {
+      path.addCircle(geometry.cx, geometry.cy, fillRadius);
     }
     return path;
-  }, [geometry.cx, geometry.cy, geometry.r]);
+  }, [fillRadius, geometry.cx, geometry.cy]);
 
   if (!image || geometry.r <= 0) return null;
 
@@ -244,10 +245,10 @@ const CircleImageFill: React.FC<CircleImageFillProps> = ({ imageUri, circle, fra
     <Group clip={clipPath} invertClip={false}>
       <Image
         image={image}
-        x={geometry.cx - geometry.r}
-        y={geometry.cy - geometry.r}
-        width={geometry.r * 2}
-        height={geometry.r * 2}
+        x={geometry.cx - fillRadius}
+        y={geometry.cy - fillRadius}
+        width={fillRadius * 2}
+        height={fillRadius * 2}
         fit="cover"
       />
     </Group>
@@ -893,17 +894,17 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
                   c1: {
                     cx: imageTemplateFrame.x + 0.220 * imageTemplateFrame.width,
                     cy: imageTemplateFrame.y + 0.577 * imageTemplateFrame.height,
-                    r: 0.122 * minDimension,
+                    r: 0.126 * minDimension,
                   },
                   c2: {
-                    cx: imageTemplateFrame.x + 0.815 * imageTemplateFrame.width,
-                    cy: imageTemplateFrame.y + 0.248 * imageTemplateFrame.height,
-                    r: 0.121 * minDimension,
+                    cx: imageTemplateFrame.x + 0.814 * imageTemplateFrame.width,
+                    cy: imageTemplateFrame.y + 0.251 * imageTemplateFrame.height,
+                    r: 0.126 * minDimension,
                   },
                   c3: {
-                    cx: imageTemplateFrame.x + 0.663 * imageTemplateFrame.width,
-                    cy: imageTemplateFrame.y + 0.691 * imageTemplateFrame.height,
-                    r: 0.111 * minDimension,
+                    cx: imageTemplateFrame.x + 0.664 * imageTemplateFrame.width,
+                    cy: imageTemplateFrame.y + 0.704 * imageTemplateFrame.height,
+                    r: 0.126 * minDimension,
                   },
                 };
 
