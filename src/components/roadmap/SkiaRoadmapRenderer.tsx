@@ -87,6 +87,13 @@ interface CornerImageLayerProps {
   height: number;
 }
 
+interface CircleImageFillProps {
+  imageUri?: string;
+  circle?: RoadmapCircleDefinition;
+  frame?: RectFrame;
+  geometry?: { cx: number; cy: number; r: number };
+}
+
 const getContainFrame = (
   containerWidth: number,
   containerHeight: number,
@@ -216,6 +223,37 @@ const CornerImageLayer: React.FC<CornerImageLayerProps> = ({ corner, width, heig
   );
 };
 
+const CircleImageFill: React.FC<CircleImageFillProps> = ({ imageUri, circle, frame, geometry: rawGeometry }) => {
+  const image = useImage(imageUri ?? null);
+  const geometry = useMemo(() => {
+    if (rawGeometry) return rawGeometry;
+    if (!circle || !frame) return { cx: 0, cy: 0, r: 0 };
+    return getCircleGeometry(circle, frame);
+  }, [circle, frame, rawGeometry]);
+  const clipPath = useMemo(() => {
+    const path = Skia.Path.Make();
+    if (geometry.r > 0) {
+      path.addCircle(geometry.cx, geometry.cy, geometry.r);
+    }
+    return path;
+  }, [geometry.cx, geometry.cy, geometry.r]);
+
+  if (!image || geometry.r <= 0) return null;
+
+  return (
+    <Group clip={clipPath} invertClip={false}>
+      <Image
+        image={image}
+        x={geometry.cx - geometry.r}
+        y={geometry.cy - geometry.r}
+        width={geometry.r * 2}
+        height={geometry.r * 2}
+        fit="cover"
+      />
+    </Group>
+  );
+};
+
 const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
   slide,
   style,
@@ -227,6 +265,7 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
   const [size, setSize] = useState<Size>({ width: 0, height: 0 });
   const isCarousel = slide.templateId === 'carousel';
   const isBubbleTimeline = slide.templateId === 'bubble_timeline_6';
+  const isThreeCircleImageTemplate = slide.templateId === 'template_3_circles';
 
   const handleLayout = useCallback((event: any) => {
     const { width, height } = event.nativeEvent.layout;
@@ -838,6 +877,50 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
                 colors={gradientPoints.colors}
               />
             </Rect>
+          )}
+
+          {/* Circle image fills for editable image-backed circles (drawn below template asset) */}
+          {!isBubbleTimeline &&
+            isThreeCircleImageTemplate &&
+            imageTemplateReady &&
+            imageTemplateConfig &&
+            imageTemplateFrame && (
+            <Group>
+              {/* template_3_circles uses image-backed artwork; these match visible ring centers */}
+              {(() => {
+                const minDimension = Math.min(imageTemplateFrame.width, imageTemplateFrame.height);
+                const overrides: Record<string, { cx: number; cy: number; r: number }> = {
+                  c1: {
+                    cx: imageTemplateFrame.x + 0.220 * imageTemplateFrame.width,
+                    cy: imageTemplateFrame.y + 0.577 * imageTemplateFrame.height,
+                    r: 0.122 * minDimension,
+                  },
+                  c2: {
+                    cx: imageTemplateFrame.x + 0.815 * imageTemplateFrame.width,
+                    cy: imageTemplateFrame.y + 0.248 * imageTemplateFrame.height,
+                    r: 0.121 * minDimension,
+                  },
+                  c3: {
+                    cx: imageTemplateFrame.x + 0.663 * imageTemplateFrame.width,
+                    cy: imageTemplateFrame.y + 0.691 * imageTemplateFrame.height,
+                    r: 0.111 * minDimension,
+                  },
+                };
+
+                return template.circles.map(circle => {
+                  const content = slide.circles.find(c => c.circleId === circle.id);
+                  if (!content?.imageUri || content.contentType !== 'image') return null;
+
+                  return (
+                    <CircleImageFill
+                      key={`${circle.id}-image-fill`}
+                      imageUri={content.imageUri}
+                      geometry={overrides[circle.id] || getCircleGeometry(circle, imageTemplateFrame)}
+                    />
+                  );
+                });
+              })()}
+            </Group>
           )}
 
           {/* Image template asset on top of selected background */}

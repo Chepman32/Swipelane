@@ -138,6 +138,7 @@ const RoadmapEditorScreen: React.FC = () => {
   const isImageBackedTemplate = Boolean(imageTemplateConfig);
   const isFigureEightTemplate = templateId === 'grid_4_circles';
   const isInfinityLoopTemplate = templateId === 'diagonal_3_circles';
+  const isThreeCirclesImageTemplate = templateId === 'template_3_circles';
   const isHorizontalLoopTemplate = templateId === 'winding_5_road';
   const isLinearChainTemplate = templateId === 'linear_4_chain';
   const isBubbleTimelineTemplate = templateId === 'bubble_timeline_6';
@@ -1122,6 +1123,63 @@ const RoadmapEditorScreen: React.FC = () => {
                 setPercentageSelection({ start: cursor, end: cursor });
               }}
             />
+
+            {isThreeCirclesImageTemplate && (
+              <>
+                <Text
+                  style={[
+                    styles.inputLabel,
+                    {
+                      color: themeDefinition.colors.text + '99',
+                      fontSize: scaleFont(12),
+                      marginBottom: scale(8),
+                    },
+                  ]}
+                >
+                  {t('select_image') || 'Select Image'}
+                </Text>
+                <View style={[styles.contentTypeRow, { marginBottom: scale(12) }]}>
+                  <TouchableOpacity
+                    style={[
+                      styles.contentTypeButton,
+                      {
+                        backgroundColor: themeDefinition.colors.background,
+                        borderColor: themeDefinition.colors.border,
+                        paddingVertical: scale(8),
+                        paddingHorizontal: scale(16),
+                        marginRight: scale(8),
+                      },
+                    ]}
+                    onPress={handleSelectCircleImage}
+                  >
+                    <Text style={{ color: themeDefinition.colors.text, fontSize: scaleFont(14) }}>
+                      {t('select_image') || 'Select Image'}
+                    </Text>
+                  </TouchableOpacity>
+                  {selectedCircleId && selectedCircleContent.imageUri && (
+                    <TouchableOpacity
+                      style={[
+                        styles.contentTypeButton,
+                        {
+                          backgroundColor: themeDefinition.colors.background,
+                          borderColor: themeDefinition.colors.border,
+                          paddingVertical: scale(8),
+                          paddingHorizontal: scale(16),
+                        },
+                      ]}
+                      onPress={() => updateCircleContent(selectedCircleId, {
+                        contentType: 'empty',
+                        imageUri: undefined,
+                      })}
+                    >
+                      <Text style={{ color: themeDefinition.colors.text, fontSize: scaleFont(14) }}>
+                        Remove
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </>
+            )}
 
             {supportsSecondaryText && (
               <>
