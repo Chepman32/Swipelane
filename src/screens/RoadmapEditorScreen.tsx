@@ -787,6 +787,9 @@ const RoadmapEditorScreen: React.FC = () => {
               ? slide.circles.map(c => ({ id: c.circleId }))
               : template.circles.map(c => ({ id: c.id }))).map((circle, index) => {
               const content = slide.circles.find(c => c.circleId === circle.id);
+              const chipLabel = content?.label
+                ? (isRibbonStepsTemplate ? content.label.replace(/\s+/g, ' ').trim() : content.label)
+                : `Step ${index + 1}`;
               return (
                 <TouchableOpacity
                   key={circle.id}
@@ -820,7 +823,7 @@ const RoadmapEditorScreen: React.FC = () => {
                       },
                     ]}
                   >
-                    {content?.label || `Step ${index + 1}`}
+                    {chipLabel}
                   </Text>
                 </TouchableOpacity>
               );
@@ -1621,7 +1624,7 @@ const RoadmapEditorScreen: React.FC = () => {
               { color: themeDefinition.colors.text, fontSize: scaleFont(16), marginBottom: scale(12) },
             ]}
           >
-            {t('roadmap_corner_images') || 'Corner Images (Logo)'}
+            {t('roadmap_corner_images') || 'Corner Images / Logo'}
           </Text>
           <View style={styles.cornerButtonsRow}>
             {(['topLeft', 'topRight', 'bottomLeft', 'bottomRight'] as CornerPosition[]).map(

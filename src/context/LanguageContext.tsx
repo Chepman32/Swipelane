@@ -427,7 +427,7 @@ const resources = {
       roadmap_style: 'Style',
       roadmap_stroke_color: 'Stroke Color',
       roadmap_change_background: 'Change Background',
-      roadmap_corner_images: 'Corner Images (Logo)',
+      roadmap_corner_images: 'Corner Images / Logo',
       roadmap_preview: 'Preview & Export',
       roadmap_description: 'Create beautiful roadmap slides with connected steps',
       roadmap_choose_template: 'Choose Template',
