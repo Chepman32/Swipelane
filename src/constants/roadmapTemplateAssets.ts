@@ -31,6 +31,8 @@ export interface RoadmapImageBackedTemplateConfig {
 
 export const ROADMAP_TEMPLATE_IMAGES = {
   grid_4_circles: require('../assets/templates/694FFAFD-27CF-4DC0-94BA-6FF46B70664D.png'),
+  template_3_circles: require('../assets/templates/template_4_circles.png'),
+  template_4_circles: require('../assets/templates/template_3_circles.png'),
   diagonal_3_circles: require('../assets/templates/084C532A-15B3-478C-8F7B-724D433963B4.png'),
   winding_5_road: require('../assets/templates/C08B69DD-104A-4963-B5E0-D5D820319629.png'),
   linear_4_chain: require('../assets/templates/IMG_0497.png'),
@@ -103,6 +105,55 @@ export const ROADMAP_IMAGE_BACKED_TEMPLATE_CONFIG: Partial<
           lineHeightMultiplier: 1.28,
           maxLines: 4,
         },
+      },
+    ],
+  },
+  template_3_circles: {
+    source: ROADMAP_TEMPLATE_IMAGES.template_3_circles,
+    originalWidth: 1024,
+    originalHeight: 1024,
+    textSlots: [
+      {
+        circleId: 'c1',
+        label: { x: 0.24, y: 0.31, maxWidth: 0.16, align: 'center', color: '#FFFFFF', font: 'body' },
+        detail: { x: 0.24, y: 0.43, maxWidth: 0.20, align: 'center', color: '#F2F2F2', font: 'small', maxLines: 3 },
+      },
+      {
+        circleId: 'c2',
+        label: { x: 0.50, y: 0.50, maxWidth: 0.16, align: 'center', color: '#FFFFFF', font: 'body' },
+        detail: { x: 0.50, y: 0.62, maxWidth: 0.20, align: 'center', color: '#F2F2F2', font: 'small', maxLines: 3 },
+      },
+      {
+        circleId: 'c3',
+        label: { x: 0.76, y: 0.69, maxWidth: 0.16, align: 'center', color: '#FFFFFF', font: 'body' },
+        detail: { x: 0.76, y: 0.81, maxWidth: 0.20, align: 'center', color: '#F2F2F2', font: 'small', maxLines: 3 },
+      },
+    ],
+  },
+  template_4_circles: {
+    source: ROADMAP_TEMPLATE_IMAGES.template_4_circles,
+    originalWidth: 1024,
+    originalHeight: 1024,
+    textSlots: [
+      {
+        circleId: 'c1',
+        label: { x: 0.25, y: 0.29, maxWidth: 0.16, align: 'center', color: '#FFFFFF', font: 'body' },
+        detail: { x: 0.25, y: 0.40, maxWidth: 0.20, align: 'center', color: '#F2F2F2', font: 'small', maxLines: 3 },
+      },
+      {
+        circleId: 'c2',
+        label: { x: 0.75, y: 0.29, maxWidth: 0.16, align: 'center', color: '#FFFFFF', font: 'body' },
+        detail: { x: 0.75, y: 0.40, maxWidth: 0.20, align: 'center', color: '#F2F2F2', font: 'small', maxLines: 3 },
+      },
+      {
+        circleId: 'c3',
+        label: { x: 0.25, y: 0.71, maxWidth: 0.16, align: 'center', color: '#FFFFFF', font: 'body' },
+        detail: { x: 0.25, y: 0.82, maxWidth: 0.20, align: 'center', color: '#F2F2F2', font: 'small', maxLines: 3 },
+      },
+      {
+        circleId: 'c4',
+        label: { x: 0.75, y: 0.71, maxWidth: 0.16, align: 'center', color: '#FFFFFF', font: 'body' },
+        detail: { x: 0.75, y: 0.82, maxWidth: 0.20, align: 'center', color: '#F2F2F2', font: 'small', maxLines: 3 },
       },
     ],
   },

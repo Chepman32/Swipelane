@@ -72,6 +72,7 @@ const RoadmapTemplateScreen: React.FC = () => {
 
   const cardWidth = (width - scale(60)) / 2;
   const cardHeight = cardWidth * 1.2;
+  const infoHeight = scale(82);
 
   const renderTemplateCard = ({ item }: { item: RoadmapTemplate }) => {
     const templateImageSource = getRoadmapTemplateImageSource(item.id);
@@ -79,7 +80,7 @@ const RoadmapTemplateScreen: React.FC = () => {
     const isCarousel = item.id === 'carousel';
     if (!templateImageSource && !isCarousel) return null;
 
-    const previewHeight = cardHeight - scale(60);
+    const previewHeight = cardHeight - infoHeight;
 
     return (
       <TouchableOpacity
@@ -140,12 +141,13 @@ const RoadmapTemplateScreen: React.FC = () => {
             resizeMode="contain"
           />
         )}
-        <View style={styles.templateInfo}>
+        <View style={[styles.templateInfo, { minHeight: infoHeight }]}>
           <Text
             style={[
               styles.templateName,
               { color: themeDefinition.colors.text, fontSize: scaleFont(14) },
             ]}
+            numberOfLines={2}
           >
             {item.name}
           </Text>
@@ -154,6 +156,7 @@ const RoadmapTemplateScreen: React.FC = () => {
               styles.templateDescription,
               { color: themeDefinition.colors.text + '99', fontSize: scaleFont(12) },
             ]}
+            numberOfLines={1}
           >
             {item.circleCount > 0 ? `${item.circleCount} steps` : item.description}
           </Text>

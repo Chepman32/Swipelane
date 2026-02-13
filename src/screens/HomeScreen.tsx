@@ -35,6 +35,8 @@ import { EffectPipeline } from '../textfx/render/pipeline';
 import { convertToNewFormat } from '../textfx/utils/effectConverter';
 import type { EffectInstance } from '../textfx/types';
 import { isTextEffectSupported } from '../constants/textEffects';
+import type { RoadmapProjectState } from '../types/roadmap';
+import { SkiaRoadmapRenderer } from '../components/roadmap';
 
 // Skia font sources for each supported font
 const SKIA_FONT_SOURCES: Record<SlideFontId, number> = {
@@ -53,6 +55,12 @@ type RootStackParamList = {
   RoadmapTemplate: undefined;
   ImageSelection: { text: string; projectId: string; images?: string[] };
   Editor: { text: string; images: string[]; projectId: string };
+  RoadmapEditor: {
+    projectId: string;
+    templateId?: string;
+    backgroundGradient?: any;
+    backgroundImageUri?: string;
+  };
   Settings: undefined;
 };
 
@@ -61,10 +69,13 @@ type HomeScreenNavigationProp = StackNavigationProp<
   'RoadmapTemplate'
 >;
 
-type GridItem = ProjectState | (ProjectState & { isCurrentProject: true });
+type TextProjectItem = ProjectState & { projectKind: 'text' };
+type RoadmapProjectItem = RoadmapProjectState & { projectKind: 'roadmap' };
+type BaseGridItem = TextProjectItem | RoadmapProjectItem;
+type GridItem = BaseGridItem | (BaseGridItem & { isCurrentProject: true });
 
 // Helper function to check if item is current project
-const isCurrentProject = (item: GridItem): item is ProjectState & { isCurrentProject: true } => {
+const isCurrentProject = (item: GridItem): item is BaseGridItem & { isCurrentProject: true } => {
   return 'isCurrentProject' in item && item.isCurrentProject === true;
 };
 
@@ -227,8 +238,10 @@ const SlidePreview: React.FC<{ slide: any }> = ({ slide }) => {
 };
 
 const HomeScreen: React.FC = () => {
-  const [recentProjects, setRecentProjects] = useState<ProjectState[]>([]);
-  const [currentProject, setCurrentProject] = useState<ProjectState | null>(null);
+  const [recentProjects, setRecentProjects] = useState<TextProjectItem[]>([]);
+  const [currentProject, setCurrentProject] = useState<TextProjectItem | null>(null);
+  const [recentRoadmapProjects, setRecentRoadmapProjects] = useState<RoadmapProjectItem[]>([]);
+  const [currentRoadmapProject, setCurrentRoadmapProject] = useState<RoadmapProjectItem | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const { themeDefinition } = useTheme();
@@ -244,12 +257,25 @@ const HomeScreen: React.FC = () => {
 
   const loadProjects = async () => {
     try {
-      const [recent, current] = await Promise.all([
+      const [recent, current, recentRoadmap, currentRoadmap] = await Promise.all([
         StorageService.getRecentProjects(),
         StorageService.loadCurrentProject(),
+        StorageService.getRecentRoadmapProjects(),
+        StorageService.loadCurrentRoadmapProject(),
       ]);
-      setRecentProjects(recent);
-      setCurrentProject(current);
+      setRecentProjects(recent.map(project => ({ ...project, projectKind: 'text' as const })));
+      setCurrentProject(current ? { ...current, projectKind: 'text' as const } : null);
+      setRecentRoadmapProjects(
+        recentRoadmap.map((project: RoadmapProjectState) => ({
+          ...project,
+          projectKind: 'roadmap' as const,
+        })),
+      );
+      setCurrentRoadmapProject(
+        currentRoadmap
+          ? { ...(currentRoadmap as RoadmapProjectState), projectKind: 'roadmap' as const }
+          : null,
+      );
     } catch (error) {
       console.error('Error loading projects:', error);
     }
@@ -260,17 +286,25 @@ const HomeScreen: React.FC = () => {
     navigation.navigate('RoadmapTemplate');
   };
 
-  const handleOpenProject = (project: ProjectState) => {
+  const handleOpenProject = (project: BaseGridItem) => {
     FeedbackService.buttonTap();
-    // Load the project as current and navigate directly to editor
+    if (project.projectKind === 'roadmap') {
+      StorageService.saveCurrentRoadmapProject(project).then(() => {
+        navigation.navigate('RoadmapEditor', {
+          projectId: project.id,
+          templateId: project.templateId,
+        });
+      });
+      return;
+    }
+    // Load text project as current and navigate directly to editor
     StorageService.saveCurrentProject(project).then(() => {
-      // Extract images from slides to pass to EditorScreen
       const images = project.slides.map(slide => slide.image || '');
       navigation.navigate('Editor', { text: project.text, images, projectId: project.id });
     });
   };
 
-  const handleDeleteProject = (projectId: string) => {
+  const handleDeleteProject = (project: BaseGridItem) => {
     Alert.alert(
       t('delete_project_title'),
       t('delete_project_confirm'),
@@ -281,15 +315,20 @@ const HomeScreen: React.FC = () => {
           style: 'destructive',
           onPress: async () => {
             try {
-              const isDeletingCurrentProject = currentProject?.id === projectId;
-
-              // Always remove from recent projects.
-              await StorageService.deleteRecentProject(projectId);
-
-              // Also clear current project if it matches.
-              if (isDeletingCurrentProject) {
-                await StorageService.clearCurrentProject();
-                setCurrentProject(null);
+              if (project.projectKind === 'roadmap') {
+                const isDeletingCurrentRoadmapProject = currentRoadmapProject?.id === project.id;
+                await StorageService.deleteRecentRoadmapProject(project.id);
+                if (isDeletingCurrentRoadmapProject) {
+                  await StorageService.clearCurrentRoadmapProject();
+                  setCurrentRoadmapProject(null);
+                }
+              } else {
+                const isDeletingCurrentProject = currentProject?.id === project.id;
+                await StorageService.deleteRecentProject(project.id);
+                if (isDeletingCurrentProject) {
+                  await StorageService.clearCurrentProject();
+                  setCurrentProject(null);
+                }
               }
               await loadProjects();
               FeedbackService.buttonTap();
@@ -314,9 +353,12 @@ const HomeScreen: React.FC = () => {
   };
 
 
-  const renderProjectItem = (props: { item: ProjectState; isCurrent?: boolean; isLastOdd?: boolean }) => {
+  const renderProjectItem = (props: { item: BaseGridItem; isCurrent?: boolean; isLastOdd?: boolean }) => {
     const { item, isCurrent, isLastOdd } = props;
-    const firstSlide = item.slides && item.slides.length > 0 ? item.slides[0] : null;
+    const firstSlide =
+      item.projectKind === 'text' && item.slides && item.slides.length > 0
+        ? item.slides[0]
+        : null;
 
     return (
       <TouchableOpacity
@@ -332,12 +374,30 @@ const HomeScreen: React.FC = () => {
           isLastOdd && styles.projectCardFullWidth,
         ]}
         onPress={() => handleOpenProject(item)}
-        onLongPress={() => handleDeleteProject(item.id)}
+        onLongPress={() => handleDeleteProject(item)}
       >
         {/* Current Project Badge - REMOVED */}
 
         {/* Slide Preview */}
-        <SlidePreview slide={firstSlide} />
+        {item.projectKind === 'roadmap' ? (
+          <View
+            style={[
+              styles.slidePreview,
+              {
+                backgroundColor: themeDefinition.colors.card,
+                borderColor: themeDefinition.colors.border,
+                overflow: 'hidden',
+              },
+            ]}
+          >
+            <SkiaRoadmapRenderer
+              slide={item.slide}
+              style={{ flex: 1 }}
+            />
+          </View>
+        ) : (
+          <SlidePreview slide={firstSlide} />
+        )}
 
         {/* Project Info */}
         <View style={[styles.projectInfo, { padding: scale(12) }]}>
@@ -348,7 +408,9 @@ const HomeScreen: React.FC = () => {
             ]}
             numberOfLines={1}
           >
-            {item.text.trim().split('\n')[0] || t('untitled_project')}
+            {item.projectKind === 'roadmap'
+              ? item.name
+              : item.text.trim().split('\n')[0] || t('untitled_project')}
           </Text>
           <View style={styles.projectFooter}>
             <Text
@@ -365,7 +427,9 @@ const HomeScreen: React.FC = () => {
                 { color: themeDefinition.colors.text + '66', fontSize: scaleFont(12) },
               ]}
             >
-              {t('slides_count', { count: item.slides.length })}
+              {item.projectKind === 'roadmap'
+                ? `${item.slide?.circles?.length || 0} steps`
+                : t('slides_count', { count: item.slides.length })}
             </Text>
           </View>
         </View>
@@ -416,10 +480,21 @@ const HomeScreen: React.FC = () => {
     return item.id;
   };
 
-  const gridData: GridItem[] = [
+  const currentItems: GridItem[] = [
     ...(currentProject ? [{ ...currentProject, isCurrentProject: true as const }] : []),
-    ...recentProjects.filter(p => !currentProject || p.id !== currentProject.id),
+    ...(currentRoadmapProject
+      ? [{ ...currentRoadmapProject, isCurrentProject: true as const }]
+      : []),
   ];
+
+  const recentText = recentProjects.filter(
+    p => !currentProject || p.id !== currentProject.id,
+  );
+  const recentRoadmap = recentRoadmapProjects.filter(
+    p => !currentRoadmapProject || p.id !== currentRoadmapProject.id,
+  );
+
+  const gridData: GridItem[] = [...currentItems, ...recentRoadmap, ...recentText];
 
   return (
     <SafeAreaView

@@ -49,6 +49,7 @@ import {
 import type { SlideBackgroundGradient } from '../services/StorageService';
 import GradientBackground from '../components/GradientBackground';
 import ImageService from '../services/ImageService';
+import StorageService from '../services/StorageService';
 
 const COLOR_OPTIONS = [
   '#F5D547', // Default yellow
@@ -124,6 +125,8 @@ const RoadmapEditorScreen: React.FC = () => {
   const [showBackgroundPicker, setShowBackgroundPicker] = useState(false);
   const [percentageSelection, setPercentageSelection] = useState({ start: 0, end: 0 });
   const backgroundAccordionAnim = useRef(new Animated.Value(0)).current;
+  const initialSlideSnapshotRef = useRef<string | null>(null);
+  const lastSavedSnapshotRef = useRef<string | null>(null);
 
   const isCarouselTemplate = templateId === 'carousel';
 
@@ -151,20 +154,82 @@ const RoadmapEditorScreen: React.FC = () => {
     }
   }, []);
 
-  // Initialize slide only once
+  // Initialize slide once: restore from saved roadmap project by id, fallback to new.
   useEffect(() => {
-    if (template && !slide) {
+    let cancelled = false;
+    if (!template || slide) return;
+
+    const init = async () => {
+      try {
+        const [currentRoadmap, recentRoadmaps] = await Promise.all([
+          StorageService.loadCurrentRoadmapProject(),
+          StorageService.getRecentRoadmapProjects(),
+        ]);
+        const restored =
+          (currentRoadmap && currentRoadmap.id === projectId ? currentRoadmap : null) ||
+          recentRoadmaps.find((p: any) => p?.id === projectId) ||
+          null;
+
+        if (cancelled) return;
+
+        if (restored?.slide) {
+          setSlide(restored.slide);
+          const restoredSnapshot = JSON.stringify(restored.slide);
+          initialSlideSnapshotRef.current = restoredSnapshot;
+          lastSavedSnapshotRef.current = restoredSnapshot;
+          return;
+        }
+      } catch (error) {
+        console.error('Error restoring roadmap project:', error);
+      }
+
       const project = createRoadmapProject(template, projectId);
-      setSlide({
+      const initialSlide: RoadmapSlide = {
         ...project.slide,
         backgroundType: routeBackgroundImageUri ? 'image' : 'gradient',
         backgroundGradient: routeBackground || ROADMAP_BACKGROUND_OPTIONS[0],
         backgroundImageUri: routeBackgroundImageUri,
         ...(isCarouselTemplate ? { carouselData: createDefaultCarouselData(3) } : {}),
+      };
+
+      if (cancelled) return;
+      setSlide(initialSlide);
+      initialSlideSnapshotRef.current = JSON.stringify(initialSlide);
+      lastSavedSnapshotRef.current = initialSlideSnapshotRef.current;
+    };
+
+    init();
+    return () => {
+      cancelled = true;
+    };
+  }, [isCarouselTemplate, projectId, routeBackground, routeBackgroundImageUri, template, slide]);
+
+  // Autosave roadmap project after any edit (background/text/colors/etc).
+  useEffect(() => {
+    if (!slide || !template) return;
+    const snapshot = JSON.stringify(slide);
+    if (!initialSlideSnapshotRef.current) return;
+    if (snapshot === initialSlideSnapshotRef.current) return;
+    if (snapshot === lastSavedSnapshotRef.current) return;
+
+    const timeout = setTimeout(() => {
+      const projectToSave = {
+        id: projectId,
+        type: 'roadmap' as const,
+        name: template.name,
+        templateId: slide.templateId,
+        slide,
+        lastModified: new Date().toISOString(),
+        isCompleted: false,
+      };
+      StorageService.saveCurrentRoadmapProject(projectToSave).catch(error => {
+        console.error('Error autosaving roadmap project:', error);
       });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectId, routeBackground, routeBackgroundImageUri, template]);
+      lastSavedSnapshotRef.current = snapshot;
+    }, 180);
+
+    return () => clearTimeout(timeout);
+  }, [projectId, slide, template]);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -946,28 +1011,31 @@ const RoadmapEditorScreen: React.FC = () => {
                 >
                   Bubble Color
                 </Text>
-                <View style={[styles.colorGrid, { marginBottom: scale(12) }]}>
-                  {BUBBLE_TIMELINE_COLOR_OPTIONS.map(color => (
-                    <TouchableOpacity
-                      key={`bubble-color-${color}`}
-                      style={[
-                        styles.colorOption,
-                        {
-                          width: scale(28),
-                          height: scale(28),
-                          borderRadius: scale(14),
-                          backgroundColor: color,
-                          borderWidth: selectedCircleContent.textStyle?.color === color ? 3 : 1,
-                          borderColor:
-                            selectedCircleContent.textStyle?.color === color
-                              ? '#007AFF'
-                              : themeDefinition.colors.border,
-                        },
-                      ]}
-                      onPress={() => handleBubbleColorChange(color)}
-                    />
-                  ))}
-                </View>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: scale(12) }}>
+                  <View style={styles.colorRow}>
+                    {BUBBLE_TIMELINE_COLOR_OPTIONS.map(color => (
+                      <TouchableOpacity
+                        key={`bubble-color-${color}`}
+                        style={[
+                          styles.colorSwatch,
+                          {
+                            width: scale(36),
+                            height: scale(36),
+                            borderRadius: scale(18),
+                            backgroundColor: color,
+                            borderWidth: selectedCircleContent.textStyle?.color === color ? 3 : 1,
+                            borderColor:
+                              selectedCircleContent.textStyle?.color === color
+                                ? '#007AFF'
+                                : themeDefinition.colors.border,
+                            marginRight: scale(8),
+                          },
+                        ]}
+                        onPress={() => handleBubbleColorChange(color)}
+                      />
+                    ))}
+                  </View>
+                </ScrollView>
               </>
             )}
 

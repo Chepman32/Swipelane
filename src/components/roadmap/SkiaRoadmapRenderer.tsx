@@ -862,7 +862,7 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
               {bubbleTimelineLayout.nodes.map((node, index) => {
                 const content = slide.circles[index];
                 if (!content) return null;
-                const isTopText = index % 2 === 1;
+                const isTopText = index % 2 === 0;
                 const detailText = content.text?.trim() || '';
                 let yearLine = content.title?.trim() || '';
                 let bodyText = detailText;
@@ -890,7 +890,20 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
 
                 return (
                   <Group key={`bubble-${content.circleId}`}>
-                    <Circle cx={node.cx} cy={node.cy} r={node.r} color={bubbleColor} />
+                    <Circle
+                      cx={node.cx}
+                      cy={node.cy}
+                      r={Math.max(0, node.r - Math.max(1, slide.strokeWidth * 0.8))}
+                      color={bubbleColor}
+                    />
+                    <Circle
+                      cx={node.cx}
+                      cy={node.cy}
+                      r={node.r}
+                      color={slide.strokeColor}
+                      style="stroke"
+                      strokeWidth={Math.max(1, slide.strokeWidth * 0.8)}
+                    />
                     {percentFont ? (
                       <SkiaText
                         x={node.cx - percentFont.measureText(content.label).width / 2}
@@ -907,10 +920,15 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
                         cx={node.cx}
                         cy={stemStartY + stemDirection * dotGap * (dotIndex + 1)}
                         r={Math.max(1.5, node.r * 0.05)}
-                        color="#E4E4E4"
+                        color={slide.strokeColor}
                       />
                     ))}
-                    <Circle cx={node.cx} cy={stemEndY} r={Math.max(3, node.r * 0.1)} color="#E4E4E4" />
+                    <Circle
+                      cx={node.cx}
+                      cy={stemEndY}
+                      r={Math.max(3, node.r * 0.1)}
+                      color={slide.strokeColor}
+                    />
 
                     {yearFont && yearLine?.trim() ? (
                       <SkiaText

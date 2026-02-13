@@ -61,6 +61,41 @@ export const GRID_4_CIRCLES_TEMPLATE: RoadmapTemplate = {
   defaultDashPattern: ROADMAP_DEFAULTS.dashPattern,
 };
 
+// Legacy Template: 3 circles
+export const TEMPLATE_3_CIRCLES_TEMPLATE: RoadmapTemplate = {
+  id: 'template_3_circles',
+  name: '3 Circles',
+  description: 'Three-step roadmap template',
+  circleCount: 3,
+  circles: [
+    { id: 'c1', position: { x: 0.24, y: 0.31 }, radius: 0.09, labelPosition: 'bottom' },
+    { id: 'c2', position: { x: 0.50, y: 0.50 }, radius: 0.09, labelPosition: 'bottom' },
+    { id: 'c3', position: { x: 0.76, y: 0.69 }, radius: 0.09, labelPosition: 'bottom' },
+  ],
+  connectors: [],
+  defaultStrokeColor: ROADMAP_DEFAULTS.strokeColor,
+  defaultStrokeWidth: ROADMAP_DEFAULTS.strokeWidth,
+  defaultDashPattern: ROADMAP_DEFAULTS.dashPattern,
+};
+
+// Legacy Template: 4 circles
+export const TEMPLATE_4_CIRCLES_TEMPLATE: RoadmapTemplate = {
+  id: 'template_4_circles',
+  name: '4 Circles',
+  description: 'Four-step roadmap template',
+  circleCount: 4,
+  circles: [
+    { id: 'c1', position: { x: 0.25, y: 0.29 }, radius: 0.085, labelPosition: 'bottom' },
+    { id: 'c2', position: { x: 0.75, y: 0.29 }, radius: 0.085, labelPosition: 'bottom' },
+    { id: 'c3', position: { x: 0.25, y: 0.71 }, radius: 0.085, labelPosition: 'bottom' },
+    { id: 'c4', position: { x: 0.75, y: 0.71 }, radius: 0.085, labelPosition: 'bottom' },
+  ],
+  connectors: [],
+  defaultStrokeColor: ROADMAP_DEFAULTS.strokeColor,
+  defaultStrokeWidth: ROADMAP_DEFAULTS.strokeWidth,
+  defaultDashPattern: ROADMAP_DEFAULTS.dashPattern,
+};
+
 // Template 2: Infinity loop with three colored circles
 // Image-backed; circles are used as editable tap targets.
 export const DIAGONAL_3_CIRCLES_TEMPLATE: RoadmapTemplate = {
@@ -204,6 +239,8 @@ export const CAROUSEL_TEMPLATE: RoadmapTemplate = {
 // All available templates
 export const ROADMAP_TEMPLATES: RoadmapTemplate[] = [
   GRID_4_CIRCLES_TEMPLATE,
+  TEMPLATE_3_CIRCLES_TEMPLATE,
+  TEMPLATE_4_CIRCLES_TEMPLATE,
   DIAGONAL_3_CIRCLES_TEMPLATE,
   WINDING_5_ROAD_TEMPLATE,
   LINEAR_4_CHAIN_TEMPLATE,

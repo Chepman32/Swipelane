@@ -23,6 +23,7 @@ import { createRoadmapProject } from '../types/roadmap';
 import type { SlideBackgroundGradient } from '../services/StorageService';
 import GradientBackground from '../components/GradientBackground';
 import ImageService from '../services/ImageService';
+import StorageService from '../services/StorageService';
 
 type RootStackParamList = {
   RoadmapBackground: { templateId: string; projectId: string };
@@ -110,8 +111,19 @@ const RoadmapBackgroundScreen: React.FC = () => {
     }
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     FeedbackService.buttonTap();
+    if (previewSlide) {
+      await StorageService.saveCurrentRoadmapProject({
+        id: projectId,
+        type: 'roadmap',
+        name: template.name,
+        templateId,
+        slide: previewSlide,
+        isCompleted: false,
+        lastModified: new Date().toISOString(),
+      });
+    }
     // Pass the selected background and templateId to the editor
     navigation.navigate('RoadmapEditor', {
       projectId,
