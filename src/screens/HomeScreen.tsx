@@ -45,8 +45,6 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
-  withTiming,
-  Easing,
 } from 'react-native-reanimated';
 import { EffectPipeline } from '../textfx/render/pipeline';
 import { convertToNewFormat } from '../textfx/utils/effectConverter';
@@ -101,39 +99,13 @@ const AnimatedAccordion: React.FC<{
   isExpanded: boolean;
   children: React.ReactNode;
 }> = ({ isExpanded, children }) => {
-  const progress = useSharedValue(isExpanded ? 1 : 0);
-  const measuredHeight = useSharedValue(0);
-
-  React.useEffect(() => {
-    progress.value = withTiming(isExpanded ? 1 : 0, {
-      duration: 240,
-      easing: Easing.out(Easing.cubic),
-    });
-  }, [isExpanded, progress]);
-
-  const containerStyle = useAnimatedStyle(() => {
-    if (measuredHeight.value === 0) {
-      return { overflow: 'hidden' as const };
-    }
-    return {
-      height: progress.value * measuredHeight.value,
-      opacity: progress.value,
-      overflow: 'hidden' as const,
-    };
-  });
-
-  const onContentLayout = React.useCallback((e: any) => {
-    const h = e.nativeEvent.layout.height;
-    if (h > 0) {
-      measuredHeight.value = h;
-    }
-  }, [measuredHeight]);
-
   return (
-    <Animated.View style={containerStyle}>
-      <View onLayout={onContentLayout}>
-        {children}
-      </View>
+    <Animated.View layout={listLayoutTransition}>
+      {isExpanded ? (
+        <Animated.View entering={FadeIn.duration(140)} exiting={FadeOut.duration(120)}>
+          {children}
+        </Animated.View>
+      ) : null}
     </Animated.View>
   );
 };
@@ -900,14 +872,17 @@ const HomeScreen: React.FC = () => {
         </Animated.View>
 
         {/* User-created folder accordions */}
-        {folders.map(folder => (
-          <Animated.View key={folder.id} style={styles.accordionSection} layout={listLayoutTransition}>
-            {renderFolderHeader(folder.name, folder.id)}
-            <AnimatedAccordion isExpanded={expandedFolders.has(folder.id)}>
-              {renderGrid(projectsInFolder(folder.id), folder.id)}
-            </AnimatedAccordion>
-          </Animated.View>
-        ))}
+        {folders.map(folder => {
+          const folderItems = projectsInFolder(folder.id);
+          return (
+            <Animated.View key={folder.id} style={styles.accordionSection} layout={listLayoutTransition}>
+              {renderFolderHeader(folder.name, folder.id)}
+              <AnimatedAccordion isExpanded={expandedFolders.has(folder.id)}>
+                {renderGrid(folderItems, folder.id)}
+              </AnimatedAccordion>
+            </Animated.View>
+          );
+        })}
 
         {/* Trash accordion – only when non-empty */}
         {trashedProjects.length > 0 && (
