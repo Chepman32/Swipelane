@@ -35,6 +35,7 @@ import {
   LEGACY_SYSTEM_FONT_ID,
   SlideFontId,
 } from '../constants/fonts';
+import { getRoadmapImageBackedTemplateConfig } from '../constants/roadmapTemplateAssets';
 import settingsIcon from '../assets/icons/settings.png';
 import { useResponsive } from '../hooks/useResponsive';
 import { useFont } from '@shopify/react-native-skia';
@@ -130,6 +131,29 @@ const AnimatedChevron: React.FC<{
       <Text style={{ color, fontSize, lineHeight: fontSize }}>▸</Text>
     </Animated.View>
   );
+};
+
+const getRoadmapPreviewAspectRatio = (item: RoadmapProjectItem): number => {
+  const templateId = item.slide?.templateId;
+  if (!templateId) {
+    return 1 / 1.2;
+  }
+
+  if (templateId === 'carousel') {
+    const panelCount = Math.max(1, item.slide?.carouselData?.panelCount ?? 1);
+    return panelCount * 0.69;
+  }
+
+  if (templateId === 'bubble_timeline_6') {
+    return 3 / 2;
+  }
+
+  const imageTemplateConfig = getRoadmapImageBackedTemplateConfig(templateId);
+  if (imageTemplateConfig?.originalWidth && imageTemplateConfig?.originalHeight) {
+    return imageTemplateConfig.originalWidth / imageTemplateConfig.originalHeight;
+  }
+
+  return 1 / 1.2;
 };
 
 const SlidePreview: React.FC<{ slide: any }> = ({ slide }) => {
@@ -602,6 +626,49 @@ const HomeScreen: React.FC = () => {
     }
   };
 
+  const handleProjectLongPress = (item: BaseGridItem, parentFolderId?: string) => {
+    if (Platform.OS !== 'ios') {
+      return;
+    }
+
+    const isTrashed = !!item.isTrashed;
+    const actions = isTrashed
+      ? [
+          { id: 'recover', title: 'Recover' },
+          { id: 'delete_permanent', title: 'Delete Permanently', destructive: true },
+        ]
+      : [
+          { id: 'rename', title: 'Rename' },
+          { id: 'duplicate', title: 'Duplicate' },
+          ...(parentFolderId ? [{ id: 'remove_from_folder', title: 'Remove from Folder' }] : []),
+          { id: 'move_to_folder', title: 'Move to Folder' },
+          { id: 'trash', title: 'Remove', destructive: true },
+        ];
+
+    const options = [...actions.map(action => action.title), 'Cancel'];
+    const destructiveButtonIndex = actions.findIndex(action => !!action.destructive);
+    const cancelButtonIndex = options.length - 1;
+
+    ActionSheetIOS.showActionSheetWithOptions(
+      {
+        options,
+        cancelButtonIndex,
+        destructiveButtonIndex: destructiveButtonIndex >= 0 ? destructiveButtonIndex : undefined,
+        title: getProjectDisplayName(item),
+      },
+      async (buttonIndex) => {
+        if (buttonIndex === cancelButtonIndex) {
+          return;
+        }
+        const targetAction = actions[buttonIndex];
+        if (!targetAction) {
+          return;
+        }
+        await handleProjectMenuAction(targetAction.id, item);
+      },
+    );
+  };
+
   const onRefresh = async () => {
     setRefreshing(true);
     await loadProjects();
@@ -638,6 +705,82 @@ const HomeScreen: React.FC = () => {
           { id: 'move_to_folder', title: 'Move to Folder' },
           { id: 'trash', title: 'Remove', attributes: { destructive: true } },
         ];
+    const roadmapPreviewAspectRatio =
+      item.projectKind === 'roadmap' ? getRoadmapPreviewAspectRatio(item) : 16 / 9;
+
+    const cardContent = (
+      <TouchableOpacity
+        style={[
+          styles.projectCard,
+          {
+            backgroundColor: themeDefinition.colors.card,
+            borderColor: themeDefinition.colors.border,
+            borderWidth: 1,
+            margin: scale(8),
+            minHeight: isPad ? 280 : 200,
+          },
+        ]}
+        onPress={() => !isTrashed && handleOpenProject(item)}
+        onLongPress={() => handleProjectLongPress(item, parentFolderId)}
+        activeOpacity={isTrashed ? 1 : 0.7}
+        delayLongPress={260}
+      >
+        {item.projectKind === 'roadmap' ? (
+          <View
+            pointerEvents="none"
+            style={[
+              styles.slidePreview,
+              {
+                backgroundColor: themeDefinition.colors.card,
+                borderColor: themeDefinition.colors.border,
+                overflow: 'hidden',
+                height: undefined,
+                aspectRatio: roadmapPreviewAspectRatio,
+              },
+            ]}
+          >
+            <SkiaRoadmapRenderer
+              slide={item.slide}
+              style={{ flex: 1, width: '100%', height: '100%' }}
+            />
+          </View>
+        ) : (
+          <SlidePreview slide={firstSlide} />
+        )}
+
+        <View style={[styles.projectInfo, { padding: scale(12) }]}>
+          <Text
+            style={[
+              styles.projectTitle,
+              { color: themeDefinition.colors.text, fontSize: scaleFont(16) },
+            ]}
+            numberOfLines={1}
+          >
+            {getProjectDisplayName(item)}
+          </Text>
+          <View style={styles.projectFooter}>
+            <Text
+              style={[
+                styles.projectDate,
+                { color: themeDefinition.colors.text + '66', fontSize: scaleFont(12) },
+              ]}
+            >
+              {formatDate(item.lastModified)}
+            </Text>
+            <Text
+              style={[
+                styles.projectSlides,
+                { color: themeDefinition.colors.text + '66', fontSize: scaleFont(12) },
+              ]}
+            >
+              {item.projectKind === 'roadmap'
+                ? `${item.slide?.circles?.length || 0} steps`
+                : t('slides_count', { count: item.slides.length })}
+            </Text>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
 
     return (
       <Animated.View
@@ -650,82 +793,20 @@ const HomeScreen: React.FC = () => {
           isLastOdd && styles.projectCardFullWidthWrapper,
         ]}
       >
-        <MenuView
-          title=""
-          onPressAction={({ nativeEvent }) =>
-            handleProjectMenuAction(nativeEvent.event, item)
-          }
-          actions={menuActions}
-          shouldOpenOnLongPress
-        >
-          <TouchableOpacity
-            style={[
-              styles.projectCard,
-              {
-                backgroundColor: themeDefinition.colors.card,
-                borderColor: themeDefinition.colors.border,
-                borderWidth: 1,
-                margin: scale(8),
-                minHeight: isPad ? 280 : 200,
-              },
-            ]}
-            onPress={() => !isTrashed && handleOpenProject(item)}
-            activeOpacity={isTrashed ? 1 : 0.7}
+        {Platform.OS === 'ios' ? (
+          cardContent
+        ) : (
+          <MenuView
+            title=""
+            onPressAction={({ nativeEvent }) =>
+              handleProjectMenuAction(nativeEvent.event, item)
+            }
+            actions={menuActions}
+            shouldOpenOnLongPress
           >
-            {item.projectKind === 'roadmap' ? (
-              <View
-                pointerEvents="none"
-                style={[
-                  styles.slidePreview,
-                  {
-                    backgroundColor: themeDefinition.colors.card,
-                    borderColor: themeDefinition.colors.border,
-                    overflow: 'hidden',
-                  },
-                ]}
-              >
-                <SkiaRoadmapRenderer
-                  slide={item.slide}
-                  style={{ flex: 1, width: '100%' }}
-                />
-              </View>
-            ) : (
-              <SlidePreview slide={firstSlide} />
-            )}
-
-            <View style={[styles.projectInfo, { padding: scale(12) }]}>
-              <Text
-                style={[
-                  styles.projectTitle,
-                  { color: themeDefinition.colors.text, fontSize: scaleFont(16) },
-                ]}
-                numberOfLines={1}
-              >
-                {getProjectDisplayName(item)}
-              </Text>
-              <View style={styles.projectFooter}>
-                <Text
-                  style={[
-                    styles.projectDate,
-                    { color: themeDefinition.colors.text + '66', fontSize: scaleFont(12) },
-                  ]}
-                >
-                  {formatDate(item.lastModified)}
-                </Text>
-                <Text
-                  style={[
-                    styles.projectSlides,
-                    { color: themeDefinition.colors.text + '66', fontSize: scaleFont(12) },
-                  ]}
-                >
-                  {item.projectKind === 'roadmap'
-                    ? `${item.slide?.circles?.length || 0} steps`
-                    : t('slides_count', { count: item.slides.length })}
-                </Text>
-              </View>
-            </View>
-          </TouchableOpacity>
-        </MenuView>
+            {cardContent}
+          </MenuView>
+        )}
       </Animated.View>
     );
   };
