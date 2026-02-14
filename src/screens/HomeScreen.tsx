@@ -45,6 +45,8 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
+  withTiming,
+  Easing,
 } from 'react-native-reanimated';
 import { EffectPipeline } from '../textfx/render/pipeline';
 import { convertToNewFormat } from '../textfx/utils/effectConverter';
@@ -91,7 +93,7 @@ type BaseGridItem = TextProjectItem | RoadmapProjectItem;
 const platformKey: 'ios' | 'android' | 'default' =
   Platform.OS === 'ios' ? 'ios' : Platform.OS === 'android' ? 'android' : 'default';
 
-const listLayoutTransition = LinearTransition.springify().damping(20).stiffness(180);
+const listLayoutTransition = LinearTransition.duration(220);
 
 const accordionSpring = { damping: 20, stiffness: 200, mass: 0.8 };
 
@@ -103,8 +105,11 @@ const AnimatedAccordion: React.FC<{
   const measuredHeight = useSharedValue(0);
 
   React.useEffect(() => {
-    progress.value = withSpring(isExpanded ? 1 : 0, accordionSpring);
-  }, [isExpanded]);
+    progress.value = withTiming(isExpanded ? 1 : 0, {
+      duration: 240,
+      easing: Easing.out(Easing.cubic),
+    });
+  }, [isExpanded, progress]);
 
   const containerStyle = useAnimatedStyle(() => {
     if (measuredHeight.value === 0) {
@@ -122,7 +127,7 @@ const AnimatedAccordion: React.FC<{
     if (h > 0) {
       measuredHeight.value = h;
     }
-  }, []);
+  }, [measuredHeight]);
 
   return (
     <Animated.View style={containerStyle}>
@@ -142,7 +147,7 @@ const AnimatedChevron: React.FC<{
 
   React.useEffect(() => {
     rotation.value = withSpring(isExpanded ? 90 : 0, accordionSpring);
-  }, [isExpanded]);
+  }, [isExpanded, rotation]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${rotation.value}deg` }],
