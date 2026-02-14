@@ -223,6 +223,47 @@ export const RIBBON_STEPS_3_TEMPLATE: RoadmapTemplate = {
   defaultDashPattern: ROADMAP_DEFAULTS.dashPattern,
 };
 
+// Template 8: Vertical flow with 5 colored steps (alternating left/right icons)
+// Image-backed; circles are invisible tap targets near each step's text area.
+export const VERTICAL_FLOW_5_TEMPLATE: RoadmapTemplate = {
+  id: 'vertical_flow_5',
+  name: 'Vertical Flow',
+  description: 'Five steps with alternating icons and colored titles',
+  circleCount: 5,
+  circles: [
+    { id: 'c1', position: { x: 0.60, y: 0.11 }, radius: 0.04, labelPosition: 'bottom' },
+    { id: 'c2', position: { x: 0.35, y: 0.27 }, radius: 0.04, labelPosition: 'bottom' },
+    { id: 'c3', position: { x: 0.60, y: 0.43 }, radius: 0.04, labelPosition: 'bottom' },
+    { id: 'c4', position: { x: 0.32, y: 0.60 }, radius: 0.04, labelPosition: 'bottom' },
+    { id: 'c5', position: { x: 0.30, y: 0.78 }, radius: 0.04, labelPosition: 'bottom' },
+  ],
+  connectors: [],
+  defaultStrokeColor: ROADMAP_DEFAULTS.strokeColor,
+  defaultStrokeWidth: ROADMAP_DEFAULTS.strokeWidth,
+  defaultDashPattern: ROADMAP_DEFAULTS.dashPattern,
+};
+
+// Template 9: 6-step grid with numbered circles on dark background
+// Image-backed; two rows of three cards with mint-colored step numbers.
+export const GRID_STEPS_6_TEMPLATE: RoadmapTemplate = {
+  id: 'grid_steps_6',
+  name: 'Grid Steps',
+  description: 'Six numbered steps in a 2×3 card grid',
+  circleCount: 6,
+  circles: [
+    { id: 'c1', position: { x: 0.18, y: 0.28 }, radius: 0.04, labelPosition: 'bottom' },
+    { id: 'c2', position: { x: 0.50, y: 0.28 }, radius: 0.04, labelPosition: 'bottom' },
+    { id: 'c3', position: { x: 0.82, y: 0.28 }, radius: 0.04, labelPosition: 'bottom' },
+    { id: 'c4', position: { x: 0.18, y: 0.70 }, radius: 0.04, labelPosition: 'bottom' },
+    { id: 'c5', position: { x: 0.50, y: 0.70 }, radius: 0.04, labelPosition: 'bottom' },
+    { id: 'c6', position: { x: 0.82, y: 0.70 }, radius: 0.04, labelPosition: 'bottom' },
+  ],
+  connectors: [],
+  defaultStrokeColor: ROADMAP_DEFAULTS.strokeColor,
+  defaultStrokeWidth: ROADMAP_DEFAULTS.strokeWidth,
+  defaultDashPattern: ROADMAP_DEFAULTS.dashPattern,
+};
+
 // Template 7: Multi-panel swipeable carousel
 export const CAROUSEL_TEMPLATE: RoadmapTemplate = {
   id: 'carousel',
@@ -246,6 +287,8 @@ export const ROADMAP_TEMPLATES: RoadmapTemplate[] = [
   LINEAR_4_CHAIN_TEMPLATE,
   BUBBLE_TIMELINE_6_TEMPLATE,
   RIBBON_STEPS_3_TEMPLATE,
+  VERTICAL_FLOW_5_TEMPLATE,
+  GRID_STEPS_6_TEMPLATE,
   CAROUSEL_TEMPLATE,
 ];
 
