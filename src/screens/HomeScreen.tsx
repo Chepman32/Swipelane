@@ -38,6 +38,7 @@ import {
 import settingsIcon from '../assets/icons/settings.png';
 import { useResponsive } from '../hooks/useResponsive';
 import { useFont } from '@shopify/react-native-skia';
+import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
 import { EffectPipeline } from '../textfx/render/pipeline';
 import { convertToNewFormat } from '../textfx/utils/effectConverter';
 import type { EffectInstance } from '../textfx/types';
@@ -82,6 +83,8 @@ type BaseGridItem = TextProjectItem | RoadmapProjectItem;
 
 const platformKey: 'ios' | 'android' | 'default' =
   Platform.OS === 'ios' ? 'ios' : Platform.OS === 'android' ? 'android' : 'default';
+
+const listLayoutTransition = LinearTransition.springify().damping(20).stiffness(180);
 
 const SlidePreview: React.FC<{ slide: any }> = ({ slide }) => {
   const { themeDefinition } = useTheme();
@@ -256,7 +259,7 @@ const HomeScreen: React.FC = () => {
     }
   }, []);
 
-  const loadProjects = async () => {
+  const loadProjects = async (animateLayout: boolean = false) => {
     try {
       const [recent, current, recentRoadmap, currentRoadmap, folderList] = await Promise.all([
         StorageService.getRecentProjects(),
@@ -265,6 +268,22 @@ const HomeScreen: React.FC = () => {
         StorageService.loadCurrentRoadmapProject(),
         StorageService.getFolders(),
       ]);
+      if (animateLayout) {
+        LayoutAnimation.configureNext({
+          duration: 260,
+          create: {
+            type: LayoutAnimation.Types.easeInEaseOut,
+            property: LayoutAnimation.Properties.opacity,
+          },
+          update: {
+            type: LayoutAnimation.Types.easeInEaseOut,
+          },
+          delete: {
+            type: LayoutAnimation.Types.easeInEaseOut,
+            property: LayoutAnimation.Properties.opacity,
+          },
+        });
+      }
       setFolders(folderList);
       setRecentProjects(recent.map(project => ({ ...project, projectKind: 'text' as const })));
       setCurrentProject(current ? { ...current, projectKind: 'text' as const } : null);
@@ -404,13 +423,12 @@ const HomeScreen: React.FC = () => {
       await StorageService.moveProjectToFolder(item.id, folderId);
     }
 
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setExpandedFolders(prev => {
       const next = new Set(prev);
       next.add(folderId);
       return next;
     });
-    await loadProjects();
+    await loadProjects(true);
   };
 
   const handleMoveToFolder = (item: BaseGridItem) => {
@@ -516,6 +534,15 @@ const HomeScreen: React.FC = () => {
     );
   };
 
+  const handleRemoveFromFolder = async (item: BaseGridItem) => {
+    if (item.projectKind === 'roadmap') {
+      await StorageService.moveRoadmapProjectToFolder(item.id, null);
+    } else {
+      await StorageService.moveProjectToFolder(item.id, null);
+    }
+    await loadProjects(true);
+  };
+
   const handleProjectMenuAction = async (actionId: string, item: BaseGridItem) => {
     FeedbackService.buttonTap();
     switch (actionId) {
@@ -533,6 +560,9 @@ const HomeScreen: React.FC = () => {
         break;
       case 'recover':
         await handleRecover(item);
+        break;
+      case 'remove_from_folder':
+        await handleRemoveFromFolder(item);
         break;
       case 'delete_permanent':
         handleDeletePermanent(item);
@@ -553,7 +583,11 @@ const HomeScreen: React.FC = () => {
 
   // ── Render helpers ────────────────────────────────────────────────────────
 
-  const renderProjectItem = (item: BaseGridItem, isLastOdd: boolean = false) => {
+  const renderProjectItem = (
+    item: BaseGridItem,
+    isLastOdd: boolean = false,
+    parentFolderId?: string
+  ) => {
     const firstSlide =
       item.projectKind === 'text' && item.slides && item.slides.length > 0
         ? item.slides[0]
@@ -568,93 +602,103 @@ const HomeScreen: React.FC = () => {
       : [
           { id: 'rename', title: 'Rename' },
           { id: 'duplicate', title: 'Duplicate' },
+          ...(parentFolderId ? [{ id: 'remove_from_folder', title: 'Remove from Folder' }] : []),
           { id: 'move_to_folder', title: 'Move to Folder' },
           { id: 'trash', title: 'Remove', attributes: { destructive: true } },
         ];
 
     return (
-      <MenuView
+      <Animated.View
         key={item.id}
-        title=""
-        onPressAction={({ nativeEvent }) =>
-          handleProjectMenuAction(nativeEvent.event, item)
-        }
-        actions={menuActions}
-        shouldOpenOnLongPress
+        layout={listLayoutTransition}
+        entering={FadeIn.duration(160)}
+        exiting={FadeOut.duration(120)}
+        style={[
+          styles.projectCardWrapper,
+          isLastOdd && styles.projectCardFullWidthWrapper,
+        ]}
       >
-        <TouchableOpacity
-          style={[
-            styles.projectCard,
-            {
-              backgroundColor: themeDefinition.colors.card,
-              borderColor: themeDefinition.colors.border,
-              borderWidth: 1,
-              margin: scale(8),
-              minHeight: isPad ? 280 : 200,
-            },
-            isLastOdd && styles.projectCardFullWidth,
-          ]}
-          onPress={() => !isTrashed && handleOpenProject(item)}
-          activeOpacity={isTrashed ? 1 : 0.7}
+        <MenuView
+          title=""
+          onPressAction={({ nativeEvent }) =>
+            handleProjectMenuAction(nativeEvent.event, item)
+          }
+          actions={menuActions}
+          shouldOpenOnLongPress
         >
-          {item.projectKind === 'roadmap' ? (
-            <View
-              pointerEvents="none"
-              style={[
-                styles.slidePreview,
-                {
-                  backgroundColor: themeDefinition.colors.card,
-                  borderColor: themeDefinition.colors.border,
-                  overflow: 'hidden',
-                },
-              ]}
-            >
-              <SkiaRoadmapRenderer
-                slide={item.slide}
-                style={{ flex: 1, width: '100%' }}
-              />
-            </View>
-          ) : (
-            <SlidePreview slide={firstSlide} />
-          )}
+          <TouchableOpacity
+            style={[
+              styles.projectCard,
+              {
+                backgroundColor: themeDefinition.colors.card,
+                borderColor: themeDefinition.colors.border,
+                borderWidth: 1,
+                margin: scale(8),
+                minHeight: isPad ? 280 : 200,
+              },
+            ]}
+            onPress={() => !isTrashed && handleOpenProject(item)}
+            activeOpacity={isTrashed ? 1 : 0.7}
+          >
+            {item.projectKind === 'roadmap' ? (
+              <View
+                pointerEvents="none"
+                style={[
+                  styles.slidePreview,
+                  {
+                    backgroundColor: themeDefinition.colors.card,
+                    borderColor: themeDefinition.colors.border,
+                    overflow: 'hidden',
+                  },
+                ]}
+              >
+                <SkiaRoadmapRenderer
+                  slide={item.slide}
+                  style={{ flex: 1, width: '100%' }}
+                />
+              </View>
+            ) : (
+              <SlidePreview slide={firstSlide} />
+            )}
 
-          <View style={[styles.projectInfo, { padding: scale(12) }]}>
-            <Text
-              style={[
-                styles.projectTitle,
-                { color: themeDefinition.colors.text, fontSize: scaleFont(16) },
-              ]}
-              numberOfLines={1}
-            >
-              {getProjectDisplayName(item)}
-            </Text>
-            <View style={styles.projectFooter}>
+            <View style={[styles.projectInfo, { padding: scale(12) }]}>
               <Text
                 style={[
-                  styles.projectDate,
-                  { color: themeDefinition.colors.text + '66', fontSize: scaleFont(12) },
+                  styles.projectTitle,
+                  { color: themeDefinition.colors.text, fontSize: scaleFont(16) },
                 ]}
+                numberOfLines={1}
               >
-                {formatDate(item.lastModified)}
+                {getProjectDisplayName(item)}
               </Text>
-              <Text
-                style={[
-                  styles.projectSlides,
-                  { color: themeDefinition.colors.text + '66', fontSize: scaleFont(12) },
-                ]}
-              >
-                {item.projectKind === 'roadmap'
-                  ? `${item.slide?.circles?.length || 0} steps`
-                  : t('slides_count', { count: item.slides.length })}
-              </Text>
+              <View style={styles.projectFooter}>
+                <Text
+                  style={[
+                    styles.projectDate,
+                    { color: themeDefinition.colors.text + '66', fontSize: scaleFont(12) },
+                  ]}
+                >
+                  {formatDate(item.lastModified)}
+                </Text>
+                <Text
+                  style={[
+                    styles.projectSlides,
+                    { color: themeDefinition.colors.text + '66', fontSize: scaleFont(12) },
+                  ]}
+                >
+                  {item.projectKind === 'roadmap'
+                    ? `${item.slide?.circles?.length || 0} steps`
+                    : t('slides_count', { count: item.slides.length })}
+                </Text>
+              </View>
             </View>
-          </View>
-        </TouchableOpacity>
-      </MenuView>
+          </TouchableOpacity>
+        </MenuView>
+      </Animated.View>
     );
   };
 
-  const renderGrid = (items: BaseGridItem[]) => {
+  const renderGrid = (items: BaseGridItem[], parentFolderId?: string) => {
     if (items.length === 0) {
       return (
         <Text style={[styles.emptyFolderHint, { color: themeDefinition.colors.text + '66' }]}>
@@ -667,13 +711,13 @@ const HomeScreen: React.FC = () => {
       rows.push(items.slice(i, i + gridColumns));
     }
     return rows.map((row, rowIdx) => (
-      <View key={rowIdx} style={styles.gridRow}>
+      <Animated.View key={rowIdx} layout={listLayoutTransition} style={styles.gridRow}>
         {row.map(item => {
           const isLastOdd = items.length % gridColumns !== 0 && items.indexOf(item) === items.length - 1;
-          return renderProjectItem(item, isLastOdd);
+          return renderProjectItem(item, isLastOdd, parentFolderId);
         })}
         {row.length < gridColumns && <View style={styles.projectCardPlaceholder} />}
-      </View>
+      </Animated.View>
     ));
   };
 
@@ -784,29 +828,29 @@ const HomeScreen: React.FC = () => {
         showsVerticalScrollIndicator={false}
       >
         {/* All Projects accordion */}
-        <View style={styles.accordionSection}>
+        <Animated.View style={styles.accordionSection} layout={listLayoutTransition}>
           {renderFolderHeader('All Projects', 'all')}
           {expandedFolders.has('all') && (
             allActiveProjects.length === 0
               ? renderEmptyState()
               : renderGrid(allActiveProjects)
           )}
-        </View>
+        </Animated.View>
 
         {/* User-created folder accordions */}
         {folders.map(folder => (
-          <View key={folder.id} style={styles.accordionSection}>
+          <Animated.View key={folder.id} style={styles.accordionSection} layout={listLayoutTransition}>
             {renderFolderHeader(folder.name, folder.id)}
-            {expandedFolders.has(folder.id) && renderGrid(projectsInFolder(folder.id))}
-          </View>
+            {expandedFolders.has(folder.id) && renderGrid(projectsInFolder(folder.id), folder.id)}
+          </Animated.View>
         ))}
 
         {/* Trash accordion – only when non-empty */}
         {trashedProjects.length > 0 && (
-          <View style={styles.accordionSection}>
+          <Animated.View style={styles.accordionSection} layout={listLayoutTransition}>
             {renderFolderHeader('Trash', 'trash')}
             {expandedFolders.has('trash') && renderGrid(trashedProjects)}
-          </View>
+          </Animated.View>
         )}
       </ScrollView>
 
@@ -1012,6 +1056,13 @@ const styles = StyleSheet.create({
     flex: 1,
     margin: 8,
   },
+  projectCardWrapper: {
+    flex: 1,
+  },
+  projectCardFullWidthWrapper: {
+    flexBasis: '100%',
+    maxWidth: '100%',
+  },
   emptyFolderHint: {
     fontStyle: 'italic',
     textAlign: 'center',
@@ -1030,10 +1081,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     overflow: 'hidden',
-  },
-  projectCardFullWidth: {
-    flexBasis: '100%',
-    maxWidth: '100%',
   },
   slidePreview: {
     width: '100%',
