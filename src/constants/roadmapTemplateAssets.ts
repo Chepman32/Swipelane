@@ -357,8 +357,8 @@ export const ROADMAP_IMAGE_BACKED_TEMPLATE_CONFIG: Partial<
       {
         circleId: 'c1',
         label: {
-          x: 0.18,
-          y: 0.30,
+          x: 0.19,
+          y: 0.20,
           maxWidth: 0.22,
           align: 'center',
           color: '#FFFFFF',
@@ -378,8 +378,8 @@ export const ROADMAP_IMAGE_BACKED_TEMPLATE_CONFIG: Partial<
       {
         circleId: 'c2',
         label: {
-          x: 0.50,
-          y: 0.30,
+          x: 0.49,
+          y: 0.20,
           maxWidth: 0.22,
           align: 'center',
           color: '#FFFFFF',
@@ -399,8 +399,8 @@ export const ROADMAP_IMAGE_BACKED_TEMPLATE_CONFIG: Partial<
       {
         circleId: 'c3',
         label: {
-          x: 0.82,
-          y: 0.30,
+          x: 0.79,
+          y: 0.20,
           maxWidth: 0.22,
           align: 'center',
           color: '#FFFFFF',
@@ -420,8 +420,8 @@ export const ROADMAP_IMAGE_BACKED_TEMPLATE_CONFIG: Partial<
       {
         circleId: 'c4',
         label: {
-          x: 0.18,
-          y: 0.72,
+          x: 0.20,
+          y: 0.71,
           maxWidth: 0.22,
           align: 'center',
           color: '#FFFFFF',
@@ -442,7 +442,7 @@ export const ROADMAP_IMAGE_BACKED_TEMPLATE_CONFIG: Partial<
         circleId: 'c5',
         label: {
           x: 0.50,
-          y: 0.72,
+          y: 0.71,
           maxWidth: 0.22,
           align: 'center',
           color: '#FFFFFF',
@@ -462,8 +462,8 @@ export const ROADMAP_IMAGE_BACKED_TEMPLATE_CONFIG: Partial<
       {
         circleId: 'c6',
         label: {
-          x: 0.82,
-          y: 0.72,
+          x: 0.80,
+          y: 0.71,
           maxWidth: 0.22,
           align: 'center',
           color: '#FFFFFF',

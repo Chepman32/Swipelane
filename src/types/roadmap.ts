@@ -143,6 +143,14 @@ export function createDefaultCircleContent(
     }));
   }
 
+  if (template.id === 'grid_steps_6') {
+    return template.circles.map((circle, index) => ({
+      circleId: circle.id,
+      label: `${index + 1}`,
+      contentType: 'empty' as const,
+    }));
+  }
+
   return template.circles.map((circle, index) => ({
     circleId: circle.id,
     label: `Step ${index + 1}`,

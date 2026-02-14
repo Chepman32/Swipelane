@@ -361,6 +361,10 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
     require('../../assets/fonts/Fira_Sans/FiraSans-SemiBold.ttf'),
     bodyFontSize,
   );
+  const bodyBold2xFont = useFont(
+    require('../../assets/fonts/Fira_Sans/FiraSans-Bold.ttf'),
+    bodyFontSize * 3.375,
+  );
   const smallBoldFont = useFont(
     require('../../assets/fonts/Fira_Sans/FiraSans-SemiBold.ttf'),
     smallFontSize,
@@ -420,6 +424,8 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
       const baseFontType = anchor.font;
       const baseFont = getTemplateTextFont(baseFontType);
       if (!baseFont) return null;
+      const isGridStepsNumberLabel = slide.templateId === 'grid_steps_6' && keyPrefix.endsWith('-label');
+      const emphasizedBaseFont = isGridStepsNumberLabel ? (bodyBold2xFont || baseFont) : baseFont;
 
       const maxWidth = Math.max(1, anchor.maxWidth * frame.width);
       const baseColor = anchor.color || fallbackColor;
@@ -442,7 +448,7 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
         }
         const remainingText = remainingParts.join('\n').trim();
         if (remainingText) {
-          const remainingLines = wrapTextToLines(remainingText, baseFont, maxWidth);
+          const remainingLines = wrapTextToLines(remainingText, emphasizedBaseFont, maxWidth);
           for (const line of remainingLines) {
             preparedLines.push({
               text: line,
@@ -452,7 +458,7 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
           }
         }
       } else {
-        const wrappedLines = wrapTextToLines(trimmed, baseFont, maxWidth);
+        const wrappedLines = wrapTextToLines(trimmed, emphasizedBaseFont, maxWidth);
         for (const line of wrappedLines) {
           preparedLines.push({
             text: line,
@@ -470,8 +476,13 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
 
       let currentY = anchorY;
       return lines.map((line, index) => {
-        const lineFont = getTemplateTextFont(line.fontType) || baseFont;
-        const lineHeight = getTemplateTextFontSize(line.fontType) * lineHeightMultiplier;
+        const lineFont = isGridStepsNumberLabel
+          ? (bodyBold2xFont || getTemplateTextFont(line.fontType) || baseFont)
+          : (getTemplateTextFont(line.fontType) || baseFont);
+        const lineHeightBase = isGridStepsNumberLabel
+          ? bodyFontSize * 3.375
+          : getTemplateTextFontSize(line.fontType);
+        const lineHeight = lineHeightBase * lineHeightMultiplier;
         const y = currentY;
         currentY += lineHeight;
 
@@ -497,7 +508,7 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
         );
       });
     },
-    [getTemplateTextFont, getTemplateTextFontSize],
+    [bodyBold2xFont, bodyFontSize, getTemplateTextFont, getTemplateTextFontSize, slide.templateId],
   );
 
   // Carousel-specific image hooks (always called, return null when not carousel)
