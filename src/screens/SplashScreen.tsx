@@ -1,5 +1,13 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
+import React, { useEffect, useMemo, useRef } from 'react';
+import {
+  Animated,
+  Dimensions,
+  Easing,
+  Image,
+  ImageSourcePropType,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -13,62 +21,68 @@ type RootStackParamList = {
 
 type SplashScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Home' | 'Onboarding'>;
 
+type Fragment = {
+  id: number;
+  col: number;
+  row: number;
+  startX: number;
+  startY: number;
+  delay: number;
+  startRotation: number;
+  startScale: number;
+};
+
+const GRID_COLUMNS = 20;
+const GRID_ROWS = 10;
+const FRAGMENT_COUNT = GRID_COLUMNS * GRID_ROWS;
+const ICON_ASSET: ImageSourcePropType = require('../../ios/Swipelane/Images.xcassets/AppIcon.appiconset/Icon-1024.png');
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+
+const seeded = (seed: number) => {
+  const x = Math.sin(seed * 12.9898) * 43758.5453;
+  return x - Math.floor(x);
+};
+
 const SplashScreen: React.FC = () => {
   const navigation = useNavigation<SplashScreenNavigationProp>();
-  const { t, ensureLanguageReady } = useLanguage();
-  const fadeAnim = React.useRef(new Animated.Value(0)).current;
-  const scaleAnim = React.useRef(new Animated.Value(0.8)).current;
-  const [titleText, setTitleText] = React.useState('');
-  const [subtitleText, setSubtitleText] = React.useState('');
+  const { ensureLanguageReady } = useLanguage();
+  const assembleProgress = useRef(new Animated.Value(0)).current;
+  const zoomScale = useRef(new Animated.Value(1)).current;
+  const zoomFlash = useRef(new Animated.Value(0)).current;
+
+  const iconSize = Math.min(screenWidth * 0.56, 220);
+  const pieceWidth = iconSize / GRID_COLUMNS;
+  const pieceHeight = iconSize / GRID_ROWS;
+
+  const fragments = useMemo<Fragment[]>(() => {
+    return Array.from({ length: FRAGMENT_COUNT }, (_, index) => {
+      const col = index % GRID_COLUMNS;
+      const row = Math.floor(index / GRID_COLUMNS);
+      const angle = seeded(index + 1) * Math.PI * 2;
+      const radiusX = screenWidth * (0.65 + seeded(index + 31) * 0.5);
+      const radiusY = screenHeight * (0.65 + seeded(index + 67) * 0.5);
+
+      return {
+        id: index,
+        col,
+        row,
+        startX: Math.cos(angle) * radiusX,
+        startY: Math.sin(angle) * radiusY,
+        delay: seeded(index + 101) * 0.22,
+        startRotation: (seeded(index + 141) * 2 - 1) * 0.6,
+        startScale: 0.72 + seeded(index + 187) * 0.28,
+      };
+    });
+  }, []);
 
   useEffect(() => {
-    const fullTitle = t('splash_title');
-    const fullSubtitle = t('splash_subtitle');
+    let isMounted = true;
 
-    // Phase 1: Fade and scale animations (0-1000ms)
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 1000,
-        easing: Easing.out(Easing.ease),
-        useNativeDriver: true,
-      }),
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        friction: 5,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    const onComplete = async () => {
+      if (!isMounted) {
+        return;
+      }
 
-    // Phase 2: Teletype effect (starts at 1000ms)
-    const titleDelay = 1000;
-    const charDelay = 50; // 50ms per character
-
-    // Title teletype
-    const titleLength = fullTitle.length;
-    const titleTimers: NodeJS.Timeout[] = [];
-
-    for (let i = 0; i <= titleLength; i++) {
-      const timer = setTimeout(() => {
-        setTitleText(fullTitle.substring(0, i));
-      }, titleDelay + (i * charDelay));
-      titleTimers.push(timer);
-    }
-
-    // Subtitle teletype (starts after title completes)
-    const subtitleDelay = titleDelay + (titleLength * charDelay) + 100; // 100ms pause
-    const subtitleLength = fullSubtitle.length;
-    const subtitleTimers: NodeJS.Timeout[] = [];
-
-    for (let i = 0; i <= subtitleLength; i++) {
-      const timer = setTimeout(() => {
-        setSubtitleText(fullSubtitle.substring(0, i));
-      }, subtitleDelay + (i * charDelay));
-      subtitleTimers.push(timer);
-    }
-
-    // Navigation timer (2000ms total)
-    const navTimer = setTimeout(async () => {
       await ensureLanguageReady();
       const isFirstLaunch = await StorageService.isFirstLaunch();
       if (isFirstLaunch) {
@@ -76,29 +90,134 @@ const SplashScreen: React.FC = () => {
       } else {
         navigation.replace('Home');
       }
-    }, 2000);
-
-    // Cleanup
-    return () => {
-      titleTimers.forEach(timer => clearTimeout(timer));
-      subtitleTimers.forEach(timer => clearTimeout(timer));
-      clearTimeout(navTimer);
     };
-  }, [fadeAnim, scaleAnim, navigation, ensureLanguageReady, t]);
+
+    Animated.sequence([
+      Animated.timing(assembleProgress, {
+        toValue: 1,
+        duration: 1000,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.parallel([
+        Animated.timing(zoomScale, {
+          toValue: 4.2,
+          duration: 500,
+          easing: Easing.in(Easing.exp),
+          useNativeDriver: true,
+        }),
+        Animated.timing(zoomFlash, {
+          toValue: 1,
+          duration: 500,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start(() => {
+      onComplete();
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [assembleProgress, ensureLanguageReady, navigation, zoomFlash, zoomScale]);
 
   return (
     <SafeAreaView style={styles.container}>
-      <Animated.View
-        style={[
-          styles.logoContainer,
-          {
-            opacity: fadeAnim,
-            transform: [{ scale: scaleAnim }],
-          },
-        ]}>
-        <Text style={styles.title}>{titleText}</Text>
-        <Text style={styles.subtitle}>{subtitleText}</Text>
+      <View style={styles.content}>
+        <Animated.View
+          style={[
+            styles.iconWrapper,
+            {
+              width: iconSize,
+              height: iconSize,
+              transform: [{ scale: zoomScale }],
+            },
+          ]}
+        >
+          {fragments.map(fragment => {
+            const fragmentProgress = assembleProgress.interpolate({
+              inputRange: [fragment.delay, Math.min(fragment.delay + 0.78, 1)],
+              outputRange: [0, 1],
+              extrapolate: 'clamp',
+            });
+
+            const animatedStyle = {
+              opacity: fragmentProgress.interpolate({
+                inputRange: [0, 0.15, 1],
+                outputRange: [0, 0.9, 1],
+              }),
+              transform: [
+                {
+                  translateX: fragmentProgress.interpolate({
+                    inputRange: [0, 0.85, 1],
+                    outputRange: [fragment.startX, fragment.startX * 0.08, 0],
+                  }),
+                },
+                {
+                  translateY: fragmentProgress.interpolate({
+                    inputRange: [0, 0.85, 1],
+                    outputRange: [fragment.startY, fragment.startY * 0.08, 0],
+                  }),
+                },
+                {
+                  rotate: fragmentProgress.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [`${fragment.startRotation}rad`, '0rad'],
+                  }),
+                },
+                {
+                  scale: fragmentProgress.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [fragment.startScale, 1],
+                  }),
+                },
+              ],
+            };
+
+            return (
+              <Animated.View
+                key={fragment.id}
+                style={[
+                  styles.fragment,
+                  {
+                    width: pieceWidth,
+                    height: pieceHeight,
+                    left: fragment.col * pieceWidth,
+                    top: fragment.row * pieceHeight,
+                  },
+                  animatedStyle,
+                ]}
+              >
+                <Image
+                  source={ICON_ASSET}
+                  style={[
+                    styles.iconImage,
+                    {
+                      width: iconSize,
+                      height: iconSize,
+                      left: -fragment.col * pieceWidth,
+                      top: -fragment.row * pieceHeight,
+                    },
+                  ]}
+                />
+              </Animated.View>
+            );
+          })}
         </Animated.View>
+      </View>
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          styles.zoomFlash,
+          {
+            opacity: zoomFlash.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0, 0.35],
+            }),
+          },
+        ]}
+      />
     </SafeAreaView>
   );
 };
@@ -106,23 +225,26 @@ const SplashScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  content: {
+    flex: 1,
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#fff',
   },
-  logoContainer: {
-    alignItems: 'center',
+  iconWrapper: {
+    position: 'relative',
   },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: '#007AFF',
+  fragment: {
+    position: 'absolute',
+    overflow: 'hidden',
   },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
+  iconImage: {
+    position: 'absolute',
+  },
+  zoomFlash: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#FFFFFF',
   },
 });
 
