@@ -38,7 +38,14 @@ import {
 import settingsIcon from '../assets/icons/settings.png';
 import { useResponsive } from '../hooks/useResponsive';
 import { useFont } from '@shopify/react-native-skia';
-import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
+import Animated, {
+  FadeIn,
+  FadeOut,
+  LinearTransition,
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
 import { EffectPipeline } from '../textfx/render/pipeline';
 import { convertToNewFormat } from '../textfx/utils/effectConverter';
 import type { EffectInstance } from '../textfx/types';
@@ -85,6 +92,68 @@ const platformKey: 'ios' | 'android' | 'default' =
   Platform.OS === 'ios' ? 'ios' : Platform.OS === 'android' ? 'android' : 'default';
 
 const listLayoutTransition = LinearTransition.springify().damping(20).stiffness(180);
+
+const accordionSpring = { damping: 20, stiffness: 200, mass: 0.8 };
+
+const AnimatedAccordion: React.FC<{
+  isExpanded: boolean;
+  children: React.ReactNode;
+}> = ({ isExpanded, children }) => {
+  const progress = useSharedValue(isExpanded ? 1 : 0);
+  const measuredHeight = useSharedValue(0);
+
+  React.useEffect(() => {
+    progress.value = withSpring(isExpanded ? 1 : 0, accordionSpring);
+  }, [isExpanded]);
+
+  const containerStyle = useAnimatedStyle(() => {
+    if (measuredHeight.value === 0) {
+      return { overflow: 'hidden' as const };
+    }
+    return {
+      height: progress.value * measuredHeight.value,
+      opacity: progress.value,
+      overflow: 'hidden' as const,
+    };
+  });
+
+  const onContentLayout = React.useCallback((e: any) => {
+    const h = e.nativeEvent.layout.height;
+    if (h > 0) {
+      measuredHeight.value = h;
+    }
+  }, []);
+
+  return (
+    <Animated.View style={containerStyle}>
+      <View onLayout={onContentLayout}>
+        {children}
+      </View>
+    </Animated.View>
+  );
+};
+
+const AnimatedChevron: React.FC<{
+  isExpanded: boolean;
+  color: string;
+  fontSize: number;
+}> = ({ isExpanded, color, fontSize }) => {
+  const rotation = useSharedValue(isExpanded ? 90 : 0);
+
+  React.useEffect(() => {
+    rotation.value = withSpring(isExpanded ? 90 : 0, accordionSpring);
+  }, [isExpanded]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${rotation.value}deg` }],
+  }));
+
+  return (
+    <Animated.View style={animatedStyle}>
+      <Text style={{ color, fontSize, lineHeight: fontSize }}>▸</Text>
+    </Animated.View>
+  );
+};
 
 const SlidePreview: React.FC<{ slide: any }> = ({ slide }) => {
   const { themeDefinition } = useTheme();
@@ -329,20 +398,6 @@ const HomeScreen: React.FC = () => {
   };
 
   const toggleAccordion = (folderId: string) => {
-    LayoutAnimation.configureNext({
-      duration: 220,
-      create: {
-        type: LayoutAnimation.Types.easeInEaseOut,
-        property: LayoutAnimation.Properties.opacity,
-      },
-      update: {
-        type: LayoutAnimation.Types.easeInEaseOut,
-      },
-      delete: {
-        type: LayoutAnimation.Types.easeInEaseOut,
-        property: LayoutAnimation.Properties.opacity,
-      },
-    });
     setExpandedFolders(prev => {
       const next = new Set(prev);
       if (next.has(folderId)) { next.delete(folderId); } else { next.add(folderId); }
@@ -740,9 +795,11 @@ const HomeScreen: React.FC = () => {
           <Text style={[styles.accordionTitle, { color: themeDefinition.colors.text, fontSize: scaleFont(18) }]}>
             {label}
           </Text>
-          <Text style={[styles.accordionChevron, { color: themeDefinition.colors.text + '88', fontSize: scaleFont(24) }]}>
-            {isExpanded ? '▾' : '▸'}
-          </Text>
+          <AnimatedChevron
+            isExpanded={isExpanded}
+            color={themeDefinition.colors.text + '88'}
+            fontSize={scaleFont(24)}
+          />
         </TouchableOpacity>
       </View>
     );
@@ -830,18 +887,20 @@ const HomeScreen: React.FC = () => {
         {/* All Projects accordion */}
         <Animated.View style={styles.accordionSection} layout={listLayoutTransition}>
           {renderFolderHeader('All Projects', 'all')}
-          {expandedFolders.has('all') && (
-            allActiveProjects.length === 0
+          <AnimatedAccordion isExpanded={expandedFolders.has('all')}>
+            {allActiveProjects.length === 0
               ? renderEmptyState()
-              : renderGrid(allActiveProjects)
-          )}
+              : renderGrid(allActiveProjects)}
+          </AnimatedAccordion>
         </Animated.View>
 
         {/* User-created folder accordions */}
         {folders.map(folder => (
           <Animated.View key={folder.id} style={styles.accordionSection} layout={listLayoutTransition}>
             {renderFolderHeader(folder.name, folder.id)}
-            {expandedFolders.has(folder.id) && renderGrid(projectsInFolder(folder.id), folder.id)}
+            <AnimatedAccordion isExpanded={expandedFolders.has(folder.id)}>
+              {renderGrid(projectsInFolder(folder.id), folder.id)}
+            </AnimatedAccordion>
           </Animated.View>
         ))}
 
@@ -849,7 +908,9 @@ const HomeScreen: React.FC = () => {
         {trashedProjects.length > 0 && (
           <Animated.View style={styles.accordionSection} layout={listLayoutTransition}>
             {renderFolderHeader('Trash', 'trash')}
-            {expandedFolders.has('trash') && renderGrid(trashedProjects)}
+            <AnimatedAccordion isExpanded={expandedFolders.has('trash')}>
+              {renderGrid(trashedProjects)}
+            </AnimatedAccordion>
           </Animated.View>
         )}
       </ScrollView>
