@@ -143,6 +143,7 @@ const RoadmapEditorScreen: React.FC = () => {
   const isLinearChainTemplate = templateId === 'linear_4_chain';
   const isBubbleTimelineTemplate = templateId === 'bubble_timeline_6';
   const isRibbonStepsTemplate = templateId === 'ribbon_steps_3';
+  const isVerticalIvoryFlowTemplate = templateId === 'vertical_flow_5';
   const supportsSecondaryText =
     isFigureEightTemplate ||
     isInfinityLoopTemplate ||
@@ -1352,6 +1353,7 @@ const RoadmapEditorScreen: React.FC = () => {
         )}
 
         {/* Style options */}
+        {!isVerticalIvoryFlowTemplate && (
         <View
           style={[
             styles.editSection,
@@ -1538,55 +1540,57 @@ const RoadmapEditorScreen: React.FC = () => {
             </>
           )}
 
-          {/* Background picker toggle */}
-          <TouchableOpacity
-            style={[
-              styles.optionButton,
-              {
-                backgroundColor: themeDefinition.colors.background,
-                borderColor: themeDefinition.colors.border,
-                padding: scale(12),
-                marginTop: scale(isCarouselTemplate ? 8 : isImageBackedTemplate ? 0 : 16),
-              },
-            ]}
-            onPress={handleToggleBackgroundPicker}
-          >
-            <View style={styles.optionButtonRow}>
-              <Text style={[styles.optionButtonText, { color: themeDefinition.colors.text, fontSize: scaleFont(14) }]}>
-                {isCarouselTemplate
-                  ? 'Change Cover Background'
-                  : t('roadmap_change_background') || 'Change Background'}
-              </Text>
-              <Animated.Text
+          {!isVerticalIvoryFlowTemplate && (
+            <>
+              {/* Background picker toggle */}
+              <TouchableOpacity
                 style={[
-                  styles.optionButtonIcon,
+                  styles.optionButton,
                   {
-                    color: themeDefinition.colors.text + 'AA',
-                    transform: [{ rotate: accordionChevronRotation }],
+                    backgroundColor: themeDefinition.colors.background,
+                    borderColor: themeDefinition.colors.border,
+                    padding: scale(12),
+                    marginTop: scale(isCarouselTemplate ? 8 : isImageBackedTemplate ? 0 : 16),
                   },
                 ]}
+                onPress={handleToggleBackgroundPicker}
               >
-                ⌄
-              </Animated.Text>
-            </View>
-          </TouchableOpacity>
+                <View style={styles.optionButtonRow}>
+                  <Text style={[styles.optionButtonText, { color: themeDefinition.colors.text, fontSize: scaleFont(14) }]}>
+                    {isCarouselTemplate
+                      ? 'Change Cover Background'
+                      : t('roadmap_change_background') || 'Change Background'}
+                  </Text>
+                  <Animated.Text
+                    style={[
+                      styles.optionButtonIcon,
+                      {
+                        color: themeDefinition.colors.text + 'AA',
+                        transform: [{ rotate: accordionChevronRotation }],
+                      },
+                    ]}
+                  >
+                    ⌄
+                  </Animated.Text>
+                </View>
+              </TouchableOpacity>
 
-          {/* Background picker */}
-          {showBackgroundPicker && (
-            <Animated.View
-              style={{
-                opacity: backgroundAccordionAnim,
-                transform: [
-                  {
-                    translateY: backgroundAccordionAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [-8, 0],
-                    }),
-                  },
-                ],
-              }}
-            >
-            <View style={[styles.backgroundGrid, { marginTop: scale(12) }]}>
+              {/* Background picker */}
+              {showBackgroundPicker && (
+                <Animated.View
+                  style={{
+                    opacity: backgroundAccordionAnim,
+                    transform: [
+                      {
+                        translateY: backgroundAccordionAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [-8, 0],
+                        }),
+                      },
+                    ],
+                  }}
+                >
+                <View style={[styles.backgroundGrid, { marginTop: scale(12) }]}>
               {ROADMAP_BACKGROUND_OPTIONS.map(gradient => (
                 <TouchableOpacity
                   key={gradient.id}
@@ -1658,10 +1662,13 @@ const RoadmapEditorScreen: React.FC = () => {
                   </Text>
                 )}
               </TouchableOpacity>
-            </View>
-            </Animated.View>
+                </View>
+                </Animated.View>
+              )}
+            </>
           )}
         </View>
+        )}
 
         {/* Corner images */}
         <View

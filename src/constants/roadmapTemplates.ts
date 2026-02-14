@@ -227,7 +227,7 @@ export const RIBBON_STEPS_3_TEMPLATE: RoadmapTemplate = {
 // Image-backed; circles are invisible tap targets near each step's text area.
 export const VERTICAL_FLOW_5_TEMPLATE: RoadmapTemplate = {
   id: 'vertical_flow_5',
-  name: 'Vertical Flow',
+  name: 'Vertical Ivory Flow',
   description: 'Five steps with alternating icons and colored titles',
   circleCount: 5,
   circles: [

@@ -56,7 +56,7 @@ const RoadmapTemplateScreen: React.FC = () => {
   const handleSelectTemplate = (template: RoadmapTemplate) => {
     FeedbackService.buttonTap();
     const projectId = `roadmap_${Date.now()}`;
-    if (template.id === 'carousel') {
+    if (template.id === 'carousel' || template.id === 'vertical_flow_5') {
       navigation.navigate('RoadmapEditor', {
         projectId,
         templateId: template.id,
