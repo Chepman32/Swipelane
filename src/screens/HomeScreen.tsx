@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,8 @@ import {
   LayoutAnimation,
   Platform,
   UIManager,
+  Modal,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -233,6 +235,9 @@ const HomeScreen: React.FC = () => {
   const [currentRoadmapProject, setCurrentRoadmapProject] = useState<RoadmapProjectItem | null>(null);
   const [folders, setFolders] = useState<ProjectFolder[]>([]);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(['all', 'trash']));
+  const [moveTargetItem, setMoveTargetItem] = useState<BaseGridItem | null>(null);
+  const [isCreatingFolderFromMove, setIsCreatingFolderFromMove] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const { themeDefinition } = useTheme();
@@ -244,6 +249,12 @@ const HomeScreen: React.FC = () => {
       loadProjects();
     }, [])
   );
+
+  useEffect(() => {
+    if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+      UIManager.setLayoutAnimationEnabledExperimental(true);
+    }
+  }, []);
 
   const loadProjects = async () => {
     try {
@@ -299,7 +310,20 @@ const HomeScreen: React.FC = () => {
   };
 
   const toggleAccordion = (folderId: string) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    LayoutAnimation.configureNext({
+      duration: 220,
+      create: {
+        type: LayoutAnimation.Types.easeInEaseOut,
+        property: LayoutAnimation.Properties.opacity,
+      },
+      update: {
+        type: LayoutAnimation.Types.easeInEaseOut,
+      },
+      delete: {
+        type: LayoutAnimation.Types.easeInEaseOut,
+        property: LayoutAnimation.Properties.opacity,
+      },
+    });
     setExpandedFolders(prev => {
       const next = new Set(prev);
       if (next.has(folderId)) { next.delete(folderId); } else { next.add(folderId); }
@@ -373,7 +397,29 @@ const HomeScreen: React.FC = () => {
     await loadProjects();
   };
 
+  const moveItemToFolder = async (item: BaseGridItem, folderId: string) => {
+    if (item.projectKind === 'roadmap') {
+      await StorageService.moveRoadmapProjectToFolder(item.id, folderId);
+    } else {
+      await StorageService.moveProjectToFolder(item.id, folderId);
+    }
+
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setExpandedFolders(prev => {
+      const next = new Set(prev);
+      next.add(folderId);
+      return next;
+    });
+    await loadProjects();
+  };
+
   const handleMoveToFolder = (item: BaseGridItem) => {
+    if (Platform.OS !== 'ios') {
+      setMoveTargetItem(item);
+      setIsCreatingFolderFromMove(false);
+      return;
+    }
+
     const options = [...folders.map(f => f.name), 'New Folder', 'Cancel'];
     ActionSheetIOS.showActionSheetWithOptions(
       {
@@ -391,26 +437,32 @@ const HomeScreen: React.FC = () => {
             async (folderName) => {
               if (!folderName?.trim()) { return; }
               const newFolder = await StorageService.createFolder(folderName.trim());
-              if (item.projectKind === 'roadmap') {
-                await StorageService.moveRoadmapProjectToFolder(item.id, newFolder.id);
-              } else {
-                await StorageService.moveProjectToFolder(item.id, newFolder.id);
-              }
-              await loadProjects();
+              await moveItemToFolder(item, newFolder.id);
             },
             'plain-text'
           );
         } else {
           const targetFolder = folders[buttonIndex];
-          if (item.projectKind === 'roadmap') {
-            await StorageService.moveRoadmapProjectToFolder(item.id, targetFolder.id);
-          } else {
-            await StorageService.moveProjectToFolder(item.id, targetFolder.id);
-          }
-          await loadProjects();
+          await moveItemToFolder(item, targetFolder.id);
         }
       }
     );
+  };
+
+  const handleCreateFolderAndMove = async () => {
+    const folderName = newFolderName.trim();
+    if (!folderName || !moveTargetItem) { return; }
+    const newFolder = await StorageService.createFolder(folderName);
+    await moveItemToFolder(moveTargetItem, newFolder.id);
+    setNewFolderName('');
+    setIsCreatingFolderFromMove(false);
+    setMoveTargetItem(null);
+  };
+
+  const closeMoveModal = () => {
+    setMoveTargetItem(null);
+    setIsCreatingFolderFromMove(false);
+    setNewFolderName('');
   };
 
   const handleTrash = async (item: BaseGridItem) => {
@@ -486,40 +538,6 @@ const HomeScreen: React.FC = () => {
         handleDeletePermanent(item);
         break;
     }
-  };
-
-  // ── Folder context menu handlers ──────────────────────────────────────────
-
-  const handleRenameFolder = (folderId: string, currentName: string) => {
-    Alert.prompt(
-      'Rename Folder',
-      'Enter a new name',
-      async (newName) => {
-        if (!newName?.trim()) { return; }
-        await StorageService.renameFolder(folderId, newName.trim());
-        await loadProjects();
-      },
-      'plain-text',
-      currentName
-    );
-  };
-
-  const handleDeleteFolder = (folderId: string) => {
-    Alert.alert(
-      'Remove Folder',
-      'Projects in this folder will stay in All Projects.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Remove',
-          style: 'destructive',
-          onPress: async () => {
-            await StorageService.deleteFolder(folderId);
-            await loadProjects();
-          },
-        },
-      ]
-    );
   };
 
   const onRefresh = async () => {
@@ -659,50 +677,30 @@ const HomeScreen: React.FC = () => {
     ));
   };
 
-  const renderFolderHeader = (
-    label: string,
-    folderId: string,
-    isBuiltIn: boolean
-  ) => {
+  const renderFolderHeader = (label: string, folderId: string) => {
     const isExpanded = expandedFolders.has(folderId);
-    const folderMenuActions = isBuiltIn
-      ? []
-      : [
-          { id: 'rename', title: 'Rename' },
-          { id: 'remove', title: 'Remove', attributes: { destructive: true } },
-        ];
-
-    const header = (
-      <TouchableOpacity
-        style={[styles.accordionHeader, { borderBottomColor: themeDefinition.colors.border }]}
-        onPress={() => toggleAccordion(folderId)}
-        activeOpacity={0.7}
-      >
-        <Text style={[styles.accordionTitle, { color: themeDefinition.colors.text, fontSize: scaleFont(18) }]}>
-          {label}
-        </Text>
-        <Text style={[styles.accordionChevron, { color: themeDefinition.colors.text + '88' }]}>
-          {isExpanded ? '▾' : '▸'}
-        </Text>
-      </TouchableOpacity>
-    );
-
-    if (isBuiltIn) {
-      return header;
-    }
-
     return (
-      <MenuView
-        title={label}
-        onPressAction={({ nativeEvent }) => {
-          if (nativeEvent.event === 'rename') { handleRenameFolder(folderId, label); }
-          if (nativeEvent.event === 'remove') { handleDeleteFolder(folderId); }
-        }}
-        actions={folderMenuActions}
-        shouldOpenOnLongPress
+      <View
+        style={[
+          styles.accordionHeader,
+          {
+            borderBottomColor: themeDefinition.colors.border,
+          },
+        ]}
       >
-        {header}
-      </MenuView>
+        <TouchableOpacity
+          style={styles.accordionHeaderMain}
+          onPress={() => toggleAccordion(folderId)}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.accordionTitle, { color: themeDefinition.colors.text, fontSize: scaleFont(18) }]}>
+            {label}
+          </Text>
+          <Text style={[styles.accordionChevron, { color: themeDefinition.colors.text + '88', fontSize: scaleFont(24) }]}>
+            {isExpanded ? '▾' : '▸'}
+          </Text>
+        </TouchableOpacity>
+      </View>
     );
   };
 
@@ -787,7 +785,7 @@ const HomeScreen: React.FC = () => {
       >
         {/* All Projects accordion */}
         <View style={styles.accordionSection}>
-          {renderFolderHeader('All Projects', 'all', true)}
+          {renderFolderHeader('All Projects', 'all')}
           {expandedFolders.has('all') && (
             allActiveProjects.length === 0
               ? renderEmptyState()
@@ -798,7 +796,7 @@ const HomeScreen: React.FC = () => {
         {/* User-created folder accordions */}
         {folders.map(folder => (
           <View key={folder.id} style={styles.accordionSection}>
-            {renderFolderHeader(folder.name, folder.id, false)}
+            {renderFolderHeader(folder.name, folder.id)}
             {expandedFolders.has(folder.id) && renderGrid(projectsInFolder(folder.id))}
           </View>
         ))}
@@ -806,11 +804,122 @@ const HomeScreen: React.FC = () => {
         {/* Trash accordion – only when non-empty */}
         {trashedProjects.length > 0 && (
           <View style={styles.accordionSection}>
-            {renderFolderHeader('Trash', 'trash', true)}
+            {renderFolderHeader('Trash', 'trash')}
             {expandedFolders.has('trash') && renderGrid(trashedProjects)}
           </View>
         )}
       </ScrollView>
+
+      <Modal
+        visible={Platform.OS !== 'ios' && !!moveTargetItem}
+        transparent
+        animationType="fade"
+        onRequestClose={closeMoveModal}
+      >
+        <View style={styles.modalBackdrop}>
+          <View
+            style={[
+              styles.modalCard,
+              {
+                backgroundColor: themeDefinition.colors.card,
+                borderColor: themeDefinition.colors.border,
+              },
+            ]}
+          >
+            {!isCreatingFolderFromMove ? (
+              <>
+                <Text style={[styles.modalTitle, { color: themeDefinition.colors.text }]}>
+                  Move to Folder
+                </Text>
+                <ScrollView style={styles.modalFolderList} showsVerticalScrollIndicator={false}>
+                  {folders.map(folder => (
+                    <TouchableOpacity
+                      key={folder.id}
+                      style={[
+                        styles.modalOption,
+                        { borderBottomColor: themeDefinition.colors.border },
+                      ]}
+                      onPress={async () => {
+                        if (!moveTargetItem) { return; }
+                        await moveItemToFolder(moveTargetItem, folder.id);
+                        closeMoveModal();
+                      }}
+                    >
+                      <Text style={[styles.modalOptionText, { color: themeDefinition.colors.text }]}>
+                        {folder.name}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+                <TouchableOpacity
+                  style={[
+                    styles.modalOption,
+                    { borderBottomColor: themeDefinition.colors.border },
+                  ]}
+                  onPress={() => setIsCreatingFolderFromMove(true)}
+                >
+                  <Text style={[styles.modalOptionText, { color: themeDefinition.colors.primary }]}>
+                    + New Folder
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.modalCancel} onPress={closeMoveModal}>
+                  <Text style={[styles.modalCancelText, { color: themeDefinition.colors.text + '99' }]}>
+                    Cancel
+                  </Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <Text style={[styles.modalTitle, { color: themeDefinition.colors.text }]}>
+                  New Folder
+                </Text>
+                <TextInput
+                  value={newFolderName}
+                  onChangeText={setNewFolderName}
+                  placeholder="Enter folder name"
+                  placeholderTextColor={themeDefinition.colors.text + '66'}
+                  style={[
+                    styles.modalInput,
+                    {
+                      color: themeDefinition.colors.text,
+                      borderColor: themeDefinition.colors.border,
+                      backgroundColor: themeDefinition.colors.background,
+                    },
+                  ]}
+                  autoFocus
+                  returnKeyType="done"
+                  onSubmitEditing={handleCreateFolderAndMove}
+                />
+                <View style={styles.modalButtonsRow}>
+                  <TouchableOpacity
+                    style={[
+                      styles.modalSecondaryButton,
+                      { borderColor: themeDefinition.colors.border },
+                    ]}
+                    onPress={() => {
+                      setIsCreatingFolderFromMove(false);
+                      setNewFolderName('');
+                    }}
+                  >
+                    <Text style={[styles.modalSecondaryButtonText, { color: themeDefinition.colors.text + '99' }]}>
+                      Back
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.modalPrimaryButton,
+                      { backgroundColor: themeDefinition.colors.primary || '#007AFF' },
+                    ]}
+                    onPress={handleCreateFolderAndMove}
+                  >
+                    <Text style={styles.modalPrimaryButtonText}>Create & Move</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
 
       {/* Floating Action Button */}
       <TouchableOpacity
@@ -882,12 +991,18 @@ const styles = StyleSheet.create({
     borderBottomColor: '#eee',
     marginBottom: 4,
   },
+  accordionHeaderMain: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   accordionTitle: {
     fontWeight: '700',
     fontSize: 18,
   },
   accordionChevron: {
-    fontSize: 16,
+    fontSize: 24,
     color: '#888',
   },
   gridRow: {
@@ -994,6 +1109,76 @@ const styles = StyleSheet.create({
   },
   projectSlides: {
     fontSize: 12,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  modalCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 16,
+    maxHeight: '80%',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 12,
+  },
+  modalFolderList: {
+    maxHeight: 280,
+  },
+  modalOption: {
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  modalOptionText: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  modalCancel: {
+    paddingTop: 12,
+    alignItems: 'center',
+  },
+  modalCancelText: {
+    fontSize: 15,
+    fontWeight: '500',
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+    marginBottom: 12,
+  },
+  modalButtonsRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  modalSecondaryButton: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingVertical: 11,
+    alignItems: 'center',
+  },
+  modalSecondaryButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  modalPrimaryButton: {
+    flex: 1,
+    borderRadius: 10,
+    paddingVertical: 11,
+    alignItems: 'center',
+  },
+  modalPrimaryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
   },
   fab: {
     position: 'absolute',
