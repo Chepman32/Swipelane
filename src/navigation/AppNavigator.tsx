@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
-import AnimatedSplashScreen from '../screens/AnimatedSplashScreen';
+import {
+  createStackNavigator,
+  type StackCardInterpolationProps,
+} from '@react-navigation/stack';
 import SplashScreen from '../screens/SplashScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
 import HomeScreen from '../screens/HomeScreen';
 import NewProjectScreen from '../screens/NewProjectScreen';
-import StorageService from '../services/StorageService';
 import ImageSelectionScreen from '../screens/ImageSelectionScreen';
 import EditorScreen from '../screens/EditorScreen';
 import PreviewScreen from '../screens/PreviewScreen';
@@ -43,26 +44,47 @@ export type RootStackParamList = {
 
 const Stack = createStackNavigator<RootStackParamList>();
 
+const springyHomeInterpolator = ({ current, next, layouts }: StackCardInterpolationProps) => {
+  const translateX = current.progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [layouts.screen.width * 0.22, 0],
+  });
+
+  const translateY = current.progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [28, 0],
+  });
+
+  const scale = current.progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.9, 1],
+  });
+
+  const opacity = current.progress.interpolate({
+    inputRange: [0, 0.45, 1],
+    outputRange: [0, 0.55, 1],
+  });
+
+  const overlayOpacity = next
+    ? next.progress.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0, 0.1],
+      })
+    : 0;
+
+  return {
+    cardStyle: {
+      opacity,
+      transform: [{ translateX }, { translateY }, { scale }],
+    },
+    overlayStyle: {
+      opacity: overlayOpacity,
+    },
+  };
+};
+
 const AppNavigator: React.FC = () => {
-  const [showAdvancedSplash, setShowAdvancedSplash] = useState(true);
-  const [hasRestoredProject, setHasRestoredProject] = useState(false);
-  const [showOnboarding, setShowOnboarding] = useState(false);
   const { t } = useLanguage();
-
-  useEffect(() => {
-    // Check if there's a saved project to restore
-    StorageService.loadCurrentProject().then(project => {
-      if (project && !project.isCompleted) {
-        setHasRestoredProject(true);
-      }
-    });
-
-    // Determine which splash screen to show based on first launch
-    StorageService.isFirstLaunch().then(isFirst => {
-      setShowAdvancedSplash(isFirst);
-      setShowOnboarding(isFirst);
-    });
-  }, []);
 
   return (
     <NavigationContainer>
@@ -89,7 +111,40 @@ const AppNavigator: React.FC = () => {
             animationTypeForReplace: 'push',
           }}
         />
-        <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen
+          name="Home"
+          component={HomeScreen}
+          options={{
+            animationTypeForReplace: 'push',
+            transitionSpec: {
+              open: {
+                animation: 'spring',
+                config: {
+                  stiffness: 680,
+                  damping: 30,
+                  mass: 0.9,
+                  velocity: 6.2,
+                  overshootClamping: false,
+                  restDisplacementThreshold: 0.01,
+                  restSpeedThreshold: 0.01,
+                },
+              },
+              close: {
+                animation: 'spring',
+                config: {
+                  stiffness: 700,
+                  damping: 50,
+                  mass: 1,
+                  velocity: 2.6,
+                  overshootClamping: true,
+                  restDisplacementThreshold: 0.01,
+                  restSpeedThreshold: 0.01,
+                },
+              },
+            },
+            cardStyleInterpolator: springyHomeInterpolator,
+          }}
+        />
         <Stack.Screen
           name="NewProject"
           component={NewProjectScreen}
