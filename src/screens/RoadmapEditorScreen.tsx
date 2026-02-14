@@ -139,8 +139,8 @@ const AnimatedEditSection: React.FC<{
   );
 
   return (
-    <ReAnimated.View style={containerStyle}>
-      <View onLayout={onContentLayout}>{children}</View>
+    <ReAnimated.View style={[{ width: '100%' }, containerStyle]}>
+      <View style={{ width: '100%' }} onLayout={onContentLayout}>{children}</View>
     </ReAnimated.View>
   );
 };
@@ -341,6 +341,7 @@ const RoadmapEditorScreen: React.FC = () => {
   }, [slide, selectedCircleId]);
 
   const lastSelectedContentRef = useRef<RoadmapCircleContent | null>(null);
+  const hasInitializedBubbleSelectionRef = useRef(false);
   if (selectedCircleContent) {
     lastSelectedContentRef.current = selectedCircleContent;
   }
@@ -371,9 +372,13 @@ const RoadmapEditorScreen: React.FC = () => {
   useEffect(() => {
     if (!isBubbleTimelineTemplate || !slide) return;
     if (!slide.circles.length) return;
-    const exists = selectedCircleId
-      ? slide.circles.some(c => c.circleId === selectedCircleId)
-      : false;
+    if (!hasInitializedBubbleSelectionRef.current && !selectedCircleId) {
+      setSelectedCircleId(slide.circles[0].circleId);
+      hasInitializedBubbleSelectionRef.current = true;
+      return;
+    }
+    if (!selectedCircleId) return;
+    const exists = slide.circles.some(c => c.circleId === selectedCircleId);
     if (!exists) {
       setSelectedCircleId(slide.circles[0].circleId);
     }
