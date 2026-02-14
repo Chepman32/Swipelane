@@ -50,6 +50,13 @@ import type { SlideBackgroundGradient } from '../services/StorageService';
 import GradientBackground from '../components/GradientBackground';
 import ImageService from '../services/ImageService';
 import StorageService from '../services/StorageService';
+import ReAnimated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  interpolate,
+  Extrapolation,
+} from 'react-native-reanimated';
 
 const COLOR_OPTIONS = [
   '#F5D547', // Default yellow
@@ -87,6 +94,56 @@ const BUBBLE_TIMELINE_COLOR_OPTIONS = [
   '#7C6BC9',
   '#32A6BC',
 ];
+
+const editSectionSpring = { damping: 15, stiffness: 150, mass: 0.8 };
+
+const AnimatedEditSection: React.FC<{
+  isVisible: boolean;
+  children: React.ReactNode;
+}> = ({ isVisible, children }) => {
+  const progress = useSharedValue(isVisible ? 1 : 0);
+  const measuredHeight = useSharedValue(0);
+
+  React.useEffect(() => {
+    progress.value = withSpring(isVisible ? 1 : 0, editSectionSpring);
+  }, [isVisible, progress]);
+
+  const containerStyle = useAnimatedStyle(() => {
+    if (measuredHeight.value === 0) {
+      return { overflow: 'hidden' as const };
+    }
+    const clamped = interpolate(
+      progress.value,
+      [0, 1],
+      [0, 1],
+      Extrapolation.CLAMP,
+    );
+    return {
+      height: clamped * measuredHeight.value,
+      opacity: clamped,
+      overflow: 'hidden' as const,
+      transform: [
+        { translateY: (1 - progress.value) * -6 },
+      ],
+    };
+  });
+
+  const onContentLayout = React.useCallback(
+    (e: any) => {
+      const h = e.nativeEvent.layout.height;
+      if (h > 0) {
+        measuredHeight.value = h;
+      }
+    },
+    [measuredHeight],
+  );
+
+  return (
+    <ReAnimated.View style={containerStyle}>
+      <View onLayout={onContentLayout}>{children}</View>
+    </ReAnimated.View>
+  );
+};
 
 type RootStackParamList = {
   RoadmapEditor: {
@@ -282,6 +339,12 @@ const RoadmapEditorScreen: React.FC = () => {
     if (!slide || !selectedCircleId) return null;
     return slide.circles.find(c => c.circleId === selectedCircleId);
   }, [slide, selectedCircleId]);
+
+  const lastSelectedContentRef = useRef<RoadmapCircleContent | null>(null);
+  if (selectedCircleContent) {
+    lastSelectedContentRef.current = selectedCircleContent;
+  }
+  const displayCircleContent = selectedCircleContent ?? lastSelectedContentRef.current;
 
   const selectedBubbleTitle = useMemo(() => {
     if (!selectedCircleContent) return '';
@@ -992,7 +1055,8 @@ const RoadmapEditorScreen: React.FC = () => {
         )}
 
         {/* Non-carousel: selected circle editing */}
-        {!isCarouselTemplate && selectedCircleContent && (
+        {!isCarouselTemplate && (
+          <AnimatedEditSection isVisible={!!selectedCircleContent}>
           <View
             style={[
               styles.editSection,
@@ -1005,14 +1069,6 @@ const RoadmapEditorScreen: React.FC = () => {
               },
             ]}
           >
-            <Text
-              style={[
-                styles.sectionTitle,
-                { color: themeDefinition.colors.text, fontSize: scaleFont(16), marginBottom: scale(12) },
-              ]}
-            >
-              {t('roadmap_edit_circle') || 'Edit Circle'}
-            </Text>
 
             {isBubbleTimelineTemplate && (
               <>
@@ -1073,9 +1129,9 @@ const RoadmapEditorScreen: React.FC = () => {
                             height: scale(36),
                             borderRadius: scale(18),
                             backgroundColor: color,
-                            borderWidth: selectedCircleContent.textStyle?.color === color ? 3 : 1,
+                            borderWidth: displayCircleContent?.textStyle?.color === color ? 3 : 1,
                             borderColor:
-                              selectedCircleContent.textStyle?.color === color
+                              displayCircleContent?.textStyle?.color === color
                                 ? '#007AFF'
                                 : themeDefinition.colors.border,
                             marginRight: scale(8),
@@ -1110,7 +1166,7 @@ const RoadmapEditorScreen: React.FC = () => {
                   marginBottom: scale(12),
                 },
               ]}
-              value={selectedCircleContent.label}
+              value={displayCircleContent?.label ?? ''}
               onChangeText={handleLabelChange}
               placeholder={circleLabelPlaceholder}
               placeholderTextColor={themeDefinition.colors.text + '66'}
@@ -1157,7 +1213,7 @@ const RoadmapEditorScreen: React.FC = () => {
                       {t('select_image') || 'Select Image'}
                     </Text>
                   </TouchableOpacity>
-                  {selectedCircleId && selectedCircleContent.imageUri && (
+                  {selectedCircleId && displayCircleContent?.imageUri && (
                     <TouchableOpacity
                       style={[
                         styles.contentTypeButton,
@@ -1242,7 +1298,7 @@ const RoadmapEditorScreen: React.FC = () => {
                       minHeight: scale(60),
                     },
                   ]}
-                  value={isBubbleTimelineTemplate ? selectedBubbleDescription : selectedCircleContent.text || ''}
+                  value={isBubbleTimelineTemplate ? selectedBubbleDescription : (displayCircleContent?.text || '')}
                   onChangeText={isBubbleTimelineTemplate ? handleBubbleDescriptionChange : handleContentTextChange}
                   placeholder="Description..."
                   placeholderTextColor={themeDefinition.colors.text + '66'}
@@ -1273,7 +1329,7 @@ const RoadmapEditorScreen: React.FC = () => {
                       styles.contentTypeButton,
                       {
                         backgroundColor:
-                          selectedCircleContent.contentType === 'text'
+                          displayCircleContent?.contentType === 'text'
                             ? '#007AFF'
                             : themeDefinition.colors.background,
                         borderColor: themeDefinition.colors.border,
@@ -1287,7 +1343,7 @@ const RoadmapEditorScreen: React.FC = () => {
                     <Text
                       style={{
                         color:
-                          selectedCircleContent.contentType === 'text'
+                          displayCircleContent?.contentType === 'text'
                             ? '#FFFFFF'
                             : themeDefinition.colors.text,
                         fontSize: scaleFont(14),
@@ -1301,7 +1357,7 @@ const RoadmapEditorScreen: React.FC = () => {
                       styles.contentTypeButton,
                       {
                         backgroundColor:
-                          selectedCircleContent.contentType === 'image'
+                          displayCircleContent?.contentType === 'image'
                             ? '#007AFF'
                             : themeDefinition.colors.background,
                         borderColor: themeDefinition.colors.border,
@@ -1314,7 +1370,7 @@ const RoadmapEditorScreen: React.FC = () => {
                     <Text
                       style={{
                         color:
-                          selectedCircleContent.contentType === 'image'
+                          displayCircleContent?.contentType === 'image'
                             ? '#FFFFFF'
                             : themeDefinition.colors.text,
                         fontSize: scaleFont(14),
@@ -1326,7 +1382,7 @@ const RoadmapEditorScreen: React.FC = () => {
                 </View>
 
                 {/* Text content input */}
-                {selectedCircleContent.contentType === 'text' && (
+                {displayCircleContent?.contentType === 'text' && (
                   <TextInput
                     style={[
                       styles.textInput,
@@ -1340,7 +1396,7 @@ const RoadmapEditorScreen: React.FC = () => {
                         minHeight: scale(60),
                       },
                     ]}
-                    value={selectedCircleContent.text || ''}
+                    value={displayCircleContent?.text || ''}
                     onChangeText={handleContentTextChange}
                     placeholder="Enter text..."
                     placeholderTextColor={themeDefinition.colors.text + '66'}
@@ -1350,6 +1406,7 @@ const RoadmapEditorScreen: React.FC = () => {
               </>
             )}
           </View>
+          </AnimatedEditSection>
         )}
 
         {/* Style options */}
