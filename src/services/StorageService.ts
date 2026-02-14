@@ -26,6 +26,12 @@ export interface SlideBackgroundGradient {
   end: GradientPoint;
 }
 
+export interface ProjectFolder {
+  id: string;
+  name: string;
+  createdAt: string;
+}
+
 export interface ProjectState {
   id: string;
   text: string;
@@ -50,6 +56,9 @@ export interface ProjectState {
   images: string[];
   lastModified: string;
   isCompleted: boolean;
+  name?: string;
+  folderId?: string;
+  isTrashed?: boolean;
 }
 
 export interface AppState {
@@ -77,6 +86,8 @@ class StorageService {
     // Roadmap storage keys
     CURRENT_ROADMAP_PROJECT: '@Swipelane:currentRoadmapProject',
     RECENT_ROADMAP_PROJECTS: '@Swipelane:recentRoadmapProjects',
+    // Folder storage
+    FOLDERS: '@Swipelane:folders',
   };
 
   private constructor() {}
@@ -276,8 +287,8 @@ class StorageService {
       // Add to beginning
       filteredProjects.unshift(project);
 
-      // Keep only last 10 projects
-      const trimmedProjects = filteredProjects.slice(0, 10);
+      // Keep only last 50 projects (raised from 10 to accommodate trashed items)
+      const trimmedProjects = filteredProjects.slice(0, 50);
 
       await AsyncStorage.setItem(
         this.STORAGE_KEYS.RECENT_PROJECTS,
@@ -635,8 +646,8 @@ class StorageService {
       // Add to beginning
       filteredProjects.unshift(project);
 
-      // Keep only last 10 projects
-      const trimmedProjects = filteredProjects.slice(0, 10);
+      // Keep only last 50 projects (raised from 10 to accommodate trashed items)
+      const trimmedProjects = filteredProjects.slice(0, 50);
 
       await AsyncStorage.setItem(
         this.STORAGE_KEYS.RECENT_ROADMAP_PROJECTS,
@@ -676,6 +687,290 @@ class StorageService {
     } catch (error) {
       console.error('Error deleting recent roadmap project:', error);
     }
+  }
+
+  // ==================== FOLDER METHODS ====================
+
+  private async saveFolders(folders: ProjectFolder[]): Promise<void> {
+    await AsyncStorage.setItem(this.STORAGE_KEYS.FOLDERS, JSON.stringify(folders));
+  }
+
+  async getFolders(): Promise<ProjectFolder[]> {
+    return StorageInitializer.safeStorageOperation(
+      async () => {
+        const data = await AsyncStorage.getItem(this.STORAGE_KEYS.FOLDERS);
+        return data ? (JSON.parse(data) as ProjectFolder[]) : [];
+      },
+      [],
+      'getFolders'
+    );
+  }
+
+  async createFolder(name: string): Promise<ProjectFolder> {
+    return StorageInitializer.safeStorageOperation(
+      async () => {
+        const folders = await this.getFolders();
+        const newFolder: ProjectFolder = {
+          id: `folder_${Date.now()}_${Math.round(Math.random() * 1_000_000)}`,
+          name,
+          createdAt: new Date().toISOString(),
+        };
+        folders.push(newFolder);
+        await this.saveFolders(folders);
+        return newFolder;
+      },
+      { id: '', name, createdAt: new Date().toISOString() } as ProjectFolder,
+      'createFolder'
+    );
+  }
+
+  async renameFolder(folderId: string, newName: string): Promise<void> {
+    return StorageInitializer.safeStorageOperation(
+      async () => {
+        const folders = await this.getFolders();
+        await this.saveFolders(folders.map(f => f.id === folderId ? { ...f, name: newName } : f));
+      },
+      undefined,
+      'renameFolder'
+    );
+  }
+
+  async deleteFolder(folderId: string): Promise<void> {
+    return StorageInitializer.safeStorageOperation(
+      async () => {
+        const folders = await this.getFolders();
+        await this.saveFolders(folders.filter(f => f.id !== folderId));
+
+        const textProjects = await this.getRecentProjects();
+        await AsyncStorage.setItem(
+          this.STORAGE_KEYS.RECENT_PROJECTS,
+          JSON.stringify(textProjects.map(p => p.folderId === folderId ? { ...p, folderId: undefined } : p))
+        );
+
+        const roadmapProjects = await this.getRecentRoadmapProjects();
+        await AsyncStorage.setItem(
+          this.STORAGE_KEYS.RECENT_ROADMAP_PROJECTS,
+          JSON.stringify(roadmapProjects.map((p: any) => p.folderId === folderId ? { ...p, folderId: undefined } : p))
+        );
+      },
+      undefined,
+      'deleteFolder'
+    );
+  }
+
+  // ==================== PROJECT RENAME / DUPLICATE / MOVE ====================
+
+  async renameRecentProject(projectId: string, newName: string): Promise<void> {
+    return StorageInitializer.safeStorageOperation(
+      async () => {
+        const projects = await this.getRecentProjects();
+        await AsyncStorage.setItem(
+          this.STORAGE_KEYS.RECENT_PROJECTS,
+          JSON.stringify(projects.map(p => p.id === projectId ? { ...p, name: newName } : p))
+        );
+      },
+      undefined,
+      'renameRecentProject'
+    );
+  }
+
+  async renameRecentRoadmapProject(projectId: string, newName: string): Promise<void> {
+    return StorageInitializer.safeStorageOperation(
+      async () => {
+        const projects = await this.getRecentRoadmapProjects();
+        await AsyncStorage.setItem(
+          this.STORAGE_KEYS.RECENT_ROADMAP_PROJECTS,
+          JSON.stringify(projects.map((p: any) => p.id === projectId ? { ...p, name: newName } : p))
+        );
+      },
+      undefined,
+      'renameRecentRoadmapProject'
+    );
+  }
+
+  async duplicateRecentProject(projectId: string): Promise<void> {
+    return StorageInitializer.safeStorageOperation(
+      async () => {
+        const projects = await this.getRecentProjects();
+        const original = projects.find(p => p.id === projectId);
+        if (!original) { return; }
+        const newId = `proj_${Date.now()}_${Math.round(Math.random() * 1_000_000)}`;
+        const baseName = original.name ?? original.text.trim().split('\n')[0] ?? 'Untitled';
+        const copy: ProjectState = {
+          ...original,
+          id: newId,
+          name: `Copy of ${baseName}`,
+          lastModified: new Date().toISOString(),
+          isTrashed: false,
+          slides: original.slides.map(slide => ({ ...slide })),
+          images: [...(original.images ?? [])],
+        };
+        await AsyncStorage.setItem(
+          this.STORAGE_KEYS.RECENT_PROJECTS,
+          JSON.stringify([copy, ...projects.filter(p => p.id !== newId)].slice(0, 50))
+        );
+      },
+      undefined,
+      'duplicateRecentProject'
+    );
+  }
+
+  async duplicateRecentRoadmapProject(projectId: string): Promise<void> {
+    return StorageInitializer.safeStorageOperation(
+      async () => {
+        const projects = await this.getRecentRoadmapProjects();
+        const original = projects.find((p: any) => p.id === projectId);
+        if (!original) { return; }
+        const newId = `roadmap_${Date.now()}_${Math.round(Math.random() * 1_000_000)}`;
+        const copy = {
+          ...original,
+          id: newId,
+          name: `Copy of ${original.name}`,
+          lastModified: new Date().toISOString(),
+          isTrashed: false,
+        };
+        await AsyncStorage.setItem(
+          this.STORAGE_KEYS.RECENT_ROADMAP_PROJECTS,
+          JSON.stringify([copy, ...projects.filter((p: any) => p.id !== newId)].slice(0, 50))
+        );
+      },
+      undefined,
+      'duplicateRecentRoadmapProject'
+    );
+  }
+
+  async moveProjectToFolder(projectId: string, folderId: string | null): Promise<void> {
+    return StorageInitializer.safeStorageOperation(
+      async () => {
+        const projects = await this.getRecentProjects();
+        await AsyncStorage.setItem(
+          this.STORAGE_KEYS.RECENT_PROJECTS,
+          JSON.stringify(projects.map(p => p.id === projectId ? { ...p, folderId: folderId ?? undefined } : p))
+        );
+      },
+      undefined,
+      'moveProjectToFolder'
+    );
+  }
+
+  async moveRoadmapProjectToFolder(projectId: string, folderId: string | null): Promise<void> {
+    return StorageInitializer.safeStorageOperation(
+      async () => {
+        const projects = await this.getRecentRoadmapProjects();
+        await AsyncStorage.setItem(
+          this.STORAGE_KEYS.RECENT_ROADMAP_PROJECTS,
+          JSON.stringify(projects.map((p: any) => p.id === projectId ? { ...p, folderId: folderId ?? undefined } : p))
+        );
+      },
+      undefined,
+      'moveRoadmapProjectToFolder'
+    );
+  }
+
+  // ==================== TRASH METHODS ====================
+
+  async trashProject(projectId: string): Promise<void> {
+    return StorageInitializer.safeStorageOperation(
+      async () => {
+        const projects = await this.getRecentProjects();
+        await AsyncStorage.setItem(
+          this.STORAGE_KEYS.RECENT_PROJECTS,
+          JSON.stringify(projects.map(p => p.id === projectId ? { ...p, isTrashed: true } : p))
+        );
+      },
+      undefined,
+      'trashProject'
+    );
+  }
+
+  async trashRoadmapProject(projectId: string): Promise<void> {
+    return StorageInitializer.safeStorageOperation(
+      async () => {
+        const projects = await this.getRecentRoadmapProjects();
+        await AsyncStorage.setItem(
+          this.STORAGE_KEYS.RECENT_ROADMAP_PROJECTS,
+          JSON.stringify(projects.map((p: any) => p.id === projectId ? { ...p, isTrashed: true } : p))
+        );
+      },
+      undefined,
+      'trashRoadmapProject'
+    );
+  }
+
+  async recoverProject(projectId: string): Promise<void> {
+    return StorageInitializer.safeStorageOperation(
+      async () => {
+        const projects = await this.getRecentProjects();
+        await AsyncStorage.setItem(
+          this.STORAGE_KEYS.RECENT_PROJECTS,
+          JSON.stringify(projects.map(p => p.id === projectId ? { ...p, isTrashed: false } : p))
+        );
+      },
+      undefined,
+      'recoverProject'
+    );
+  }
+
+  async recoverRoadmapProject(projectId: string): Promise<void> {
+    return StorageInitializer.safeStorageOperation(
+      async () => {
+        const projects = await this.getRecentRoadmapProjects();
+        await AsyncStorage.setItem(
+          this.STORAGE_KEYS.RECENT_ROADMAP_PROJECTS,
+          JSON.stringify(projects.map((p: any) => p.id === projectId ? { ...p, isTrashed: false } : p))
+        );
+      },
+      undefined,
+      'recoverRoadmapProject'
+    );
+  }
+
+  async permanentlyDeleteProject(projectId: string): Promise<void> {
+    return StorageInitializer.safeStorageOperation(
+      async () => {
+        const projects = await this.getRecentProjects();
+        await AsyncStorage.setItem(
+          this.STORAGE_KEYS.RECENT_PROJECTS,
+          JSON.stringify(projects.filter(p => p.id !== projectId))
+        );
+      },
+      undefined,
+      'permanentlyDeleteProject'
+    );
+  }
+
+  async permanentlyDeleteRoadmapProject(projectId: string): Promise<void> {
+    return StorageInitializer.safeStorageOperation(
+      async () => {
+        const projects = await this.getRecentRoadmapProjects();
+        await AsyncStorage.setItem(
+          this.STORAGE_KEYS.RECENT_ROADMAP_PROJECTS,
+          JSON.stringify(projects.filter((p: any) => p.id !== projectId))
+        );
+      },
+      undefined,
+      'permanentlyDeleteRoadmapProject'
+    );
+  }
+
+  async emptyTrash(): Promise<void> {
+    return StorageInitializer.safeStorageOperation(
+      async () => {
+        const textProjects = await this.getRecentProjects();
+        await AsyncStorage.setItem(
+          this.STORAGE_KEYS.RECENT_PROJECTS,
+          JSON.stringify(textProjects.filter(p => !p.isTrashed))
+        );
+
+        const roadmapProjects = await this.getRecentRoadmapProjects();
+        await AsyncStorage.setItem(
+          this.STORAGE_KEYS.RECENT_ROADMAP_PROJECTS,
+          JSON.stringify(roadmapProjects.filter((p: any) => !p.isTrashed))
+        );
+      },
+      undefined,
+      'emptyTrash'
+    );
   }
 }
 

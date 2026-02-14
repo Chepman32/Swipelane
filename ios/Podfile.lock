@@ -1808,6 +1808,34 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
+  - react-native-menu (2.0.0):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - SocketRocket
+    - Yoga
   - react-native-safe-area-context (5.6.1):
     - boost
     - DoubleConversion
@@ -2947,6 +2975,7 @@ DEPENDENCIES:
   - React-microtasksnativemodule (from `../node_modules/react-native/ReactCommon/react/nativemodule/microtasks`)
   - react-native-image-manipulator (from `../node_modules/react-native-image-manipulator`)
   - react-native-image-picker (from `../node_modules/react-native-image-picker`)
+  - "react-native-menu (from `../node_modules/@react-native-menu/menu`)"
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
   - "react-native-skia (from `../node_modules/@shopify/react-native-skia`)"
   - react-native-view-shot (from `../node_modules/react-native-view-shot`)
@@ -3089,6 +3118,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-image-manipulator"
   react-native-image-picker:
     :path: "../node_modules/react-native-image-picker"
+  react-native-menu:
+    :path: "../node_modules/@react-native-menu/menu"
   react-native-safe-area-context:
     :path: "../node_modules/react-native-safe-area-context"
   react-native-skia:
@@ -3227,6 +3258,7 @@ SPEC CHECKSUMS:
   React-microtasksnativemodule: 75b6604b667d297292345302cc5bfb6b6aeccc1b
   react-native-image-manipulator: 31643abf3d76d9a9c88f061ad8cee64337f3322f
   react-native-image-picker: 0314366753615115fa55c3cc937ac44cb7e75702
+  react-native-menu: 8d2c831a735c9e6528c28b26ca14e57591d87e14
   react-native-safe-area-context: c6e2edd1c1da07bdce287fa9d9e60c5f7b514616
   react-native-skia: 7267799b233f9671ff6ee9e9912f754977aa2a41
   react-native-view-shot: 6c008e58f4720de58370848201c5d4a082c6d4ca
@@ -3275,6 +3307,6 @@ SPEC CHECKSUMS:
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: a3ed390a19db0459bd6839823a6ac6d9c6db198d
 
-PODFILE CHECKSUM: 6b5d9b6bb7fb679ef95cf4b58e40c89778ae7bc6
+PODFILE CHECKSUM: 3e7132825246cbdec02914820b1e1c7f65927b03
 
 COCOAPODS: 1.16.2

@@ -117,7 +117,6 @@
 				931BCF49F7F1415789D0A22C /* FiraSans-Regular.ttf */,
 				0C0AA49BBA094D0CA7AFE8C7 /* FiraSans-SemiBold.ttf */,
 				D434997B22CE4FE6B8E00829 /* HomemadeApple-Regular.ttf */,
-				26E89A5ADCCA43FCAC32D487 /* README.txt */,
 			);
 			name = Resources;
 			sourceTree = "<group>";

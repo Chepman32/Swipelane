@@ -10,6 +10,7 @@ import {
   Platform,
   UIManager,
   Switch,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -181,6 +182,30 @@ const SettingsScreen: React.FC = () => {
     }
   };
 
+  const handleCleanTrash = () => {
+    FeedbackService.buttonTap();
+    Alert.alert(
+      'Clean Trash',
+      'Permanently delete all trashed projects? This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete All',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await StorageService.emptyTrash();
+              FeedbackService.success();
+            } catch (error) {
+              FeedbackService.error();
+              console.error('Error emptying trash:', error);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const currentLanguageName = languages.find(l => l.code === currentLanguage)?.nativeName || currentLanguage;
 
   return (
@@ -328,6 +353,25 @@ const SettingsScreen: React.FC = () => {
           >
             <Text style={[styles.resetButtonText, { color: themeDefinition.colors.notification, fontSize: scaleFont(16) }]}>
               {t('settings_reset_onboarding')}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Clean Trash */}
+        <View style={[styles.section, { paddingHorizontal: scale(20) }]}>
+          <TouchableOpacity
+            style={[
+              styles.resetButton,
+              {
+                backgroundColor: themeDefinition.colors.card,
+                borderColor: themeDefinition.colors.border,
+                paddingVertical: scale(14),
+              },
+            ]}
+            onPress={handleCleanTrash}
+          >
+            <Text style={[styles.resetButtonText, { color: themeDefinition.colors.notification, fontSize: scaleFont(16) }]}>
+              Clean Trash
             </Text>
           </TouchableOpacity>
         </View>

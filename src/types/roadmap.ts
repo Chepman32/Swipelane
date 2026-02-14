@@ -109,6 +109,8 @@ export interface RoadmapProjectState {
   slide: RoadmapSlide;
   lastModified: string;
   isCompleted: boolean;
+  folderId?: string;
+  isTrashed?: boolean;
 }
 
 // Helper to create default circle content for a template
