@@ -201,11 +201,13 @@ const RoadmapEditorScreen: React.FC = () => {
   const isBubbleTimelineTemplate = templateId === 'bubble_timeline_6';
   const isRibbonStepsTemplate = templateId === 'ribbon_steps_3';
   const isVerticalIvoryFlowTemplate = templateId === 'vertical_flow_5';
+  const isGridStepsTemplate = templateId === 'grid_steps_6';
   const supportsSecondaryText =
     isFigureEightTemplate ||
     isInfinityLoopTemplate ||
     isBubbleTimelineTemplate ||
-    isRibbonStepsTemplate;
+    isRibbonStepsTemplate ||
+    isGridStepsTemplate;
 
   useEffect(() => {
     if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -432,10 +434,14 @@ const RoadmapEditorScreen: React.FC = () => {
           setPercentageSelection({ start: cursor, end: cursor });
           return;
         }
+        if (isGridStepsTemplate) {
+          updateCircleContent(selectedCircleId, { label: text.replace(/[^\d]/g, '').slice(0, 2) });
+          return;
+        }
         updateCircleContent(selectedCircleId, { label: text });
       }
     },
-    [isBubbleTimelineTemplate, selectedCircleId, updateCircleContent]
+    [isBubbleTimelineTemplate, isGridStepsTemplate, selectedCircleId, updateCircleContent]
   );
 
   const handlePercentageSelectionChange = useCallback(
@@ -482,6 +488,11 @@ const RoadmapEditorScreen: React.FC = () => {
       text,
       imageUri: undefined,
     });
+  }, [selectedCircleId, updateCircleContent]);
+
+  const handleGridStepTitleChange = useCallback((title: string) => {
+    if (!selectedCircleId) return;
+    updateCircleContent(selectedCircleId, { title });
   }, [selectedCircleId, updateCircleContent]);
 
   const handleBubbleCountChange = useCallback((nextCount: number) => {
@@ -747,6 +758,8 @@ const RoadmapEditorScreen: React.FC = () => {
     ? 'Text Under Arrow'
     : isBubbleTimelineTemplate
       ? 'Percentage'
+      : isGridStepsTemplate
+        ? 'Step Number'
       : isRibbonStepsTemplate
         ? 'Step Label'
     : isHorizontalLoopTemplate
@@ -759,6 +772,8 @@ const RoadmapEditorScreen: React.FC = () => {
     ? 'Zone text...'
     : isBubbleTimelineTemplate
       ? '61%'
+      : isGridStepsTemplate
+        ? '1'
       : isRibbonStepsTemplate
         ? 'STEP 01'
     : supportsSecondaryText
@@ -1175,8 +1190,8 @@ const RoadmapEditorScreen: React.FC = () => {
               onChangeText={handleLabelChange}
               placeholder={circleLabelPlaceholder}
               placeholderTextColor={themeDefinition.colors.text + '66'}
-              keyboardType={isBubbleTimelineTemplate ? 'number-pad' : 'default'}
-              maxLength={isBubbleTimelineTemplate ? 4 : undefined}
+              keyboardType={isBubbleTimelineTemplate || isGridStepsTemplate ? 'number-pad' : 'default'}
+              maxLength={isBubbleTimelineTemplate ? 4 : isGridStepsTemplate ? 2 : undefined}
               selection={isBubbleTimelineTemplate ? percentageSelection : undefined}
               onSelectionChange={handlePercentageSelectionChange}
               onFocus={() => {
@@ -1274,6 +1289,39 @@ const RoadmapEditorScreen: React.FC = () => {
                       value={selectedBubbleTitle}
                       onChangeText={handleBubbleTitleChange}
                       placeholder="2012"
+                      placeholderTextColor={themeDefinition.colors.text + '66'}
+                    />
+                  </>
+                )}
+                {isGridStepsTemplate && (
+                  <>
+                    <Text
+                      style={[
+                        styles.inputLabel,
+                        {
+                          color: themeDefinition.colors.text + '99',
+                          fontSize: scaleFont(12),
+                          marginBottom: scale(4),
+                          marginTop: scale(8),
+                        },
+                      ]}
+                    >
+                      Main Text
+                    </Text>
+                    <TextInput
+                      style={[
+                        styles.textInput,
+                        {
+                          backgroundColor: themeDefinition.colors.background,
+                          color: themeDefinition.colors.text,
+                          borderColor: themeDefinition.colors.border,
+                          fontSize: scaleFont(14),
+                          padding: scale(12),
+                        },
+                      ]}
+                      value={displayCircleContent?.title || ''}
+                      onChangeText={handleGridStepTitleChange}
+                      placeholder="Define Your Vision"
                       placeholderTextColor={themeDefinition.colors.text + '66'}
                     />
                   </>

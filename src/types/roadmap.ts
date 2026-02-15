@@ -144,10 +144,28 @@ export function createDefaultCircleContent(
   }
 
   if (template.id === 'grid_steps_6') {
+    const defaultTitles = [
+      'Define Your Vision',
+      'Plan Your Path',
+      'Plan Path',
+      'Take Action',
+      'Review & Adapt',
+      'Achieve Success',
+    ];
+    const defaultDescriptions = [
+      'Clarity is key',
+      'Strategy matters',
+      'Execution drives',
+      'Execution drives',
+      'Flexibility wins',
+      'Consistency pays',
+    ];
     return template.circles.map((circle, index) => ({
       circleId: circle.id,
       label: `${index + 1}`,
-      contentType: 'empty' as const,
+      title: defaultTitles[index] || `Step ${index + 1}`,
+      contentType: 'text' as const,
+      text: defaultDescriptions[index] || 'Add your description here.',
     }));
   }
 

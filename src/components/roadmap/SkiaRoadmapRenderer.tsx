@@ -1068,6 +1068,7 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
                 if (!content) return null;
 
                 const labelText = content.label?.trim() || '';
+                const titleText = content.title?.trim() || '';
                 const detailText = content.text?.trim() || '';
                 const textSlot = textSlotsByCircleId.get(circle.id);
 
@@ -1079,6 +1080,13 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
                       `${circle.id}-label`,
                       imageTemplateFrame,
                       '#2D2D2D',
+                    )}
+                    {renderTemplateTextLines(
+                      titleText,
+                      textSlot?.title,
+                      `${circle.id}-title`,
+                      imageTemplateFrame,
+                      '#FFFFFF',
                     )}
                     {renderTemplateTextLines(
                       detailText,
