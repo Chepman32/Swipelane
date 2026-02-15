@@ -169,6 +169,29 @@ export function createDefaultCircleContent(
     }));
   }
 
+  if (template.id === 'process_cards_10') {
+    const defaultTitles = [
+      'Initial Research',
+      'Planning & Strategy',
+      'Planning &',
+      'Prototype Development',
+      'User Testing',
+      'Feedback Analysis',
+      'Finalization',
+      'Iterative Design',
+      'Deployment',
+      'Post-Launch Review',
+    ];
+
+    return template.circles.map((circle, index) => ({
+      circleId: circle.id,
+      label: `${index + 1}.`,
+      title: defaultTitles[index] || `Step ${index + 1}`,
+      contentType: 'text' as const,
+      text: '',
+    }));
+  }
+
   return template.circles.map((circle, index) => ({
     circleId: circle.id,
     label: `Step ${index + 1}`,

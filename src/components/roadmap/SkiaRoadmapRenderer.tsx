@@ -8,6 +8,7 @@ import {
   LinearGradient,
   Path,
   Rect,
+  RoundedRect,
   Skia,
   Text as SkiaText,
   useFont,
@@ -39,6 +40,50 @@ type SafeRoundedRectInput = {
   height: number;
   radius: number;
 };
+type ProcessCardIconKind =
+  | 'research'
+  | 'plan'
+  | 'idea'
+  | 'prototype'
+  | 'user'
+  | 'feedback'
+  | 'finalize'
+  | 'deploy'
+  | 'review';
+type ProcessCardLayout = {
+  circleId: string;
+  isBlue: boolean;
+  icon: ProcessCardIconKind;
+  cardX: number;
+  cardY: number;
+  cardWidth: number;
+  cardHeight: number;
+  iconCx: number;
+  iconCy: number;
+  iconRadius: number;
+};
+type ProcessCardLayoutInput = {
+  circleId: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  isBlue: boolean;
+  icon: ProcessCardIconKind;
+};
+
+const PROCESS_CARDS_LAYOUT_INPUT: ProcessCardLayoutInput[] = [
+  { circleId: 'c1', x: 0.06, y: 0.105, width: 0.41, height: 0.128, isBlue: true, icon: 'research' },
+  { circleId: 'c2', x: 0.53, y: 0.105, width: 0.41, height: 0.128, isBlue: false, icon: 'plan' },
+  { circleId: 'c3', x: 0.06, y: 0.273, width: 0.41, height: 0.128, isBlue: false, icon: 'idea' },
+  { circleId: 'c4', x: 0.53, y: 0.273, width: 0.41, height: 0.128, isBlue: true, icon: 'prototype' },
+  { circleId: 'c5', x: 0.06, y: 0.441, width: 0.41, height: 0.128, isBlue: true, icon: 'user' },
+  { circleId: 'c6', x: 0.53, y: 0.441, width: 0.41, height: 0.128, isBlue: false, icon: 'feedback' },
+  { circleId: 'c7', x: 0.06, y: 0.609, width: 0.41, height: 0.128, isBlue: false, icon: 'finalize' },
+  { circleId: 'c8', x: 0.53, y: 0.609, width: 0.41, height: 0.128, isBlue: true, icon: 'idea' },
+  { circleId: 'c9', x: 0.06, y: 0.777, width: 0.41, height: 0.128, isBlue: true, icon: 'deploy' },
+  { circleId: 'c10', x: 0.53, y: 0.777, width: 0.41, height: 0.128, isBlue: false, icon: 'review' },
+];
 
 const toSafeRoundedRect = ({
   x,
@@ -51,6 +96,330 @@ const toSafeRoundedRect = ({
   if (width <= 0 || height <= 0) return null;
   const safeRadius = Math.max(0, Math.min(radius, width / 2, height / 2));
   return Skia.RRectXY(Skia.XYWHRect(x, y, width, height), safeRadius, safeRadius);
+};
+
+const makeLinePath = (points: Array<{ x: number; y: number }>) => {
+  const path = Skia.Path.Make();
+  if (!points.length) return path;
+  path.moveTo(points[0].x, points[0].y);
+  for (let index = 1; index < points.length; index += 1) {
+    path.lineTo(points[index].x, points[index].y);
+  }
+  return path;
+};
+
+const getProcessCardsLayout = (width: number, height: number): ProcessCardLayout[] => {
+  if (width <= 0 || height <= 0) return [];
+  return PROCESS_CARDS_LAYOUT_INPUT.map(card => {
+    const cardX = card.x * width;
+    const cardY = card.y * height;
+    const cardWidth = card.width * width;
+    const cardHeight = card.height * height;
+    const iconRadius = cardHeight * 0.28;
+    const iconCx = cardX + cardWidth - iconRadius - cardWidth * 0.07;
+    const iconCy = cardY + cardHeight * 0.31;
+    return {
+      circleId: card.circleId,
+      isBlue: card.isBlue,
+      icon: card.icon,
+      cardX,
+      cardY,
+      cardWidth,
+      cardHeight,
+      iconCx,
+      iconCy,
+      iconRadius,
+    };
+  });
+};
+
+const renderProcessCardIcon = (
+  icon: ProcessCardIconKind,
+  cx: number,
+  cy: number,
+  radius: number,
+  color: string,
+  strokeWidth: number,
+) => {
+  const lineColor = color;
+  const s = radius;
+  const tinyStroke = Math.max(1, strokeWidth * 0.85);
+
+  if (icon === 'research') {
+    const clipTopLine = makeLinePath([
+      { x: cx - s * 0.25, y: cy - s * 0.34 },
+      { x: cx + s * 0.02, y: cy - s * 0.34 },
+    ]);
+    const handle = makeLinePath([
+      { x: cx + s * 0.22, y: cy + s * 0.18 },
+      { x: cx + s * 0.42, y: cy + s * 0.38 },
+    ]);
+    return (
+      <Group>
+        <RoundedRect
+          x={cx - s * 0.45}
+          y={cy - s * 0.38}
+          width={s * 0.58}
+          height={s * 0.72}
+          r={s * 0.08}
+          color={lineColor}
+          style="stroke"
+          strokeWidth={strokeWidth}
+        />
+        <Path path={clipTopLine} color={lineColor} style="stroke" strokeWidth={strokeWidth} />
+        <Circle cx={cx + s * 0.10} cy={cy + s * 0.02} r={s * 0.30} color={lineColor} style="stroke" strokeWidth={strokeWidth} />
+        <Path path={handle} color={lineColor} style="stroke" strokeWidth={strokeWidth} />
+      </Group>
+    );
+  }
+
+  if (icon === 'plan') {
+    const fold = makeLinePath([
+      { x: cx + s * 0.15, y: cy - s * 0.37 },
+      { x: cx + s * 0.30, y: cy - s * 0.22 },
+      { x: cx + s * 0.14, y: cy - s * 0.22 },
+    ]);
+    const line1 = makeLinePath([
+      { x: cx - s * 0.20, y: cy - s * 0.03 },
+      { x: cx + s * 0.22, y: cy - s * 0.03 },
+    ]);
+    const line2 = makeLinePath([
+      { x: cx - s * 0.20, y: cy + s * 0.12 },
+      { x: cx + s * 0.14, y: cy + s * 0.12 },
+    ]);
+    return (
+      <Group>
+        <RoundedRect
+          x={cx - s * 0.30}
+          y={cy - s * 0.38}
+          width={s * 0.60}
+          height={s * 0.76}
+          r={s * 0.09}
+          color={lineColor}
+          style="stroke"
+          strokeWidth={strokeWidth}
+        />
+        <Path path={fold} color={lineColor} style="stroke" strokeWidth={strokeWidth} />
+        <Path path={line1} color={lineColor} style="stroke" strokeWidth={tinyStroke} />
+        <Path path={line2} color={lineColor} style="stroke" strokeWidth={tinyStroke} />
+      </Group>
+    );
+  }
+
+  if (icon === 'idea') {
+    const base1 = makeLinePath([
+      { x: cx - s * 0.15, y: cy + s * 0.28 },
+      { x: cx + s * 0.15, y: cy + s * 0.28 },
+    ]);
+    const base2 = makeLinePath([
+      { x: cx - s * 0.11, y: cy + s * 0.38 },
+      { x: cx + s * 0.11, y: cy + s * 0.38 },
+    ]);
+    const rayTop = makeLinePath([
+      { x: cx, y: cy - s * 0.62 },
+      { x: cx, y: cy - s * 0.47 },
+    ]);
+    const rayLeft = makeLinePath([
+      { x: cx - s * 0.50, y: cy - s * 0.08 },
+      { x: cx - s * 0.36, y: cy - s * 0.03 },
+    ]);
+    const rayRight = makeLinePath([
+      { x: cx + s * 0.36, y: cy - s * 0.03 },
+      { x: cx + s * 0.50, y: cy - s * 0.08 },
+    ]);
+    return (
+      <Group>
+        <Circle cx={cx} cy={cy - s * 0.03} r={s * 0.33} color={lineColor} style="stroke" strokeWidth={strokeWidth} />
+        <Path path={base1} color={lineColor} style="stroke" strokeWidth={strokeWidth} />
+        <Path path={base2} color={lineColor} style="stroke" strokeWidth={strokeWidth} />
+        <Path path={rayTop} color={lineColor} style="stroke" strokeWidth={tinyStroke} />
+        <Path path={rayLeft} color={lineColor} style="stroke" strokeWidth={tinyStroke} />
+        <Path path={rayRight} color={lineColor} style="stroke" strokeWidth={tinyStroke} />
+      </Group>
+    );
+  }
+
+  if (icon === 'prototype') {
+    const gearOuter = s * 0.14;
+    const gearCenterX = cx + s * 0.23;
+    const gearCenterY = cy + s * 0.23;
+    const backDoc = (
+      <RoundedRect
+        x={cx - s * 0.40}
+        y={cy - s * 0.22}
+        width={s * 0.48}
+        height={s * 0.62}
+        r={s * 0.07}
+        color={lineColor}
+        style="stroke"
+        strokeWidth={tinyStroke}
+      />
+    );
+    const frontDoc = (
+      <RoundedRect
+        x={cx - s * 0.16}
+        y={cy - s * 0.34}
+        width={s * 0.48}
+        height={s * 0.62}
+        r={s * 0.07}
+        color={lineColor}
+        style="stroke"
+        strokeWidth={strokeWidth}
+      />
+    );
+    const line1 = makeLinePath([
+      { x: cx - s * 0.02, y: cy - s * 0.10 },
+      { x: cx + s * 0.20, y: cy - s * 0.10 },
+    ]);
+    const line2 = makeLinePath([
+      { x: cx - s * 0.02, y: cy + s * 0.02 },
+      { x: cx + s * 0.16, y: cy + s * 0.02 },
+    ]);
+    return (
+      <Group>
+        {backDoc}
+        {frontDoc}
+        <Path path={line1} color={lineColor} style="stroke" strokeWidth={tinyStroke} />
+        <Path path={line2} color={lineColor} style="stroke" strokeWidth={tinyStroke} />
+        <Circle cx={gearCenterX} cy={gearCenterY} r={gearOuter} color={lineColor} style="stroke" strokeWidth={tinyStroke} />
+        <Circle cx={gearCenterX} cy={gearCenterY} r={gearOuter * 0.45} color={lineColor} style="stroke" strokeWidth={tinyStroke} />
+      </Group>
+    );
+  }
+
+  if (icon === 'user') {
+    const shoulders = makeLinePath([
+      { x: cx - s * 0.30, y: cy + s * 0.30 },
+      { x: cx + s * 0.30, y: cy + s * 0.30 },
+    ]);
+    const cross1 = makeLinePath([
+      { x: cx + s * 0.24, y: cy + s * 0.10 },
+      { x: cx + s * 0.38, y: cy + s * 0.24 },
+    ]);
+    const cross2 = makeLinePath([
+      { x: cx + s * 0.38, y: cy + s * 0.10 },
+      { x: cx + s * 0.24, y: cy + s * 0.24 },
+    ]);
+    return (
+      <Group>
+        <Circle cx={cx} cy={cy - s * 0.06} r={s * 0.20} color={lineColor} />
+        <RoundedRect
+          x={cx - s * 0.31}
+          y={cy + s * 0.12}
+          width={s * 0.62}
+          height={s * 0.24}
+          r={s * 0.12}
+          color={lineColor}
+        />
+        <Path path={shoulders} color={lineColor} style="stroke" strokeWidth={tinyStroke} />
+        <Path path={cross1} color={lineColor} style="stroke" strokeWidth={tinyStroke} />
+        <Path path={cross2} color={lineColor} style="stroke" strokeWidth={tinyStroke} />
+      </Group>
+    );
+  }
+
+  if (icon === 'feedback') {
+    const topArc = Skia.Path.Make();
+    topArc.moveTo(cx - s * 0.42, cy - s * 0.08);
+    topArc.quadTo(cx, cy - s * 0.54, cx + s * 0.40, cy - s * 0.08);
+    const topArrow = makeLinePath([
+      { x: cx + s * 0.30, y: cy - s * 0.20 },
+      { x: cx + s * 0.42, y: cy - s * 0.08 },
+      { x: cx + s * 0.28, y: cy - s * 0.02 },
+    ]);
+    const bottomArc = Skia.Path.Make();
+    bottomArc.moveTo(cx + s * 0.42, cy + s * 0.08);
+    bottomArc.quadTo(cx, cy + s * 0.54, cx - s * 0.40, cy + s * 0.08);
+    const bottomArrow = makeLinePath([
+      { x: cx - s * 0.30, y: cy + s * 0.20 },
+      { x: cx - s * 0.42, y: cy + s * 0.08 },
+      { x: cx - s * 0.28, y: cy + s * 0.02 },
+    ]);
+    return (
+      <Group>
+        <Path path={topArc} color={lineColor} style="stroke" strokeWidth={strokeWidth} />
+        <Path path={topArrow} color={lineColor} style="stroke" strokeWidth={strokeWidth} />
+        <Path path={bottomArc} color={lineColor} style="stroke" strokeWidth={strokeWidth} />
+        <Path path={bottomArrow} color={lineColor} style="stroke" strokeWidth={strokeWidth} />
+      </Group>
+    );
+  }
+
+  if (icon === 'finalize') {
+    const clip = makeLinePath([
+      { x: cx - s * 0.12, y: cy - s * 0.35 },
+      { x: cx + s * 0.12, y: cy - s * 0.35 },
+    ]);
+    const check = makeLinePath([
+      { x: cx - s * 0.18, y: cy + s * 0.04 },
+      { x: cx - s * 0.04, y: cy + s * 0.18 },
+      { x: cx + s * 0.20, y: cy - s * 0.08 },
+    ]);
+    return (
+      <Group>
+        <RoundedRect
+          x={cx - s * 0.30}
+          y={cy - s * 0.40}
+          width={s * 0.60}
+          height={s * 0.80}
+          r={s * 0.09}
+          color={lineColor}
+          style="stroke"
+          strokeWidth={strokeWidth}
+        />
+        <Path path={clip} color={lineColor} style="stroke" strokeWidth={tinyStroke} />
+        <Path path={check} color={lineColor} style="stroke" strokeWidth={strokeWidth} />
+      </Group>
+    );
+  }
+
+  if (icon === 'deploy') {
+    const body = Skia.Path.Make();
+    body.moveTo(cx - s * 0.08, cy + s * 0.35);
+    body.quadTo(cx - s * 0.30, cy + s * 0.05, cx - s * 0.14, cy - s * 0.28);
+    body.quadTo(cx + s * 0.02, cy - s * 0.52, cx + s * 0.22, cy - s * 0.26);
+    body.quadTo(cx + s * 0.36, cy - s * 0.02, cx + s * 0.16, cy + s * 0.28);
+    body.close();
+    const fin = makeLinePath([
+      { x: cx - s * 0.08, y: cy + s * 0.35 },
+      { x: cx - s * 0.28, y: cy + s * 0.42 },
+      { x: cx - s * 0.10, y: cy + s * 0.16 },
+    ]);
+    const flame = makeLinePath([
+      { x: cx - s * 0.19, y: cy + s * 0.38 },
+      { x: cx - s * 0.27, y: cy + s * 0.56 },
+      { x: cx - s * 0.10, y: cy + s * 0.48 },
+    ]);
+    return (
+      <Group>
+        <Path path={body} color={lineColor} style="stroke" strokeWidth={strokeWidth} />
+        <Circle cx={cx + s * 0.05} cy={cy - s * 0.16} r={s * 0.09} color={lineColor} style="stroke" strokeWidth={tinyStroke} />
+        <Path path={fin} color={lineColor} style="stroke" strokeWidth={tinyStroke} />
+        <Path path={flame} color={lineColor} style="stroke" strokeWidth={tinyStroke} />
+      </Group>
+    );
+  }
+
+  const arrow = makeLinePath([
+    { x: cx - s * 0.38, y: cy + s * 0.20 },
+    { x: cx - s * 0.08, y: cy - s * 0.02 },
+    { x: cx + s * 0.10, y: cy - s * 0.20 },
+    { x: cx + s * 0.34, y: cy - s * 0.35 },
+  ]);
+  const arrowHead = makeLinePath([
+    { x: cx + s * 0.24, y: cy - s * 0.35 },
+    { x: cx + s * 0.34, y: cy - s * 0.35 },
+    { x: cx + s * 0.32, y: cy - s * 0.24 },
+  ]);
+  return (
+    <Group>
+      <RoundedRect x={cx - s * 0.38} y={cy + s * 0.14} width={s * 0.10} height={s * 0.24} r={s * 0.03} color={lineColor} />
+      <RoundedRect x={cx - s * 0.20} y={cy + s * 0.02} width={s * 0.10} height={s * 0.36} r={s * 0.03} color={lineColor} />
+      <RoundedRect x={cx - s * 0.02} y={cy - s * 0.14} width={s * 0.10} height={s * 0.50} r={s * 0.03} color={lineColor} />
+      <Path path={arrow} color={lineColor} style="stroke" strokeWidth={strokeWidth} />
+      <Path path={arrowHead} color={lineColor} style="stroke" strokeWidth={strokeWidth} />
+    </Group>
+  );
 };
 
 function wrapTextToLines(text: string, font: FontMeasurer, maxWidth: number): string[] {
@@ -266,6 +635,7 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
   const [size, setSize] = useState<Size>({ width: 0, height: 0 });
   const isCarousel = slide.templateId === 'carousel';
   const isBubbleTimeline = slide.templateId === 'bubble_timeline_6';
+  const isProcessCardsTemplate = slide.templateId === 'process_cards_10';
   const isThreeCircleImageTemplate = slide.templateId === 'template_3_circles';
 
   const handleLayout = useCallback((event: any) => {
@@ -319,6 +689,10 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
     () => getBubbleTimelineLayout(size.width, size.height, slide.circles),
     [size.height, size.width, slide.circles],
   );
+  const processCardsLayout = useMemo(
+    () => getProcessCardsLayout(size.width, size.height),
+    [size.height, size.width],
+  );
 
   const effectivePanelWidth = useMemo(() => {
     if (isCarousel && slide.carouselData) {
@@ -368,6 +742,20 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
   const smallBoldFont = useFont(
     require('../../assets/fonts/Fira_Sans/FiraSans-SemiBold.ttf'),
     smallFontSize,
+  );
+  const processNumberFontSize = useMemo(() => {
+    return Math.max(10, Math.min(46, size.width * 0.068));
+  }, [size.width]);
+  const processTitleFontSize = useMemo(() => {
+    return Math.max(7, Math.min(28, size.width * 0.034));
+  }, [size.width]);
+  const processNumberFont = useFont(
+    require('../../assets/fonts/Fira_Sans/FiraSans-Bold.ttf'),
+    processNumberFontSize,
+  );
+  const processTitleFont = useFont(
+    require('../../assets/fonts/Fira_Sans/FiraSans-SemiBold.ttf'),
+    processTitleFontSize,
   );
 
   const textSlotsByCircleId = useMemo(() => {
@@ -563,6 +951,25 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
 
     if (!template || !onCircleTap) return;
 
+    if (isProcessCardsTemplate) {
+      for (const card of processCardsLayout) {
+        if (
+          locationX >= card.cardX &&
+          locationX <= card.cardX + card.cardWidth &&
+          locationY >= card.cardY &&
+          locationY <= card.cardY + card.cardHeight
+        ) {
+          onCircleTap(
+            card.circleId,
+            card.cardX + card.cardWidth * 0.5,
+            card.cardY + card.cardHeight * 0.5,
+          );
+          return;
+        }
+      }
+      return;
+    }
+
     if (isBubbleTimeline) {
       for (let i = 0; i < bubbleTimelineLayout.nodes.length; i += 1) {
         const node = bubbleTimelineLayout.nodes[i];
@@ -602,6 +1009,8 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
     slide.carouselData,
     slide.circles,
     onPanelTap,
+    isProcessCardsTemplate,
+    processCardsLayout,
     isBubbleTimeline,
     bubbleTimelineLayout.nodes,
     imageTemplateConfig,
@@ -1057,6 +1466,160 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
                         '#EDEDED',
                       )
                     ) : null}
+                  </Group>
+                );
+              })}
+            </Group>
+          ) : isProcessCardsTemplate ? (
+            <Group>
+              {Array.from({ length: 14 }).map((_, columnIndex) => {
+                const x = (columnIndex / 13) * size.width;
+                return (
+                  <Rect
+                    key={`process-grid-col-${columnIndex}`}
+                    x={x}
+                    y={0}
+                    width={Math.max(1, size.width * 0.0012)}
+                    height={size.height}
+                    color="rgba(149,171,205,0.14)"
+                  />
+                );
+              })}
+              {Array.from({ length: 21 }).map((_, rowIndex) => {
+                const y = (rowIndex / 20) * size.height;
+                return (
+                  <Rect
+                    key={`process-grid-row-${rowIndex}`}
+                    x={0}
+                    y={y}
+                    width={size.width}
+                    height={Math.max(1, size.height * 0.0011)}
+                    color="rgba(149,171,205,0.11)"
+                  />
+                );
+              })}
+
+              {processCardsLayout.map((card, index) => {
+                const content = slide.circles.find(c => c.circleId === card.circleId);
+                const labelText = content?.label?.trim() || `${index + 1}.`;
+                const titleText = content?.title?.trim() || content?.text?.trim() || '';
+                const titleLines =
+                  processTitleFont && titleText
+                    ? wrapTextToLines(titleText, processTitleFont, card.cardWidth * 0.54).slice(0, 2)
+                    : [];
+                const cardRadius = card.cardHeight * 0.25;
+                const shadowOffset = Math.max(1, size.height * 0.0055);
+                const cardRRect = toSafeRoundedRect({
+                  x: card.cardX,
+                  y: card.cardY,
+                  width: card.cardWidth,
+                  height: card.cardHeight,
+                  radius: cardRadius,
+                });
+                if (!cardRRect) return null;
+                const cardPath = Skia.Path.Make();
+                cardPath.addRRect(cardRRect);
+                const shadowRRect = toSafeRoundedRect({
+                  x: card.cardX,
+                  y: card.cardY + shadowOffset,
+                  width: card.cardWidth,
+                  height: card.cardHeight,
+                  radius: cardRadius,
+                });
+                const shadowPath = shadowRRect ? (() => {
+                  const path = Skia.Path.Make();
+                  path.addRRect(shadowRRect);
+                  return path;
+                })() : null;
+                const numberColor = card.isBlue ? '#F4F8FF' : '#0B203B';
+                const titleColor = card.isBlue ? '#F4F8FF' : '#0B203B';
+                const numberX = card.cardX + card.cardWidth * 0.10;
+                const numberY = card.cardY + card.cardHeight * 0.40;
+                const titleX = card.cardX + card.cardWidth * 0.10;
+                const titleStartY = card.cardY + card.cardHeight * 0.70;
+                const titleLineHeight = processTitleFontSize * 1.12;
+                const iconStrokeWidth = Math.max(1, card.iconRadius * 0.08);
+                const isWhiteCard = !card.isBlue;
+                const iconCircleFill = isWhiteCard ? '#7CA4E7' : '#F8FBFF';
+                const iconGlyphColor = isWhiteCard ? '#FFFFFF' : '#2E547D';
+
+                return (
+                  <Group key={`process-card-${card.circleId}`}>
+                    {shadowPath && (
+                      <Path
+                        path={shadowPath}
+                        color={card.isBlue ? 'rgba(90,118,168,0.24)' : 'rgba(113,132,161,0.18)'}
+                      />
+                    )}
+                    {card.isBlue ? (
+                      <Path path={cardPath}>
+                        <LinearGradient
+                          start={vec(card.cardX, card.cardY)}
+                          end={vec(card.cardX + card.cardWidth, card.cardY + card.cardHeight)}
+                          colors={['#7CA4E7', '#A9C1F2']}
+                        />
+                      </Path>
+                    ) : (
+                      <Path path={cardPath} color="#F8FAFE" />
+                    )}
+                    <Path
+                      path={cardPath}
+                      color={card.isBlue ? 'rgba(73,101,151,0.25)' : 'rgba(123,142,171,0.18)'}
+                      style="stroke"
+                      strokeWidth={Math.max(1, size.width * 0.0015)}
+                    />
+                    {selectedCircleId === card.circleId && (
+                      <Path
+                        path={cardPath}
+                        color="#0A84FF"
+                        style="stroke"
+                        strokeWidth={Math.max(2, size.width * 0.004)}
+                      />
+                    )}
+
+                    <Circle
+                      cx={card.iconCx}
+                      cy={card.iconCy + shadowOffset * 1.05}
+                      r={card.iconRadius * 1.04}
+                      color="rgba(75,99,134,0.18)"
+                    />
+                    <Circle
+                      cx={card.iconCx}
+                      cy={card.iconCy + shadowOffset * 0.72}
+                      r={card.iconRadius}
+                      color="rgba(75,99,134,0.34)"
+                    />
+                    <Circle cx={card.iconCx} cy={card.iconCy} r={card.iconRadius} color={iconCircleFill} />
+                    {renderProcessCardIcon(
+                      card.icon,
+                      card.iconCx,
+                      card.iconCy,
+                      card.iconRadius * 0.58,
+                      iconGlyphColor,
+                      iconStrokeWidth,
+                    )}
+
+                    {processNumberFont ? (
+                      <SkiaText
+                        x={numberX}
+                        y={numberY}
+                        text={labelText}
+                        font={processNumberFont}
+                        color={numberColor}
+                      />
+                    ) : null}
+
+                    {processTitleFont &&
+                      titleLines.map((line, lineIndex) => (
+                        <SkiaText
+                          key={`process-card-${card.circleId}-title-${lineIndex}`}
+                          x={titleX}
+                          y={titleStartY + lineIndex * titleLineHeight}
+                          text={line}
+                          font={processTitleFont}
+                          color={titleColor}
+                        />
+                      ))}
                   </Group>
                 );
               })}

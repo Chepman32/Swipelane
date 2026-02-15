@@ -35,7 +35,7 @@ import {
   LEGACY_SYSTEM_FONT_ID,
   SlideFontId,
 } from '../constants/fonts';
-import { getRoadmapImageBackedTemplateConfig } from '../constants/roadmapTemplateAssets';
+import { getRoadmapTemplateAspectRatio } from '../constants/roadmapTemplateAssets';
 import settingsIcon from '../assets/icons/settings.png';
 import { useResponsive } from '../hooks/useResponsive';
 import { useFont } from '@shopify/react-native-skia';
@@ -148,9 +148,9 @@ const getRoadmapPreviewAspectRatio = (item: RoadmapProjectItem): number => {
     return 3 / 2;
   }
 
-  const imageTemplateConfig = getRoadmapImageBackedTemplateConfig(templateId);
-  if (imageTemplateConfig?.originalWidth && imageTemplateConfig?.originalHeight) {
-    return imageTemplateConfig.originalWidth / imageTemplateConfig.originalHeight;
+  const templateAspectRatio = getRoadmapTemplateAspectRatio(templateId);
+  if (templateAspectRatio) {
+    return templateAspectRatio;
   }
 
   return 1 / 1.2;

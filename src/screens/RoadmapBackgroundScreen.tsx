@@ -16,7 +16,7 @@ import { useLanguage } from '../context/LanguageContext';
 import FeedbackService from '../services/FeedbackService';
 import { useResponsive } from '../hooks/useResponsive';
 import { getRoadmapTemplateById } from '../constants/roadmapTemplates';
-import { getRoadmapImageBackedTemplateConfig } from '../constants/roadmapTemplateAssets';
+import { getRoadmapTemplateAspectRatio } from '../constants/roadmapTemplateAssets';
 import { ROADMAP_BACKGROUND_OPTIONS } from '../constants/gradients';
 import { SkiaRoadmapRenderer } from '../components/roadmap';
 import { createRoadmapProject } from '../types/roadmap';
@@ -62,10 +62,7 @@ const RoadmapBackgroundScreen: React.FC = () => {
   >(undefined);
 
   const template = useMemo(() => getRoadmapTemplateById(templateId), [templateId]);
-  const imageTemplateConfig = useMemo(
-    () => getRoadmapImageBackedTemplateConfig(templateId),
-    [templateId],
-  );
+  const templateAspectRatio = useMemo(() => getRoadmapTemplateAspectRatio(templateId), [templateId]);
 
   // Create a preview slide with the selected background
   const previewSlide = useMemo(() => {
@@ -136,7 +133,7 @@ const RoadmapBackgroundScreen: React.FC = () => {
 
   const handleContinue = async () => {
     FeedbackService.buttonTap();
-    if (previewSlide) {
+    if (previewSlide && template) {
       await StorageService.saveCurrentRoadmapProject({
         id: projectId,
         type: 'roadmap',
@@ -161,8 +158,8 @@ const RoadmapBackgroundScreen: React.FC = () => {
   const previewWidth = width;
   const previewHeight = templateId === 'bubble_timeline_6'
     ? previewWidth * (2 / 3)
-    : imageTemplateConfig
-    ? previewWidth * (imageTemplateConfig.originalHeight / imageTemplateConfig.originalWidth)
+    : templateAspectRatio
+    ? previewWidth / templateAspectRatio
     : previewWidth * 1.2;
   const swatchSize = scale(48);
 

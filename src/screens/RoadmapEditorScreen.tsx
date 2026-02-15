@@ -32,7 +32,10 @@ import { useLanguage } from '../context/LanguageContext';
 import FeedbackService from '../services/FeedbackService';
 import { useResponsive } from '../hooks/useResponsive';
 import { getRoadmapTemplateById } from '../constants/roadmapTemplates';
-import { getRoadmapImageBackedTemplateConfig } from '../constants/roadmapTemplateAssets';
+import {
+  getRoadmapImageBackedTemplateConfig,
+  getRoadmapTemplateAspectRatio,
+} from '../constants/roadmapTemplateAssets';
 import { ROADMAP_BACKGROUND_OPTIONS } from '../constants/gradients';
 import { SkiaRoadmapRenderer } from '../components/roadmap';
 import {
@@ -202,12 +205,18 @@ const RoadmapEditorScreen: React.FC = () => {
   const isRibbonStepsTemplate = templateId === 'ribbon_steps_3';
   const isVerticalIvoryFlowTemplate = templateId === 'vertical_flow_5';
   const isGridStepsTemplate = templateId === 'grid_steps_6';
+  const isProcessCardsTemplate = templateId === 'process_cards_10';
+  const templateAspectRatio = useMemo(
+    () => getRoadmapTemplateAspectRatio(templateId),
+    [templateId],
+  );
   const supportsSecondaryText =
     isFigureEightTemplate ||
     isInfinityLoopTemplate ||
     isBubbleTimelineTemplate ||
     isRibbonStepsTemplate ||
-    isGridStepsTemplate;
+    isGridStepsTemplate ||
+    isProcessCardsTemplate;
 
   useEffect(() => {
     if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -438,10 +447,29 @@ const RoadmapEditorScreen: React.FC = () => {
           updateCircleContent(selectedCircleId, { label: text.replace(/[^\d]/g, '').slice(0, 2) });
           return;
         }
+        if (isProcessCardsTemplate) {
+          const digitsOnly = text.replace(/[^\d]/g, '').slice(0, 2);
+          if (!digitsOnly) {
+            updateCircleContent(selectedCircleId, { label: '' });
+            return;
+          }
+          const numeric = Number(digitsOnly);
+          if (!Number.isFinite(numeric)) {
+            return;
+          }
+          updateCircleContent(selectedCircleId, { label: `${numeric}.` });
+          return;
+        }
         updateCircleContent(selectedCircleId, { label: text });
       }
     },
-    [isBubbleTimelineTemplate, isGridStepsTemplate, selectedCircleId, updateCircleContent]
+    [
+      isBubbleTimelineTemplate,
+      isGridStepsTemplate,
+      isProcessCardsTemplate,
+      selectedCircleId,
+      updateCircleContent,
+    ]
   );
 
   const handlePercentageSelectionChange = useCallback(
@@ -491,6 +519,11 @@ const RoadmapEditorScreen: React.FC = () => {
   }, [selectedCircleId, updateCircleContent]);
 
   const handleGridStepTitleChange = useCallback((title: string) => {
+    if (!selectedCircleId) return;
+    updateCircleContent(selectedCircleId, { title });
+  }, [selectedCircleId, updateCircleContent]);
+
+  const handleProcessCardTitleChange = useCallback((title: string) => {
     if (!selectedCircleId) return;
     updateCircleContent(selectedCircleId, { title });
   }, [selectedCircleId, updateCircleContent]);
@@ -750,8 +783,8 @@ const RoadmapEditorScreen: React.FC = () => {
     ? previewWidth / (slide.carouselData.panelCount * 0.69)
     : isBubbleTimelineTemplate
       ? previewWidth * (2 / 3)
-    : imageTemplateConfig
-      ? previewWidth * (imageTemplateConfig.originalHeight / imageTemplateConfig.originalWidth)
+    : templateAspectRatio
+      ? previewWidth / templateAspectRatio
       : previewWidth * 1.2;
 
   const circleLabelInputLabel = isLinearChainTemplate
@@ -759,6 +792,8 @@ const RoadmapEditorScreen: React.FC = () => {
     : isBubbleTimelineTemplate
       ? 'Percentage'
       : isGridStepsTemplate
+        ? 'Step Number'
+      : isProcessCardsTemplate
         ? 'Step Number'
       : isRibbonStepsTemplate
         ? 'Step Label'
@@ -774,6 +809,8 @@ const RoadmapEditorScreen: React.FC = () => {
       ? '61%'
       : isGridStepsTemplate
         ? '1'
+      : isProcessCardsTemplate
+        ? '1.'
       : isRibbonStepsTemplate
         ? 'STEP 01'
     : supportsSecondaryText
@@ -1190,8 +1227,14 @@ const RoadmapEditorScreen: React.FC = () => {
               onChangeText={handleLabelChange}
               placeholder={circleLabelPlaceholder}
               placeholderTextColor={themeDefinition.colors.text + '66'}
-              keyboardType={isBubbleTimelineTemplate || isGridStepsTemplate ? 'number-pad' : 'default'}
-              maxLength={isBubbleTimelineTemplate ? 4 : isGridStepsTemplate ? 2 : undefined}
+              keyboardType={
+                isBubbleTimelineTemplate || isGridStepsTemplate || isProcessCardsTemplate
+                  ? 'number-pad'
+                  : 'default'
+              }
+              maxLength={
+                isBubbleTimelineTemplate ? 4 : isGridStepsTemplate ? 2 : isProcessCardsTemplate ? 3 : undefined
+              }
               selection={isBubbleTimelineTemplate ? percentageSelection : undefined}
               onSelectionChange={handlePercentageSelectionChange}
               onFocus={() => {
@@ -1326,41 +1369,78 @@ const RoadmapEditorScreen: React.FC = () => {
                     />
                   </>
                 )}
-                <Text
-                  style={[
-                    styles.inputLabel,
-                    {
-                      color: themeDefinition.colors.text + '99',
-                      fontSize: scaleFont(12),
-                      marginBottom: scale(4),
-                      marginTop: scale(8),
-                    },
-                  ]}
-                >
-                  Description
-                </Text>
-                <TextInput
-                  style={[
-                    styles.textInput,
-                    {
-                      backgroundColor: themeDefinition.colors.background,
-                      color: themeDefinition.colors.text,
-                      borderColor: themeDefinition.colors.border,
-                      fontSize: scaleFont(14),
-                      padding: scale(12),
-                      minHeight: scale(60),
-                    },
-                  ]}
-                  value={isBubbleTimelineTemplate ? selectedBubbleDescription : (displayCircleContent?.text || '')}
-                  onChangeText={isBubbleTimelineTemplate ? handleBubbleDescriptionChange : handleContentTextChange}
-                  placeholder="Description..."
-                  placeholderTextColor={themeDefinition.colors.text + '66'}
-                  multiline
-                />
+                {isProcessCardsTemplate && (
+                  <>
+                    <Text
+                      style={[
+                        styles.inputLabel,
+                        {
+                          color: themeDefinition.colors.text + '99',
+                          fontSize: scaleFont(12),
+                          marginBottom: scale(4),
+                          marginTop: scale(8),
+                        },
+                      ]}
+                    >
+                      Main Text
+                    </Text>
+                    <TextInput
+                      style={[
+                        styles.textInput,
+                        {
+                          backgroundColor: themeDefinition.colors.background,
+                          color: themeDefinition.colors.text,
+                          borderColor: themeDefinition.colors.border,
+                          fontSize: scaleFont(14),
+                          padding: scale(12),
+                        },
+                      ]}
+                      value={displayCircleContent?.title || ''}
+                      onChangeText={handleProcessCardTitleChange}
+                      placeholder="Initial Research"
+                      placeholderTextColor={themeDefinition.colors.text + '66'}
+                    />
+                  </>
+                )}
+                {!isProcessCardsTemplate && (
+                  <>
+                    <Text
+                      style={[
+                        styles.inputLabel,
+                        {
+                          color: themeDefinition.colors.text + '99',
+                          fontSize: scaleFont(12),
+                          marginBottom: scale(4),
+                          marginTop: scale(8),
+                        },
+                      ]}
+                    >
+                      Description
+                    </Text>
+                    <TextInput
+                      style={[
+                        styles.textInput,
+                        {
+                          backgroundColor: themeDefinition.colors.background,
+                          color: themeDefinition.colors.text,
+                          borderColor: themeDefinition.colors.border,
+                          fontSize: scaleFont(14),
+                          padding: scale(12),
+                          minHeight: scale(60),
+                        },
+                      ]}
+                      value={isBubbleTimelineTemplate ? selectedBubbleDescription : (displayCircleContent?.text || '')}
+                      onChangeText={isBubbleTimelineTemplate ? handleBubbleDescriptionChange : handleContentTextChange}
+                      placeholder="Description..."
+                      placeholderTextColor={themeDefinition.colors.text + '66'}
+                      multiline
+                    />
+                  </>
+                )}
               </>
             )}
 
-            {!isImageBackedTemplate && !isBubbleTimelineTemplate && (
+            {!isImageBackedTemplate && !isBubbleTimelineTemplate && !isProcessCardsTemplate && (
               <>
                 {/* Content type toggle */}
                 <Text
@@ -1611,7 +1691,7 @@ const RoadmapEditorScreen: React.FC = () => {
           )}
 
           {/* Non-carousel stroke color */}
-          {!isCarouselTemplate && !isImageBackedTemplate && (
+          {!isCarouselTemplate && !isImageBackedTemplate && !isProcessCardsTemplate && (
             <>
               <Text
                 style={[

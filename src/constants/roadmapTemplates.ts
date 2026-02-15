@@ -264,6 +264,31 @@ export const GRID_STEPS_6_TEMPLATE: RoadmapTemplate = {
   defaultDashPattern: ROADMAP_DEFAULTS.dashPattern,
 };
 
+// Template 10: 10-step process cards on a soft grid background
+// Rendered fully in Skia (no image asset) to keep it crisp across all screens.
+export const PROCESS_CARDS_10_TEMPLATE: RoadmapTemplate = {
+  id: 'process_cards_10',
+  name: 'Process Cards',
+  description: 'Ten-step alternating card layout with icon chips',
+  circleCount: 10,
+  circles: [
+    { id: 'c1', position: { x: 0.2625, y: 0.1685 }, radius: 0.06, labelPosition: 'bottom' },
+    { id: 'c2', position: { x: 0.7375, y: 0.1685 }, radius: 0.06, labelPosition: 'bottom' },
+    { id: 'c3', position: { x: 0.2625, y: 0.3335 }, radius: 0.06, labelPosition: 'bottom' },
+    { id: 'c4', position: { x: 0.7375, y: 0.3335 }, radius: 0.06, labelPosition: 'bottom' },
+    { id: 'c5', position: { x: 0.2625, y: 0.4995 }, radius: 0.06, labelPosition: 'bottom' },
+    { id: 'c6', position: { x: 0.7375, y: 0.4995 }, radius: 0.06, labelPosition: 'bottom' },
+    { id: 'c7', position: { x: 0.2625, y: 0.6645 }, radius: 0.06, labelPosition: 'bottom' },
+    { id: 'c8', position: { x: 0.7375, y: 0.6645 }, radius: 0.06, labelPosition: 'bottom' },
+    { id: 'c9', position: { x: 0.2625, y: 0.8565 }, radius: 0.06, labelPosition: 'bottom' },
+    { id: 'c10', position: { x: 0.7375, y: 0.8565 }, radius: 0.06, labelPosition: 'bottom' },
+  ],
+  connectors: [],
+  defaultStrokeColor: ROADMAP_DEFAULTS.strokeColor,
+  defaultStrokeWidth: ROADMAP_DEFAULTS.strokeWidth,
+  defaultDashPattern: ROADMAP_DEFAULTS.dashPattern,
+};
+
 // Template 7: Multi-panel swipeable carousel
 export const CAROUSEL_TEMPLATE: RoadmapTemplate = {
   id: 'carousel',
@@ -289,6 +314,7 @@ export const ROADMAP_TEMPLATES: RoadmapTemplate[] = [
   RIBBON_STEPS_3_TEMPLATE,
   VERTICAL_FLOW_5_TEMPLATE,
   GRID_STEPS_6_TEMPLATE,
+  PROCESS_CARDS_10_TEMPLATE,
   CAROUSEL_TEMPLATE,
 ];
 

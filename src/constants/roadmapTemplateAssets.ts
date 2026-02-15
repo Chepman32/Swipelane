@@ -560,3 +560,29 @@ export function getRoadmapImageBackedTemplateConfig(
 export function isRoadmapImageBackedTemplate(templateId: string): boolean {
   return getRoadmapImageBackedTemplateConfig(templateId) !== null;
 }
+
+const ROADMAP_VECTOR_TEMPLATE_DIMENSIONS: Partial<
+  Record<string, { width: number; height: number }>
+> = {
+  process_cards_10: { width: 832, height: 1248 },
+};
+
+export function getRoadmapTemplateDimensions(
+  templateId: string,
+): { width: number; height: number } | null {
+  const imageConfig = getRoadmapImageBackedTemplateConfig(templateId);
+  if (imageConfig?.originalWidth && imageConfig?.originalHeight) {
+    return {
+      width: imageConfig.originalWidth,
+      height: imageConfig.originalHeight,
+    };
+  }
+
+  return ROADMAP_VECTOR_TEMPLATE_DIMENSIONS[templateId] ?? null;
+}
+
+export function getRoadmapTemplateAspectRatio(templateId: string): number | null {
+  const dimensions = getRoadmapTemplateDimensions(templateId);
+  if (!dimensions || dimensions.height <= 0) return null;
+  return dimensions.width / dimensions.height;
+}

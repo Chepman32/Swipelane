@@ -1,4 +1,4 @@
-import React, { useLayoutEffect } from 'react';
+import React, { useLayoutEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -19,7 +19,10 @@ import { ROADMAP_TEMPLATES, ROADMAP_BACKGROUNDS } from '../constants/roadmapTemp
 import {
   getRoadmapTemplateImageSource,
   getRoadmapImageBackedTemplateConfig,
+  getRoadmapTemplateAspectRatio,
 } from '../constants/roadmapTemplateAssets';
+import { SkiaRoadmapRenderer } from '../components/roadmap';
+import { createRoadmapProject } from '../types/roadmap';
 import type { RoadmapTemplate } from '../types/roadmap';
 import type { SlideBackgroundGradient } from '../services/StorageService';
 
@@ -73,14 +76,32 @@ const RoadmapTemplateScreen: React.FC = () => {
   const cardWidth = (width - scale(60)) / 2;
   const cardHeight = cardWidth * 1.2;
   const infoHeight = scale(82);
+  const templatePreviewSlides = useMemo(() => {
+    const entries = ROADMAP_TEMPLATES.filter(template => template.id !== 'carousel').map(template => {
+      const project = createRoadmapProject(template, `preview_${template.id}`);
+      return [template.id, project.slide] as const;
+    });
+    return Object.fromEntries(entries);
+  }, []);
 
   const renderTemplateCard = ({ item }: { item: RoadmapTemplate }) => {
     const templateImageSource = getRoadmapTemplateImageSource(item.id);
     const imageTemplateConfig = getRoadmapImageBackedTemplateConfig(item.id);
+    const templateAspectRatio = getRoadmapTemplateAspectRatio(item.id) ?? 1;
     const isCarousel = item.id === 'carousel';
-    if (!templateImageSource && !isCarousel) return null;
+    const previewSlide = templatePreviewSlides[item.id];
+    if (!templateImageSource && !isCarousel && !previewSlide) return null;
 
     const previewHeight = cardHeight - infoHeight;
+    const previewAreaAspect = cardWidth / previewHeight;
+    const fittedPreviewWidth =
+      templateAspectRatio > previewAreaAspect
+        ? cardWidth
+        : previewHeight * templateAspectRatio;
+    const fittedPreviewHeight =
+      templateAspectRatio > previewAreaAspect
+        ? cardWidth / templateAspectRatio
+        : previewHeight;
 
     return (
       <TouchableOpacity
@@ -127,7 +148,7 @@ const RoadmapTemplateScreen: React.FC = () => {
               </View>
             ))}
           </View>
-        ) : (
+        ) : templateImageSource ? (
           <Image
             source={templateImageSource!}
             style={[
@@ -140,6 +161,31 @@ const RoadmapTemplateScreen: React.FC = () => {
             ]}
             resizeMode="contain"
           />
+        ) : (
+          <View
+            style={[
+              styles.templateImage,
+              {
+                height: previewHeight,
+                backgroundColor: '#EFF4FC',
+                alignItems: 'center',
+                justifyContent: 'center',
+              },
+            ]}
+          >
+            <View
+              style={{
+                width: fittedPreviewWidth,
+                height: fittedPreviewHeight,
+                overflow: 'hidden',
+              }}
+            >
+              <SkiaRoadmapRenderer
+                slide={previewSlide!}
+                style={{ flex: 1 }}
+              />
+            </View>
+          </View>
         )}
         <View style={[styles.templateInfo, { minHeight: infoHeight }]}>
           <Text
