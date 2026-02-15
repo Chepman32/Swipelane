@@ -1,4 +1,6 @@
 import type { SlideBackgroundGradient } from '../services/StorageService';
+import type { ProcessCardIconKind } from '../constants/processCardIcons';
+import { PROCESS_CARD_DEFAULT_ICON_BY_CIRCLE_ID } from '../constants/processCardIcons';
 
 // ─── CAROUSEL TYPES ──────────────────────────────────────────────────────────
 
@@ -73,6 +75,8 @@ export interface RoadmapCircleContent {
     color: string;
     fontFamily?: string;
   };
+  iconKey?: ProcessCardIconKind;
+  iconImageUri?: string;
 }
 
 // Corner image configuration
@@ -189,6 +193,7 @@ export function createDefaultCircleContent(
       title: defaultTitles[index] || `Step ${index + 1}`,
       contentType: 'text' as const,
       text: '',
+      iconKey: PROCESS_CARD_DEFAULT_ICON_BY_CIRCLE_ID[circle.id],
     }));
   }
 

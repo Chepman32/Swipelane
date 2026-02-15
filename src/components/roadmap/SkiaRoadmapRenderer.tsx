@@ -22,8 +22,13 @@ import {
   type RoadmapImageTextAnchorConfig,
   type RoadmapImageTextFont,
 } from '../../constants/roadmapTemplateAssets';
+import {
+  PROCESS_CARD_DEFAULT_ICON_BY_CIRCLE_ID,
+  type ProcessCardIconKind,
+} from '../../constants/processCardIcons';
 import RoadmapCircle from './RoadmapCircle';
 import RoadmapConnector from './RoadmapConnector';
+import ProcessCardIconGlyph from './ProcessCardIconGlyph';
 
 type Size = { width: number; height: number };
 type RectFrame = { x: number; y: number; width: number; height: number };
@@ -40,16 +45,6 @@ type SafeRoundedRectInput = {
   height: number;
   radius: number;
 };
-type ProcessCardIconKind =
-  | 'research'
-  | 'plan'
-  | 'idea'
-  | 'prototype'
-  | 'user'
-  | 'feedback'
-  | 'finalize'
-  | 'deploy'
-  | 'review';
 type ProcessCardLayout = {
   circleId: string;
   isBlue: boolean;
@@ -462,6 +457,12 @@ interface CircleImageFillProps {
   frame?: RectFrame;
   geometry?: { cx: number; cy: number; r: number };
 }
+interface ProcessCardIconImageProps {
+  imageUri?: string;
+  cx: number;
+  cy: number;
+  radius: number;
+}
 
 const getContainFrame = (
   containerWidth: number,
@@ -618,6 +619,32 @@ const CircleImageFill: React.FC<CircleImageFillProps> = ({ imageUri, circle, fra
         y={geometry.cy - fillRadius}
         width={fillRadius * 2}
         height={fillRadius * 2}
+        fit="cover"
+      />
+    </Group>
+  );
+};
+
+const ProcessCardIconImage: React.FC<ProcessCardIconImageProps> = ({ imageUri, cx, cy, radius }) => {
+  const image = useImage(imageUri ?? null);
+  const clipPath = useMemo(() => {
+    const path = Skia.Path.Make();
+    if (radius > 0) {
+      path.addCircle(cx, cy, radius);
+    }
+    return path;
+  }, [cx, cy, radius]);
+
+  if (!image || radius <= 0) return null;
+
+  return (
+    <Group clip={clipPath} invertClip={false}>
+      <Image
+        image={image}
+        x={cx - radius}
+        y={cy - radius}
+        width={radius * 2}
+        height={radius * 2}
         fit="cover"
       />
     </Group>
@@ -1501,6 +1528,11 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
 
               {processCardsLayout.map((card, index) => {
                 const content = slide.circles.find(c => c.circleId === card.circleId);
+                const iconKind =
+                  content?.iconKey ||
+                  PROCESS_CARD_DEFAULT_ICON_BY_CIRCLE_ID[card.circleId] ||
+                  card.icon;
+                const iconImageUri = content?.iconImageUri;
                 const labelText = content?.label?.trim() || `${index + 1}.`;
                 const titleText = content?.title?.trim() || content?.text?.trim() || '';
                 const titleLines =
@@ -1590,13 +1622,22 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
                       color="rgba(75,99,134,0.34)"
                     />
                     <Circle cx={card.iconCx} cy={card.iconCy} r={card.iconRadius} color={iconCircleFill} />
-                    {renderProcessCardIcon(
-                      card.icon,
-                      card.iconCx,
-                      card.iconCy,
-                      card.iconRadius * 0.58,
-                      iconGlyphColor,
-                      iconStrokeWidth,
+                    {iconImageUri ? (
+                      <ProcessCardIconImage
+                        imageUri={iconImageUri}
+                        cx={card.iconCx}
+                        cy={card.iconCy}
+                        radius={card.iconRadius * 0.98}
+                      />
+                    ) : (
+                      <ProcessCardIconGlyph
+                        icon={iconKind}
+                        cx={card.iconCx}
+                        cy={card.iconCy}
+                        radius={card.iconRadius * 1.56}
+                        color={iconGlyphColor}
+                        strokeWidth={iconStrokeWidth}
+                      />
                     )}
 
                     {processNumberFont ? (
