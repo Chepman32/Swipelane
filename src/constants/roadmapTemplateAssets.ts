@@ -716,8 +716,8 @@ export const ROADMAP_IMAGE_BACKED_TEMPLATE_CONFIG: Partial<
   },
   radial_spokes_8: {
     source: ROADMAP_TEMPLATE_IMAGES.radial_spokes_8,
-    originalWidth: 1024,
-    originalHeight: 1024,
+    originalWidth: 832,
+    originalHeight: 1248,
     textSlots: [
       {
         circleId: 'c1',
