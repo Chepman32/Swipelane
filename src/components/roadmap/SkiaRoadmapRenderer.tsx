@@ -1680,7 +1680,7 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
                   const step = String(index + 1).padStart(2, '0');
                   const stepColors = ['#2F8ECC', '#D86666', '#7B57B8', '#35B4B4', '#2F8ECC', '#7A57B5'];
                   const stepColor = stepColors[index % stepColors.length];
-                  const isLargeStep = index === 0 || index === 5;
+                  const isLargeStep = index === 0 || index === 1 || index === 5;
                   const font = isLargeStep ? roadStepSmallFont : bodyBoldFont;
                   const fontSize = isLargeStep ? bodyFontSize * 1.4 : bodyFontSize;
                   const textWidth = font.measureText(step).width;

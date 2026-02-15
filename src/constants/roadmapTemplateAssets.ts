@@ -42,7 +42,7 @@ export const ROADMAP_TEMPLATE_IMAGES = {
   vertical_flow_5: require('../assets/templates/IMG_0545.png'),
   grid_steps_6: require('../assets/templates/IMG_0548.png'),
   vertical_icon_rail_5: require('../assets/templates/IMG_0578.jpg'),
-  road_track_6: require('../assets/templates/IMG_0576.jpg'),
+  road_track_6: require('../assets/templates/IMG_0576.png'),
   radial_spokes_8: require('../assets/templates/IMG_0580.jpg'),
 } as const;
 
