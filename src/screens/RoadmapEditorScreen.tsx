@@ -1435,7 +1435,9 @@ const RoadmapEditorScreen: React.FC = () => {
                         {
                           backgroundColor: themeDefinition.colors.background,
                           borderColor: themeDefinition.colors.border,
-                          padding: scale(12),
+                          paddingHorizontal: scale(12),
+                          paddingVertical: scale(14),
+                          minHeight: scale(84),
                           marginTop: scale(10),
                         },
                       ]}
@@ -1453,31 +1455,31 @@ const RoadmapEditorScreen: React.FC = () => {
                         >
                           Change Icon
                         </Text>
-                        <View style={styles.processIconButtonPreview}>
+                        <View pointerEvents="none" style={styles.processIconButtonPreview}>
                           {selectedProcessCardIconImageUri ? (
                             <Image
                               source={{ uri: selectedProcessCardIconImageUri }}
                               style={{
-                                width: scale(24),
-                                height: scale(24),
-                                borderRadius: scale(12),
+                                width: scale(48),
+                                height: scale(48),
+                                borderRadius: scale(24),
                               }}
                             />
                           ) : selectedProcessCardIconKey ? (
-                            <Canvas style={{ width: scale(24), height: scale(24) }}>
+                            <Canvas style={{ width: scale(48), height: scale(48) }}>
                               <SkiaCircle
-                                cx={scale(12)}
-                                cy={scale(12)}
-                                r={scale(11)}
+                                cx={scale(24)}
+                                cy={scale(24)}
+                                r={scale(23)}
                                 color="#7CA4E7"
                               />
                               <ProcessCardIconGlyph
                                 icon={selectedProcessCardIconKey}
-                                cx={scale(12)}
-                                cy={scale(12)}
-                                radius={scale(6)}
+                                cx={scale(24)}
+                                cy={scale(24)}
+                                radius={scale(12)}
                                 color="#FFFFFF"
-                                strokeWidth={1.5}
+                                strokeWidth={2.2}
                               />
                             </Canvas>
                           ) : null}
@@ -1986,7 +1988,7 @@ const RoadmapEditorScreen: React.FC = () => {
                     {existing ? (
                       <Image
                         source={{ uri: existing.imageUri }}
-                        style={{ width: scale(32), height: scale(32), borderRadius: scale(4) }}
+                        style={{ width: scale(64), height: scale(64), borderRadius: scale(8) }}
                       />
                     ) : (
                       <Text
@@ -2049,7 +2051,11 @@ const RoadmapEditorScreen: React.FC = () => {
               Choose Icon
             </Text>
 
-            <View style={styles.processIconGrid}>
+            <ScrollView
+              style={styles.processIconGridScroll}
+              contentContainerStyle={styles.processIconGrid}
+              showsVerticalScrollIndicator={false}
+            >
               {PROCESS_CARD_ICON_OPTIONS.map(option => {
                 const isSelected =
                   !selectedProcessCardIconImageUri && selectedProcessCardIconKey === option.id;
@@ -2065,8 +2071,11 @@ const RoadmapEditorScreen: React.FC = () => {
                     ]}
                     onPress={() => handleSelectProcessCardIcon(option.id)}
                   >
-                    <View style={styles.processIconTileInner}>
-                      <Canvas style={{ width: scale(56), height: scale(56) }}>
+                    <View pointerEvents="none" style={styles.processIconTileInner}>
+                      <Canvas
+                        pointerEvents="none"
+                        style={{ width: scale(56), height: scale(56) }}
+                      >
                         <SkiaCircle cx={scale(28)} cy={scale(28)} r={scale(27)} color="#7CA4E7" />
                         <ProcessCardIconGlyph
                           icon={option.id}
@@ -2093,7 +2102,7 @@ const RoadmapEditorScreen: React.FC = () => {
                 ]}
                 onPress={handleSelectProcessCardCustomIcon}
               >
-                <View style={styles.processIconTileInner}>
+                <View pointerEvents="none" style={styles.processIconTileInner}>
                   {selectedProcessCardIconImageUri ? (
                     <Image
                       source={{ uri: selectedProcessCardIconImageUri }}
@@ -2108,7 +2117,7 @@ const RoadmapEditorScreen: React.FC = () => {
                   )}
                 </View>
               </TouchableOpacity>
-            </View>
+            </ScrollView>
 
             <TouchableOpacity style={styles.modalCancel} onPress={() => setShowProcessIconPicker(false)}>
               <Text style={[styles.modalCancelText, { color: themeDefinition.colors.text + '99' }]}>
@@ -2193,9 +2202,9 @@ const styles = StyleSheet.create({
     includeFontPadding: false,
   },
   processIconButtonPreview: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
@@ -2309,6 +2318,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+    paddingBottom: 4,
+  },
+  processIconGridScroll: {
+    maxHeight: 430,
   },
   processIconTile: {
     width: '31%',
