@@ -700,9 +700,9 @@ export const ROADMAP_IMAGE_BACKED_TEMPLATE_CONFIG: Partial<
       },
       {
         circleId: 'c6',
-        label: { x: 0.62, y: 0.07, maxWidth: 0.33, align: 'left', color: '#8E63C7', font: 'title' },
+        label: { x: 0.59, y: 0.07, maxWidth: 0.33, align: 'left', color: '#8E63C7', font: 'title' },
         detail: {
-          x: 0.62,
+          x: 0.59,
           y: 0.115,
           maxWidth: 0.33,
           align: 'left',
