@@ -19,6 +19,7 @@ interface ProcessCardIconGlyphProps {
   radius: number;
   color: string;
   strokeWidth: number;
+  filled?: boolean;
 }
 
 const resolveIconVariant = (
@@ -40,8 +41,10 @@ const ProcessCardIconGlyph: React.FC<ProcessCardIconGlyphProps> = ({
   radius,
   color,
   strokeWidth,
+  filled = false,
 }) => {
   const { baseIcon, variantIndex } = resolveIconVariant(icon);
+  const drawStyle = filled ? 'fill' as const : 'stroke' as const;
   const lineColor = color;
   const s = radius;
   const variantStrokeWidth = strokeWidth * (0.88 + variantIndex * 0.06);
@@ -58,7 +61,7 @@ const ProcessCardIconGlyph: React.FC<ProcessCardIconGlyphProps> = ({
         { x: cx - s * 0.38, y: cy + s * 0.58 },
         { x: cx + s * 0.38, y: cy + s * 0.58 },
       ]);
-      return <Path path={bottomLine} color={lineColor} style="stroke" strokeWidth={accentStroke} />;
+      return <Path path={bottomLine} color={lineColor} style={drawStyle} strokeWidth={accentStroke} />;
     }
     if (variantIndex === 4) {
       return (
@@ -79,8 +82,8 @@ const ProcessCardIconGlyph: React.FC<ProcessCardIconGlyphProps> = ({
       ]);
       return (
         <Group>
-          <Path path={crossVertical} color={lineColor} style="stroke" strokeWidth={accentStroke} />
-          <Path path={crossHorizontal} color={lineColor} style="stroke" strokeWidth={accentStroke} />
+          <Path path={crossVertical} color={lineColor} style={drawStyle} strokeWidth={accentStroke} />
+          <Path path={crossHorizontal} color={lineColor} style={drawStyle} strokeWidth={accentStroke} />
         </Group>
       );
     }
@@ -91,7 +94,7 @@ const ProcessCardIconGlyph: React.FC<ProcessCardIconGlyphProps> = ({
           cy={cy - s * 0.5}
           r={s * 0.12}
           color={lineColor}
-          style="stroke"
+          style={drawStyle}
           strokeWidth={accentStroke}
         />
       );
@@ -106,8 +109,8 @@ const ProcessCardIconGlyph: React.FC<ProcessCardIconGlyphProps> = ({
     ]);
     return (
       <Group>
-        <Path path={topLine} color={lineColor} style="stroke" strokeWidth={accentStroke} />
-        <Path path={bottomLine} color={lineColor} style="stroke" strokeWidth={accentStroke} />
+        <Path path={topLine} color={lineColor} style={drawStyle} strokeWidth={accentStroke} />
+        <Path path={bottomLine} color={lineColor} style={drawStyle} strokeWidth={accentStroke} />
       </Group>
     );
   })();
@@ -137,12 +140,12 @@ const ProcessCardIconGlyph: React.FC<ProcessCardIconGlyphProps> = ({
           height={s * 0.72}
           r={s * 0.08}
           color={lineColor}
-          style="stroke"
+          style={drawStyle}
           strokeWidth={variantStrokeWidth}
         />
-        <Path path={clipTopLine} color={lineColor} style="stroke" strokeWidth={variantStrokeWidth} />
-        <Circle cx={cx + s * 0.1} cy={cy + s * 0.02} r={s * 0.3} color={lineColor} style="stroke" strokeWidth={variantStrokeWidth} />
-        <Path path={handle} color={lineColor} style="stroke" strokeWidth={variantStrokeWidth} />
+        <Path path={clipTopLine} color={lineColor} style={drawStyle} strokeWidth={variantStrokeWidth} />
+        <Circle cx={cx + s * 0.1} cy={cy + s * 0.02} r={s * 0.3} color={lineColor} style={drawStyle} strokeWidth={variantStrokeWidth} />
+        <Path path={handle} color={lineColor} style={drawStyle} strokeWidth={variantStrokeWidth} />
       </Group>
     );
   }
@@ -170,12 +173,12 @@ const ProcessCardIconGlyph: React.FC<ProcessCardIconGlyphProps> = ({
           height={s * 0.76}
           r={s * 0.09}
           color={lineColor}
-          style="stroke"
+          style={drawStyle}
           strokeWidth={variantStrokeWidth}
         />
-        <Path path={fold} color={lineColor} style="stroke" strokeWidth={variantStrokeWidth} />
-        <Path path={line1} color={lineColor} style="stroke" strokeWidth={tinyStroke} />
-        <Path path={line2} color={lineColor} style="stroke" strokeWidth={tinyStroke} />
+        <Path path={fold} color={lineColor} style={drawStyle} strokeWidth={variantStrokeWidth} />
+        <Path path={line1} color={lineColor} style={drawStyle} strokeWidth={tinyStroke} />
+        <Path path={line2} color={lineColor} style={drawStyle} strokeWidth={tinyStroke} />
       </Group>
     );
   }
@@ -203,12 +206,12 @@ const ProcessCardIconGlyph: React.FC<ProcessCardIconGlyphProps> = ({
     ]);
     return decorate(
       <Group>
-        <Circle cx={cx} cy={cy - s * 0.03} r={s * 0.33} color={lineColor} style="stroke" strokeWidth={variantStrokeWidth} />
-        <Path path={base1} color={lineColor} style="stroke" strokeWidth={variantStrokeWidth} />
-        <Path path={base2} color={lineColor} style="stroke" strokeWidth={variantStrokeWidth} />
-        <Path path={rayTop} color={lineColor} style="stroke" strokeWidth={tinyStroke} />
-        <Path path={rayLeft} color={lineColor} style="stroke" strokeWidth={tinyStroke} />
-        <Path path={rayRight} color={lineColor} style="stroke" strokeWidth={tinyStroke} />
+        <Circle cx={cx} cy={cy - s * 0.03} r={s * 0.33} color={lineColor} style={drawStyle} strokeWidth={variantStrokeWidth} />
+        <Path path={base1} color={lineColor} style={drawStyle} strokeWidth={variantStrokeWidth} />
+        <Path path={base2} color={lineColor} style={drawStyle} strokeWidth={variantStrokeWidth} />
+        <Path path={rayTop} color={lineColor} style={drawStyle} strokeWidth={tinyStroke} />
+        <Path path={rayLeft} color={lineColor} style={drawStyle} strokeWidth={tinyStroke} />
+        <Path path={rayRight} color={lineColor} style={drawStyle} strokeWidth={tinyStroke} />
       </Group>
     );
   }
@@ -234,7 +237,7 @@ const ProcessCardIconGlyph: React.FC<ProcessCardIconGlyphProps> = ({
           height={s * 0.62}
           r={s * 0.07}
           color={lineColor}
-          style="stroke"
+          style={drawStyle}
           strokeWidth={tinyStroke}
         />
         <RoundedRect
@@ -244,13 +247,13 @@ const ProcessCardIconGlyph: React.FC<ProcessCardIconGlyphProps> = ({
           height={s * 0.62}
           r={s * 0.07}
           color={lineColor}
-          style="stroke"
+          style={drawStyle}
           strokeWidth={variantStrokeWidth}
         />
-        <Path path={line1} color={lineColor} style="stroke" strokeWidth={tinyStroke} />
-        <Path path={line2} color={lineColor} style="stroke" strokeWidth={tinyStroke} />
-        <Circle cx={gearCenterX} cy={gearCenterY} r={gearOuter} color={lineColor} style="stroke" strokeWidth={tinyStroke} />
-        <Circle cx={gearCenterX} cy={gearCenterY} r={gearOuter * 0.45} color={lineColor} style="stroke" strokeWidth={tinyStroke} />
+        <Path path={line1} color={lineColor} style={drawStyle} strokeWidth={tinyStroke} />
+        <Path path={line2} color={lineColor} style={drawStyle} strokeWidth={tinyStroke} />
+        <Circle cx={gearCenterX} cy={gearCenterY} r={gearOuter} color={lineColor} style={drawStyle} strokeWidth={tinyStroke} />
+        <Circle cx={gearCenterX} cy={gearCenterY} r={gearOuter * 0.45} color={lineColor} style={drawStyle} strokeWidth={tinyStroke} />
       </Group>
     );
   }
@@ -279,9 +282,9 @@ const ProcessCardIconGlyph: React.FC<ProcessCardIconGlyphProps> = ({
           r={s * 0.12}
           color={lineColor}
         />
-        <Path path={shoulders} color={lineColor} style="stroke" strokeWidth={tinyStroke} />
-        <Path path={cross1} color={lineColor} style="stroke" strokeWidth={tinyStroke} />
-        <Path path={cross2} color={lineColor} style="stroke" strokeWidth={tinyStroke} />
+        <Path path={shoulders} color={lineColor} style={drawStyle} strokeWidth={tinyStroke} />
+        <Path path={cross1} color={lineColor} style={drawStyle} strokeWidth={tinyStroke} />
+        <Path path={cross2} color={lineColor} style={drawStyle} strokeWidth={tinyStroke} />
       </Group>
     );
   }
@@ -305,10 +308,10 @@ const ProcessCardIconGlyph: React.FC<ProcessCardIconGlyphProps> = ({
     ]);
     return decorate(
       <Group>
-        <Path path={topArc} color={lineColor} style="stroke" strokeWidth={variantStrokeWidth} />
-        <Path path={topArrow} color={lineColor} style="stroke" strokeWidth={variantStrokeWidth} />
-        <Path path={bottomArc} color={lineColor} style="stroke" strokeWidth={variantStrokeWidth} />
-        <Path path={bottomArrow} color={lineColor} style="stroke" strokeWidth={variantStrokeWidth} />
+        <Path path={topArc} color={lineColor} style={drawStyle} strokeWidth={variantStrokeWidth} />
+        <Path path={topArrow} color={lineColor} style={drawStyle} strokeWidth={variantStrokeWidth} />
+        <Path path={bottomArc} color={lineColor} style={drawStyle} strokeWidth={variantStrokeWidth} />
+        <Path path={bottomArrow} color={lineColor} style={drawStyle} strokeWidth={variantStrokeWidth} />
       </Group>
     );
   }
@@ -332,11 +335,11 @@ const ProcessCardIconGlyph: React.FC<ProcessCardIconGlyphProps> = ({
           height={s * 0.8}
           r={s * 0.09}
           color={lineColor}
-          style="stroke"
+          style={drawStyle}
           strokeWidth={variantStrokeWidth}
         />
-        <Path path={clip} color={lineColor} style="stroke" strokeWidth={tinyStroke} />
-        <Path path={check} color={lineColor} style="stroke" strokeWidth={variantStrokeWidth} />
+        <Path path={clip} color={lineColor} style={drawStyle} strokeWidth={tinyStroke} />
+        <Path path={check} color={lineColor} style={drawStyle} strokeWidth={variantStrokeWidth} />
       </Group>
     );
   }
@@ -360,10 +363,10 @@ const ProcessCardIconGlyph: React.FC<ProcessCardIconGlyphProps> = ({
     ]);
     return decorate(
       <Group>
-        <Path path={body} color={lineColor} style="stroke" strokeWidth={variantStrokeWidth} />
-        <Circle cx={cx + s * 0.05} cy={cy - s * 0.16} r={s * 0.09} color={lineColor} style="stroke" strokeWidth={tinyStroke} />
-        <Path path={fin} color={lineColor} style="stroke" strokeWidth={tinyStroke} />
-        <Path path={flame} color={lineColor} style="stroke" strokeWidth={tinyStroke} />
+        <Path path={body} color={lineColor} style={drawStyle} strokeWidth={variantStrokeWidth} />
+        <Circle cx={cx + s * 0.05} cy={cy - s * 0.16} r={s * 0.09} color={lineColor} style={drawStyle} strokeWidth={tinyStroke} />
+        <Path path={fin} color={lineColor} style={drawStyle} strokeWidth={tinyStroke} />
+        <Path path={flame} color={lineColor} style={drawStyle} strokeWidth={tinyStroke} />
       </Group>
     );
   }
@@ -384,8 +387,8 @@ const ProcessCardIconGlyph: React.FC<ProcessCardIconGlyphProps> = ({
       <RoundedRect x={cx - s * 0.38} y={cy + s * 0.14} width={s * 0.1} height={s * 0.24} r={s * 0.03} color={lineColor} />
       <RoundedRect x={cx - s * 0.2} y={cy + s * 0.02} width={s * 0.1} height={s * 0.36} r={s * 0.03} color={lineColor} />
       <RoundedRect x={cx - s * 0.02} y={cy - s * 0.14} width={s * 0.1} height={s * 0.5} r={s * 0.03} color={lineColor} />
-      <Path path={arrow} color={lineColor} style="stroke" strokeWidth={variantStrokeWidth} />
-      <Path path={arrowHead} color={lineColor} style="stroke" strokeWidth={variantStrokeWidth} />
+      <Path path={arrow} color={lineColor} style={drawStyle} strokeWidth={variantStrokeWidth} />
+      <Path path={arrowHead} color={lineColor} style={drawStyle} strokeWidth={variantStrokeWidth} />
     </Group>
   );
 };

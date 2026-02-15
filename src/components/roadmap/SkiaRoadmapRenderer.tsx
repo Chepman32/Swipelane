@@ -665,6 +665,7 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
   const isProcessCardsTemplate = slide.templateId === 'process_cards_10';
   const isThreeCircleImageTemplate = slide.templateId === 'template_3_circles';
   const isRoadTrackTemplate = slide.templateId === 'road_track_6';
+  const isVerticalIconRailTemplate = slide.templateId === 'vertical_icon_rail_5';
 
   const handleLayout = useCallback((event: any) => {
     const { width, height } = event.nativeEvent.layout;
@@ -1696,6 +1697,41 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
                       font={font}
                       color={stepColor}
                     />
+                  );
+                })}
+              {isVerticalIconRailTemplate &&
+                template.circles.map(circle => {
+                  const geometry = getCircleGeometry(circle, imageTemplateFrame);
+                  const content = slide.circles.find(c => c.circleId === circle.id);
+                  const iconKind =
+                    content?.iconKey ||
+                    PROCESS_CARD_DEFAULT_ICON_BY_CIRCLE_ID[circle.id] ||
+                    'research';
+                  const iconImageUri = content?.iconImageUri;
+                  const iconRadius = geometry.r * 0.75;
+                  const iconStroke = Math.max(1, iconRadius * 0.08);
+
+                  return (
+                    <Group key={`${circle.id}-spoke-icon`}>
+                      {iconImageUri ? (
+                        <ProcessCardIconImage
+                          imageUri={iconImageUri}
+                          cx={geometry.cx}
+                          cy={geometry.cy}
+                          radius={iconRadius}
+                        />
+                      ) : (
+                        <ProcessCardIconGlyph
+                          icon={iconKind}
+                          cx={geometry.cx}
+                          cy={geometry.cy}
+                          radius={iconRadius * 1.56}
+                          color="#FFFFFF"
+                          strokeWidth={iconStroke}
+                          filled
+                        />
+                      )}
+                    </Group>
                   );
                 })}
               {template.circles.map(circle => {
