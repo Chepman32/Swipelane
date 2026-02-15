@@ -137,19 +137,22 @@ export const WINDING_5_ROAD_TEMPLATE: RoadmapTemplate = {
   defaultDashPattern: ROADMAP_DEFAULTS.dashPattern,
 };
 
-// Template 11: Vertical icon rail with five alternating content blocks
-// Image-backed; hidden tap targets map to the five title/description zones.
+// Template 11: Radial pinwheel with eight colored spokes
+// Image-backed; eight tap targets at spoke tips map to title/description zones.
 export const VERTICAL_ICON_RAIL_5_TEMPLATE: RoadmapTemplate = {
   id: 'vertical_icon_rail_5',
   name: 'Vertical Icon Rail',
-  description: 'Five-stage rail with alternating icon callouts',
-  circleCount: 5,
+  description: 'Eight-point radial pinwheel with side callouts',
+  circleCount: 8,
   circles: [
-    { id: 'c1', position: { x: 0.24, y: 0.20 }, radius: 0.07, labelPosition: 'bottom' },
-    { id: 'c2', position: { x: 0.74, y: 0.36 }, radius: 0.07, labelPosition: 'bottom' },
-    { id: 'c3', position: { x: 0.74, y: 0.54 }, radius: 0.07, labelPosition: 'bottom' },
-    { id: 'c4', position: { x: 0.24, y: 0.70 }, radius: 0.07, labelPosition: 'bottom' },
-    { id: 'c5', position: { x: 0.74, y: 0.86 }, radius: 0.07, labelPosition: 'bottom' },
+    { id: 'c1', position: { x: 0.50, y: 0.15 }, radius: 0.06, labelPosition: 'bottom' },
+    { id: 'c2', position: { x: 0.66, y: 0.25 }, radius: 0.06, labelPosition: 'bottom' },
+    { id: 'c3', position: { x: 0.73, y: 0.45 }, radius: 0.06, labelPosition: 'bottom' },
+    { id: 'c4', position: { x: 0.66, y: 0.63 }, radius: 0.06, labelPosition: 'bottom' },
+    { id: 'c5', position: { x: 0.50, y: 0.73 }, radius: 0.06, labelPosition: 'bottom' },
+    { id: 'c6', position: { x: 0.37, y: 0.63 }, radius: 0.06, labelPosition: 'bottom' },
+    { id: 'c7', position: { x: 0.27, y: 0.45 }, radius: 0.06, labelPosition: 'bottom' },
+    { id: 'c8', position: { x: 0.37, y: 0.25 }, radius: 0.06, labelPosition: 'bottom' },
   ],
   connectors: [],
   defaultStrokeColor: ROADMAP_DEFAULTS.strokeColor,

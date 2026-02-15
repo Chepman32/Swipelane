@@ -198,19 +198,11 @@ export function createDefaultCircleContent(
   }
 
   if (template.id === 'vertical_icon_rail_5') {
-    const defaultTitles = ['Ideation', 'Planning', 'Execution', 'Review', 'Launch'];
-    const defaultDetails = [
-      'Brainstorming\nConcept development\nResearch',
-      'Strategy\nTimeline\nResource allocation',
-      'Implementation\nTesting\nFeedback',
-      'Analysis\nRefinement\nApproval',
-      'Deployment\nMonitoring\nEvaluation',
-    ];
-    return template.circles.map((circle, index) => ({
+    return template.circles.map(circle => ({
       circleId: circle.id,
-      label: defaultTitles[index] || `Step ${index + 1}`,
+      label: 'Lorem Ipsum',
       contentType: 'text' as const,
-      text: defaultDetails[index] || 'Add your details here.',
+      text: 'Lorem ipsum dolor sit mibh,\nA magna maecenas, quam nec quis,\nlorem nunc. Suspendisse viverra.',
     }));
   }
 
