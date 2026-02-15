@@ -763,6 +763,10 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
     require('../../assets/fonts/Fira_Sans/FiraSans-SemiBold.ttf'),
     bodyFontSize,
   );
+  const roadStepSmallFont = useFont(
+    require('../../assets/fonts/Fira_Sans/FiraSans-SemiBold.ttf'),
+    bodyFontSize * 1.4,
+  );
   const bodyBold2xFont = useFont(
     require('../../assets/fonts/Fira_Sans/FiraSans-Bold.ttf'),
     bodyFontSize * 3.375,
@@ -1670,14 +1674,18 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
             <Group>
               {isRoadTrackTemplate &&
                 bodyBoldFont &&
+                roadStepSmallFont &&
                 template.circles.map((circle, index) => {
                   const geometry = getCircleGeometry(circle, imageTemplateFrame);
                   const step = String(index + 1).padStart(2, '0');
                   const stepColors = ['#2F8ECC', '#D86666', '#7B57B8', '#35B4B4', '#2F8ECC', '#7A57B5'];
                   const stepColor = stepColors[index % stepColors.length];
-                  const textWidth = bodyBoldFont.measureText(step).width;
+                  const isLargeStep = index === 0 || index === 5;
+                  const font = isLargeStep ? roadStepSmallFont : bodyBoldFont;
+                  const fontSize = isLargeStep ? bodyFontSize * 1.4 : bodyFontSize;
+                  const textWidth = font.measureText(step).width;
                   const x = geometry.cx - textWidth / 2;
-                  const y = geometry.cy + bodyFontSize * 0.36;
+                  const y = geometry.cy + fontSize * 0.36;
 
                   return (
                     <SkiaText
@@ -1685,7 +1693,7 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
                       x={x}
                       y={y}
                       text={step}
-                      font={bodyBoldFont}
+                      font={font}
                       color={stepColor}
                     />
                   );
