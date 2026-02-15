@@ -630,7 +630,7 @@ export const ROADMAP_IMAGE_BACKED_TEMPLATE_CONFIG: Partial<
     textSlots: [
       {
         circleId: 'c1',
-        label: { x: 0.17, y: 0.53, maxWidth: 0.28, align: 'left', color: '#141414', font: 'title' },
+        label: { x: 0.17, y: 0.53, maxWidth: 0.28, align: 'left', color: '#2D9CDB', font: 'title' },
         detail: {
           x: 0.17,
           y: 0.575,
@@ -644,7 +644,7 @@ export const ROADMAP_IMAGE_BACKED_TEMPLATE_CONFIG: Partial<
       },
       {
         circleId: 'c2',
-        label: { x: 0.67, y: 0.82, maxWidth: 0.33, align: 'left', color: '#141414', font: 'title' },
+        label: { x: 0.67, y: 0.82, maxWidth: 0.33, align: 'left', color: '#E35D5B', font: 'title' },
         detail: {
           x: 0.67,
           y: 0.865,
@@ -658,7 +658,7 @@ export const ROADMAP_IMAGE_BACKED_TEMPLATE_CONFIG: Partial<
       },
       {
         circleId: 'c3',
-        label: { x: 0.015, y: 0.34, maxWidth: 0.28, align: 'left', color: '#141414', font: 'title' },
+        label: { x: 0.015, y: 0.34, maxWidth: 0.28, align: 'left', color: '#7E57C2', font: 'title' },
         detail: {
           x: 0.015,
           y: 0.385,
@@ -672,7 +672,7 @@ export const ROADMAP_IMAGE_BACKED_TEMPLATE_CONFIG: Partial<
       },
       {
         circleId: 'c4',
-        label: { x: 0.66, y: 0.31, maxWidth: 0.33, align: 'left', color: '#141414', font: 'title' },
+        label: { x: 0.66, y: 0.31, maxWidth: 0.33, align: 'left', color: '#20B8B2', font: 'title' },
         detail: {
           x: 0.66,
           y: 0.355,
@@ -686,7 +686,7 @@ export const ROADMAP_IMAGE_BACKED_TEMPLATE_CONFIG: Partial<
       },
       {
         circleId: 'c5',
-        label: { x: 0.02, y: 0.06, maxWidth: 0.28, align: 'left', color: '#141414', font: 'title' },
+        label: { x: 0.02, y: 0.06, maxWidth: 0.28, align: 'left', color: '#3E9DD6', font: 'title' },
         detail: {
           x: 0.02,
           y: 0.105,
@@ -700,7 +700,7 @@ export const ROADMAP_IMAGE_BACKED_TEMPLATE_CONFIG: Partial<
       },
       {
         circleId: 'c6',
-        label: { x: 0.62, y: 0.07, maxWidth: 0.33, align: 'left', color: '#141414', font: 'title' },
+        label: { x: 0.62, y: 0.07, maxWidth: 0.33, align: 'left', color: '#8E63C7', font: 'title' },
         detail: {
           x: 0.62,
           y: 0.115,
