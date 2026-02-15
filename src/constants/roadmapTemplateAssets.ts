@@ -553,9 +553,9 @@ export const ROADMAP_IMAGE_BACKED_TEMPLATE_CONFIG: Partial<
     textSlots: [
       {
         circleId: 'c1',
-        label: { x: 0.60, y: 0.05, maxWidth: 0.34, align: 'left', color: '#8B124F', font: 'title' },
+        label: { x: 0.35, y: 0.05, maxWidth: 0.34, align: 'left', color: '#8B124F', font: 'title' },
         detail: {
-          x: 0.60,
+          x: 0.35,
           y: 0.095,
           maxWidth: 0.34,
           align: 'left',
@@ -567,11 +567,11 @@ export const ROADMAP_IMAGE_BACKED_TEMPLATE_CONFIG: Partial<
       },
       {
         circleId: 'c2',
-        label: { x: 0.60, y: 0.29, maxWidth: 0.34, align: 'left', color: '#A71111', font: 'title' },
+        label: { x: 0.68, y: 0.08, maxWidth: 0.30, align: 'left', color: '#A71111', font: 'title' },
         detail: {
-          x: 0.60,
-          y: 0.335,
-          maxWidth: 0.34,
+          x: 0.68,
+          y: 0.125,
+          maxWidth: 0.30,
           align: 'left',
           color: '#252525',
           font: 'body',
@@ -581,11 +581,11 @@ export const ROADMAP_IMAGE_BACKED_TEMPLATE_CONFIG: Partial<
       },
       {
         circleId: 'c3',
-        label: { x: 0.60, y: 0.53, maxWidth: 0.34, align: 'left', color: '#4C8D4F', font: 'title' },
+        label: { x: 0.68, y: 0.56, maxWidth: 0.30, align: 'left', color: '#4C8D4F', font: 'title' },
         detail: {
-          x: 0.60,
-          y: 0.575,
-          maxWidth: 0.34,
+          x: 0.68,
+          y: 0.605,
+          maxWidth: 0.30,
           align: 'left',
           color: '#252525',
           font: 'body',
@@ -595,11 +595,11 @@ export const ROADMAP_IMAGE_BACKED_TEMPLATE_CONFIG: Partial<
       },
       {
         circleId: 'c4',
-        label: { x: 0.60, y: 0.76, maxWidth: 0.34, align: 'left', color: '#2D85B7', font: 'title' },
+        label: { x: 0.68, y: 0.79, maxWidth: 0.30, align: 'left', color: '#2D85B7', font: 'title' },
         detail: {
-          x: 0.60,
-          y: 0.805,
-          maxWidth: 0.34,
+          x: 0.68,
+          y: 0.835,
+          maxWidth: 0.30,
           align: 'left',
           color: '#252525',
           font: 'body',
@@ -609,10 +609,10 @@ export const ROADMAP_IMAGE_BACKED_TEMPLATE_CONFIG: Partial<
       },
       {
         circleId: 'c5',
-        label: { x: 0.03, y: 0.78, maxWidth: 0.34, align: 'left', color: '#C88703', font: 'title' },
+        label: { x: 0.03, y: 0.86, maxWidth: 0.34, align: 'left', color: '#C88703', font: 'title' },
         detail: {
           x: 0.03,
-          y: 0.825,
+          y: 0.905,
           maxWidth: 0.34,
           align: 'left',
           color: '#252525',
@@ -623,10 +623,10 @@ export const ROADMAP_IMAGE_BACKED_TEMPLATE_CONFIG: Partial<
       },
       {
         circleId: 'c6',
-        label: { x: 0.03, y: 0.55, maxWidth: 0.34, align: 'left', color: '#C88703', font: 'title' },
+        label: { x: 0.03, y: 0.60, maxWidth: 0.34, align: 'left', color: '#C88703', font: 'title' },
         detail: {
           x: 0.03,
-          y: 0.595,
+          y: 0.645,
           maxWidth: 0.34,
           align: 'left',
           color: '#252525',
