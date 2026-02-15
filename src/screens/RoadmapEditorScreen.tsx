@@ -214,6 +214,9 @@ const RoadmapEditorScreen: React.FC = () => {
   const isBubbleTimelineTemplate = templateId === 'bubble_timeline_6';
   const isRibbonStepsTemplate = templateId === 'ribbon_steps_3';
   const isVerticalIvoryFlowTemplate = templateId === 'vertical_flow_5';
+  const isVerticalIconRailTemplate = templateId === 'vertical_icon_rail_5';
+  const isRoadTrackTemplate = templateId === 'road_track_6';
+  const isRadialSpokesTemplate = templateId === 'radial_spokes_8';
   const isGridStepsTemplate = templateId === 'grid_steps_6';
   const isProcessCardsTemplate = templateId === 'process_cards_10';
   const templateAspectRatio = useMemo(
@@ -225,6 +228,9 @@ const RoadmapEditorScreen: React.FC = () => {
     isInfinityLoopTemplate ||
     isBubbleTimelineTemplate ||
     isRibbonStepsTemplate ||
+    isVerticalIconRailTemplate ||
+    isRoadTrackTemplate ||
+    isRadialSpokesTemplate ||
     isGridStepsTemplate ||
     isProcessCardsTemplate;
 
@@ -820,22 +826,34 @@ const RoadmapEditorScreen: React.FC = () => {
     ? 'Text Under Arrow'
     : isBubbleTimelineTemplate
       ? 'Percentage'
+      : isVerticalIconRailTemplate
+        ? 'Title'
+      : isRoadTrackTemplate
+        ? 'Title'
+      : isRadialSpokesTemplate
+        ? 'Title'
       : isGridStepsTemplate
         ? 'Step Number'
       : isProcessCardsTemplate
         ? 'Step Number'
       : isRibbonStepsTemplate
         ? 'Step Label'
-    : isHorizontalLoopTemplate
-      ? 'Zone Text'
+      : isHorizontalLoopTemplate
+        ? 'Zone Text'
       : supportsSecondaryText
         ? 'Heading'
         : t('roadmap_label') || 'Label';
 
-  const circleLabelPlaceholder = isHorizontalLoopTemplate
-    ? 'Zone text...'
-    : isBubbleTimelineTemplate
+  const circleLabelPlaceholder = isBubbleTimelineTemplate
       ? '61%'
+      : isVerticalIconRailTemplate
+        ? 'Your Text Here'
+      : isRoadTrackTemplate
+        ? 'Put Text Here'
+      : isRadialSpokesTemplate
+        ? 'Lorem Ipsum'
+      : isHorizontalLoopTemplate
+        ? 'Zone text...'
       : isGridStepsTemplate
         ? '1'
       : isProcessCardsTemplate

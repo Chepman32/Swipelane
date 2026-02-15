@@ -137,6 +137,70 @@ export const WINDING_5_ROAD_TEMPLATE: RoadmapTemplate = {
   defaultDashPattern: ROADMAP_DEFAULTS.dashPattern,
 };
 
+// Template 11: Vertical icon rail with five alternating content blocks
+// Image-backed; hidden tap targets map to the five title/description zones.
+export const VERTICAL_ICON_RAIL_5_TEMPLATE: RoadmapTemplate = {
+  id: 'vertical_icon_rail_5',
+  name: 'Vertical Icon Rail',
+  description: 'Five-stage rail with alternating icon callouts',
+  circleCount: 5,
+  circles: [
+    { id: 'c1', position: { x: 0.24, y: 0.20 }, radius: 0.07, labelPosition: 'bottom' },
+    { id: 'c2', position: { x: 0.74, y: 0.36 }, radius: 0.07, labelPosition: 'bottom' },
+    { id: 'c3', position: { x: 0.74, y: 0.54 }, radius: 0.07, labelPosition: 'bottom' },
+    { id: 'c4', position: { x: 0.24, y: 0.70 }, radius: 0.07, labelPosition: 'bottom' },
+    { id: 'c5', position: { x: 0.74, y: 0.86 }, radius: 0.07, labelPosition: 'bottom' },
+  ],
+  connectors: [],
+  defaultStrokeColor: ROADMAP_DEFAULTS.strokeColor,
+  defaultStrokeWidth: ROADMAP_DEFAULTS.strokeWidth,
+  defaultDashPattern: ROADMAP_DEFAULTS.dashPattern,
+};
+
+// Template 12: Winding road with six map markers
+// Image-backed; each pin controls one title/description callout block.
+export const ROAD_TRACK_6_TEMPLATE: RoadmapTemplate = {
+  id: 'road_track_6',
+  name: 'Winding Road Track',
+  description: 'Six marker callouts along a curved road',
+  circleCount: 6,
+  circles: [
+    { id: 'c1', position: { x: 0.14, y: 0.71 }, radius: 0.06, labelPosition: 'bottom' },
+    { id: 'c2', position: { x: 0.73, y: 0.57 }, radius: 0.06, labelPosition: 'bottom' },
+    { id: 'c3', position: { x: 0.30, y: 0.37 }, radius: 0.06, labelPosition: 'bottom' },
+    { id: 'c4', position: { x: 0.51, y: 0.28 }, radius: 0.06, labelPosition: 'bottom' },
+    { id: 'c5', position: { x: 0.38, y: 0.22 }, radius: 0.06, labelPosition: 'bottom' },
+    { id: 'c6', position: { x: 0.93, y: 0.21 }, radius: 0.06, labelPosition: 'bottom' },
+  ],
+  connectors: [],
+  defaultStrokeColor: ROADMAP_DEFAULTS.strokeColor,
+  defaultStrokeWidth: ROADMAP_DEFAULTS.strokeWidth,
+  defaultDashPattern: ROADMAP_DEFAULTS.dashPattern,
+};
+
+// Template 13: Eight radial spokes infographic
+// Image-backed; one editable content block per colored spoke.
+export const RADIAL_SPOKES_8_TEMPLATE: RoadmapTemplate = {
+  id: 'radial_spokes_8',
+  name: 'Radial Spokes',
+  description: 'Eight-point radial infographic with side callouts',
+  circleCount: 8,
+  circles: [
+    { id: 'c1', position: { x: 0.50, y: 0.21 }, radius: 0.06, labelPosition: 'bottom' },
+    { id: 'c2', position: { x: 0.66, y: 0.30 }, radius: 0.06, labelPosition: 'bottom' },
+    { id: 'c3', position: { x: 0.76, y: 0.48 }, radius: 0.06, labelPosition: 'bottom' },
+    { id: 'c4', position: { x: 0.66, y: 0.67 }, radius: 0.06, labelPosition: 'bottom' },
+    { id: 'c5', position: { x: 0.50, y: 0.76 }, radius: 0.06, labelPosition: 'bottom' },
+    { id: 'c6', position: { x: 0.34, y: 0.67 }, radius: 0.06, labelPosition: 'bottom' },
+    { id: 'c7', position: { x: 0.24, y: 0.48 }, radius: 0.06, labelPosition: 'bottom' },
+    { id: 'c8', position: { x: 0.34, y: 0.30 }, radius: 0.06, labelPosition: 'bottom' },
+  ],
+  connectors: [],
+  defaultStrokeColor: ROADMAP_DEFAULTS.strokeColor,
+  defaultStrokeWidth: ROADMAP_DEFAULTS.strokeWidth,
+  defaultDashPattern: ROADMAP_DEFAULTS.dashPattern,
+};
+
 // Template 4: 4 circles in a horizontal chain
 // Matching IMG_0497: linked circles connected by horizontal bar connectors
 // Canvas is portrait 5:6; radius 0.09 gives ~7% width gap between adjacent circles
@@ -309,6 +373,9 @@ export const ROADMAP_TEMPLATES: RoadmapTemplate[] = [
   TEMPLATE_4_CIRCLES_TEMPLATE,
   DIAGONAL_3_CIRCLES_TEMPLATE,
   WINDING_5_ROAD_TEMPLATE,
+  VERTICAL_ICON_RAIL_5_TEMPLATE,
+  ROAD_TRACK_6_TEMPLATE,
+  RADIAL_SPOKES_8_TEMPLATE,
   LINEAR_4_CHAIN_TEMPLATE,
   BUBBLE_TIMELINE_6_TEMPLATE,
   RIBBON_STEPS_3_TEMPLATE,

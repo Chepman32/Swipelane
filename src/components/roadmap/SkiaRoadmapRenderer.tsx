@@ -664,6 +664,7 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
   const isBubbleTimeline = slide.templateId === 'bubble_timeline_6';
   const isProcessCardsTemplate = slide.templateId === 'process_cards_10';
   const isThreeCircleImageTemplate = slide.templateId === 'template_3_circles';
+  const isRoadTrackTemplate = slide.templateId === 'road_track_6';
 
   const handleLayout = useCallback((event: any) => {
     const { width, height } = event.nativeEvent.layout;
@@ -1667,6 +1668,28 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
             </Group>
           ) : imageTemplateReady && imageTemplateConfig && imageTemplateFrame ? (
             <Group>
+              {isRoadTrackTemplate &&
+                bodyBoldFont &&
+                template.circles.map((circle, index) => {
+                  const geometry = getCircleGeometry(circle, imageTemplateFrame);
+                  const step = String(index + 1).padStart(2, '0');
+                  const stepColors = ['#2F8ECC', '#D86666', '#7B57B8', '#35B4B4', '#2F8ECC', '#7A57B5'];
+                  const stepColor = stepColors[index % stepColors.length];
+                  const textWidth = bodyBoldFont.measureText(step).width;
+                  const x = geometry.cx - textWidth / 2;
+                  const y = geometry.cy + bodyFontSize * 0.36;
+
+                  return (
+                    <SkiaText
+                      key={`${circle.id}-road-step`}
+                      x={x}
+                      y={y}
+                      text={step}
+                      font={bodyBoldFont}
+                      color={stepColor}
+                    />
+                  );
+                })}
               {template.circles.map(circle => {
                 const content = slide.circles.find(c => c.circleId === circle.id);
                 if (!content) return null;

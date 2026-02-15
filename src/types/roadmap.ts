@@ -197,6 +197,41 @@ export function createDefaultCircleContent(
     }));
   }
 
+  if (template.id === 'vertical_icon_rail_5') {
+    const defaultTitles = ['Ideation', 'Planning', 'Execution', 'Review', 'Launch'];
+    const defaultDetails = [
+      'Brainstorming\nConcept development\nResearch',
+      'Strategy\nTimeline\nResource allocation',
+      'Implementation\nTesting\nFeedback',
+      'Analysis\nRefinement\nApproval',
+      'Deployment\nMonitoring\nEvaluation',
+    ];
+    return template.circles.map((circle, index) => ({
+      circleId: circle.id,
+      label: defaultTitles[index] || `Step ${index + 1}`,
+      contentType: 'text' as const,
+      text: defaultDetails[index] || 'Add your details here.',
+    }));
+  }
+
+  if (template.id === 'road_track_6') {
+    return template.circles.map((circle, index) => ({
+      circleId: circle.id,
+      label: `Your Text ${index + 1}`,
+      contentType: 'text' as const,
+      text: 'Download this awesome diagram.\nCapture your audience\'s attention.',
+    }));
+  }
+
+  if (template.id === 'radial_spokes_8') {
+    return template.circles.map(circle => ({
+      circleId: circle.id,
+      label: 'Lorem Ipsum',
+      contentType: 'text' as const,
+      text: 'Lorem ipsum dolor sit amet,\nmagna maecenas, quam nec quis,\nlorem nunc.',
+    }));
+  }
+
   return template.circles.map((circle, index) => ({
     circleId: circle.id,
     label: `Step ${index + 1}`,
