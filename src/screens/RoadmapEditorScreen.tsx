@@ -124,6 +124,14 @@ const ZIGZAG_TIMELINE_DEFAULT_ICON_BY_CIRCLE_ID: Record<string, ProcessCardIconK
   c5: 'deploy',
 };
 
+const SPINE_TIMELINE_DEFAULT_ICON_BY_CIRCLE_ID: Record<string, ProcessCardIconKind> = {
+  c1: 'idea',
+  c2: 'plan',
+  c3: 'prototype',
+  c4: 'research',
+  c5: 'deploy',
+};
+
 const PROCESS_CARDS_DEFAULT_ICON_COLOR_BY_CIRCLE_ID: Record<string, string> = {
   c1: '#2E547D',
   c2: '#FFFFFF',
@@ -151,6 +159,14 @@ const ZIGZAG_TIMELINE_DEFAULT_ICON_COLOR_BY_CIRCLE_ID: Record<string, string> = 
   c3: '#FFC107',
   c4: '#7E57C2',
   c5: '#EF5350',
+};
+
+const SPINE_TIMELINE_DEFAULT_ICON_COLOR_BY_CIRCLE_ID: Record<string, string> = {
+  c1: '#00BCD4',
+  c2: '#009688',
+  c3: '#E59A00',
+  c4: '#7E22CE',
+  c5: '#D50000',
 };
 
 const PROCESS_ICON_COLOR_OPTIONS = [
@@ -344,6 +360,7 @@ const RoadmapEditorScreen: React.FC = () => {
   const isVerticalIconRailTemplate = templateId === 'vertical_icon_rail_5';
   const isRoadTrackTemplate = templateId === 'road_track_6';
   const isZigzagTimelineTemplate = templateId === 'zigzag_timeline_5';
+  const isSpineTimelineTemplate = templateId === 'spine_timeline_5';
   const isGridStepsTemplate = templateId === 'grid_steps_6';
   const isProcessCardsTemplate = templateId === 'process_cards_10';
   const templateAspectRatio = useMemo(
@@ -358,6 +375,7 @@ const RoadmapEditorScreen: React.FC = () => {
     isVerticalIconRailTemplate ||
     isRoadTrackTemplate ||
     isZigzagTimelineTemplate ||
+    isSpineTimelineTemplate ||
     isGridStepsTemplate ||
     isProcessCardsTemplate;
 
@@ -554,7 +572,10 @@ const RoadmapEditorScreen: React.FC = () => {
   }
   const displayCircleContent = selectedCircleContent ?? lastSelectedContentRef.current;
   const supportsIcons =
-    isProcessCardsTemplate || isVerticalIconRailTemplate || isZigzagTimelineTemplate;
+    isProcessCardsTemplate ||
+    isVerticalIconRailTemplate ||
+    isZigzagTimelineTemplate ||
+    isSpineTimelineTemplate;
   const selectedProcessCardIconKey = useMemo<ProcessCardIconKind | null>(() => {
     if (!supportsIcons || !displayCircleContent) return null;
     let templateDefaultIcon = PROCESS_CARD_DEFAULT_ICON_BY_CIRCLE_ID[displayCircleContent.circleId];
@@ -562,14 +583,16 @@ const RoadmapEditorScreen: React.FC = () => {
       templateDefaultIcon = VERTICAL_ICON_RAIL_DEFAULT_ICON_BY_CIRCLE_ID[displayCircleContent.circleId];
     } else if (isZigzagTimelineTemplate) {
       templateDefaultIcon = ZIGZAG_TIMELINE_DEFAULT_ICON_BY_CIRCLE_ID[displayCircleContent.circleId];
+    } else if (isSpineTimelineTemplate) {
+      templateDefaultIcon = SPINE_TIMELINE_DEFAULT_ICON_BY_CIRCLE_ID[displayCircleContent.circleId];
     }
 
     return (
       displayCircleContent.iconKey ||
       templateDefaultIcon ||
-      ((isVerticalIconRailTemplate || isZigzagTimelineTemplate) ? 'idea' : 'research')
+      ((isVerticalIconRailTemplate || isZigzagTimelineTemplate || isSpineTimelineTemplate) ? 'idea' : 'research')
     );
-  }, [displayCircleContent, isVerticalIconRailTemplate, isZigzagTimelineTemplate, supportsIcons]);
+  }, [displayCircleContent, isSpineTimelineTemplate, isVerticalIconRailTemplate, isZigzagTimelineTemplate, supportsIcons]);
   const selectedProcessCardIconImageUri =
     supportsIcons ? displayCircleContent?.iconImageUri : undefined;
   const selectedProcessCardIconColor = useMemo(() => {
@@ -581,8 +604,11 @@ const RoadmapEditorScreen: React.FC = () => {
     if (isZigzagTimelineTemplate) {
       return ZIGZAG_TIMELINE_DEFAULT_ICON_COLOR_BY_CIRCLE_ID[displayCircleContent.circleId] || '#FFFFFF';
     }
+    if (isSpineTimelineTemplate) {
+      return SPINE_TIMELINE_DEFAULT_ICON_COLOR_BY_CIRCLE_ID[displayCircleContent.circleId] || '#FFFFFF';
+    }
     return PROCESS_CARDS_DEFAULT_ICON_COLOR_BY_CIRCLE_ID[displayCircleContent.circleId] || '#FFFFFF';
-  }, [displayCircleContent, isVerticalIconRailTemplate, isZigzagTimelineTemplate, supportsIcons]);
+  }, [displayCircleContent, isSpineTimelineTemplate, isVerticalIconRailTemplate, isZigzagTimelineTemplate, supportsIcons]);
   const processIconCatalogCircleColor = useMemo(() => {
     const fallbackColor = '#7CA4E7';
     if (!slide) return fallbackColor;
@@ -1190,6 +1216,8 @@ const RoadmapEditorScreen: React.FC = () => {
         ? 'Title'
       : isZigzagTimelineTemplate
         ? 'Title'
+      : isSpineTimelineTemplate
+        ? 'Title'
       : isGridStepsTemplate
         ? 'Step Number'
       : isProcessCardsTemplate
@@ -1209,6 +1237,8 @@ const RoadmapEditorScreen: React.FC = () => {
       : isRoadTrackTemplate
         ? 'Put Text Here'
       : isZigzagTimelineTemplate
+        ? 'Step Title'
+      : isSpineTimelineTemplate
         ? 'Step Title'
       : isHorizontalLoopTemplate
         ? 'Zone text...'
@@ -1943,7 +1973,7 @@ const RoadmapEditorScreen: React.FC = () => {
               </>
             )}
 
-            {!isImageBackedTemplate && !isBubbleTimelineTemplate && !isProcessCardsTemplate && (
+            {!isImageBackedTemplate && !isBubbleTimelineTemplate && !isProcessCardsTemplate && !isSpineTimelineTemplate && (
               <>
                 {/* Content type toggle */}
                 <Text
@@ -2194,7 +2224,7 @@ const RoadmapEditorScreen: React.FC = () => {
           )}
 
           {/* Non-carousel stroke color */}
-          {!isCarouselTemplate && !isImageBackedTemplate && !isProcessCardsTemplate && (
+          {!isCarouselTemplate && !isImageBackedTemplate && !isProcessCardsTemplate && !isSpineTimelineTemplate && (
             <>
               <Text
                 style={[

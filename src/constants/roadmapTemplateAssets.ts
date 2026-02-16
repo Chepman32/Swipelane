@@ -813,6 +813,7 @@ const ROADMAP_VECTOR_TEMPLATE_DIMENSIONS: Partial<
   Record<string, { width: number; height: number }>
 > = {
   process_cards_10: { width: 832, height: 1248 },
+  spine_timeline_5: { width: 832, height: 1248 },
 };
 
 export function getRoadmapTemplateDimensions(

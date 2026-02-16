@@ -198,6 +198,26 @@ export const ZIGZAG_TIMELINE_5_TEMPLATE: RoadmapTemplate = {
   defaultDashPattern: ROADMAP_DEFAULTS.dashPattern,
 };
 
+// Template 14: Vertical spine timeline with alternating text/icon blocks (5 steps)
+// Rendered fully in Skia (no image asset) for full customization of background/text/icon/color.
+export const SPINE_TIMELINE_5_TEMPLATE: RoadmapTemplate = {
+  id: 'spine_timeline_5',
+  name: 'Spine Timeline',
+  description: 'Five-step vertical spine with bold milestones and icon callouts',
+  circleCount: 5,
+  circles: [
+    { id: 'c1', position: { x: 0.74, y: 0.12 }, radius: 0.07, labelPosition: 'bottom' },
+    { id: 'c2', position: { x: 0.27, y: 0.30 }, radius: 0.07, labelPosition: 'bottom' },
+    { id: 'c3', position: { x: 0.27, y: 0.48 }, radius: 0.07, labelPosition: 'bottom' },
+    { id: 'c4', position: { x: 0.74, y: 0.66 }, radius: 0.07, labelPosition: 'bottom' },
+    { id: 'c5', position: { x: 0.27, y: 0.84 }, radius: 0.07, labelPosition: 'bottom' },
+  ],
+  connectors: [],
+  defaultStrokeColor: ROADMAP_DEFAULTS.strokeColor,
+  defaultStrokeWidth: ROADMAP_DEFAULTS.strokeWidth,
+  defaultDashPattern: ROADMAP_DEFAULTS.dashPattern,
+};
+
 // Template 4: 4 circles in a horizontal chain
 // Matching IMG_0497: linked circles connected by horizontal bar connectors
 // Canvas is portrait 5:6; radius 0.09 gives ~7% width gap between adjacent circles
@@ -373,6 +393,7 @@ export const ROADMAP_TEMPLATES: RoadmapTemplate[] = [
   VERTICAL_ICON_RAIL_5_TEMPLATE,
   ROAD_TRACK_6_TEMPLATE,
   ZIGZAG_TIMELINE_5_TEMPLATE,
+  SPINE_TIMELINE_5_TEMPLATE,
   LINEAR_4_CHAIN_TEMPLATE,
   BUBBLE_TIMELINE_6_TEMPLATE,
   RIBBON_STEPS_3_TEMPLATE,

@@ -230,6 +230,26 @@ export function createDefaultCircleContent(
     }));
   }
 
+  if (template.id === 'spine_timeline_5') {
+    const defaultTitles = ['Ideation', 'Planning', 'Execution', 'Review', 'Launch'];
+    const defaultDetails = [
+      '• Brainstorming\n• Concept Development\n• Research',
+      '• Strategy\n• Timeline\n• Resource Allocation',
+      '• Implementation\n• Testing\n• Feedback',
+      '• Analysis\n• Refinement\n• Approval',
+      '• Deployment\n• Monitoring\n• Evaluation',
+    ];
+    const defaultIcons = ['idea', 'plan', 'prototype', 'research', 'deploy'] as const;
+
+    return template.circles.map((circle, index) => ({
+      circleId: circle.id,
+      label: defaultTitles[index] || `Step ${index + 1}`,
+      contentType: 'text' as const,
+      text: defaultDetails[index] || '• Add detail\n• Add detail\n• Add detail',
+      iconKey: defaultIcons[index] || 'idea',
+    }));
+  }
+
   return template.circles.map((circle, index) => ({
     circleId: circle.id,
     label: `Step ${index + 1}`,
