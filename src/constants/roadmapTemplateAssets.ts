@@ -1,5 +1,5 @@
 export type RoadmapImageTextAlign = 'left' | 'center' | 'right';
-export type RoadmapImageTextFont = 'title' | 'body' | 'small' | 'bodyBold' | 'smallBold';
+export type RoadmapImageTextFont = 'title' | 'titleLarge' | 'body' | 'bodyLarge' | 'small' | 'bodyBold' | 'smallBold';
 
 export interface RoadmapImageTextAnchorConfig {
   x: number;
@@ -721,71 +721,71 @@ export const ROADMAP_IMAGE_BACKED_TEMPLATE_CONFIG: Partial<
     textSlots: [
       {
         circleId: 'c1',
-        label: { x: 0.03, y: 0.07, maxWidth: 0.34, align: 'left', color: '#00BCD4', font: 'title' },
+        label: { x: 0.03, y: 0.07, maxWidth: 0.34, align: 'left', color: '#00BCD4', font: 'titleLarge' },
         detail: {
           x: 0.03,
-          y: 0.115,
+          y: 0.12,
           maxWidth: 0.34,
           align: 'left',
           color: '#252525',
-          font: 'body',
-          lineHeightMultiplier: 1.18,
+          font: 'bodyLarge',
+          lineHeightMultiplier: 1.2,
           maxLines: 4,
         },
       },
       {
         circleId: 'c2',
-        label: { x: 0.62, y: 0.25, maxWidth: 0.34, align: 'left', color: '#4CAF50', font: 'title' },
+        label: { x: 0.62, y: 0.25, maxWidth: 0.34, align: 'left', color: '#4CAF50', font: 'titleLarge' },
         detail: {
           x: 0.62,
-          y: 0.285,
+          y: 0.30,
           maxWidth: 0.34,
           align: 'left',
           color: '#252525',
-          font: 'body',
-          lineHeightMultiplier: 1.18,
+          font: 'bodyLarge',
+          lineHeightMultiplier: 1.2,
           maxLines: 4,
         },
       },
       {
         circleId: 'c3',
-        label: { x: 0.03, y: 0.43, maxWidth: 0.34, align: 'left', color: '#FFC107', font: 'title' },
+        label: { x: 0.03, y: 0.43, maxWidth: 0.34, align: 'left', color: '#FFC107', font: 'titleLarge' },
         detail: {
           x: 0.03,
-          y: 0.465,
+          y: 0.48,
           maxWidth: 0.34,
           align: 'left',
           color: '#252525',
-          font: 'body',
-          lineHeightMultiplier: 1.18,
+          font: 'bodyLarge',
+          lineHeightMultiplier: 1.2,
           maxLines: 4,
         },
       },
       {
         circleId: 'c4',
-        label: { x: 0.62, y: 0.61, maxWidth: 0.34, align: 'left', color: '#7E57C2', font: 'title' },
+        label: { x: 0.62, y: 0.61, maxWidth: 0.34, align: 'left', color: '#7E57C2', font: 'titleLarge' },
         detail: {
           x: 0.62,
-          y: 0.645,
+          y: 0.66,
           maxWidth: 0.34,
           align: 'left',
           color: '#252525',
-          font: 'body',
-          lineHeightMultiplier: 1.18,
+          font: 'bodyLarge',
+          lineHeightMultiplier: 1.2,
           maxLines: 4,
         },
       },
       {
         circleId: 'c5',
-        label: { x: 0.03, y: 0.79, maxWidth: 0.34, align: 'left', color: '#EF5350', font: 'title' },
+        label: { x: 0.03, y: 0.79, maxWidth: 0.34, align: 'left', color: '#EF5350', font: 'titleLarge' },
         detail: {
           x: 0.03,
-          y: 0.825,
+          y: 0.84,
           maxWidth: 0.34,
           align: 'left',
           color: '#252525',
-          font: 'body',
-          lineHeightMultiplier: 1.18,
+          font: 'bodyLarge',
+          lineHeightMultiplier: 1.2,
           maxLines: 4,
         },
       },

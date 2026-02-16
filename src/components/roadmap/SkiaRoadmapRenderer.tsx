@@ -846,6 +846,16 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
     require('../../assets/fonts/Fira_Sans/FiraSans-SemiBold.ttf'),
     smallFontSize,
   );
+  const titleLargeFontSize = useMemo(() => titleFontSize * 1.5, [titleFontSize]);
+  const bodyLargeFontSize = useMemo(() => bodyFontSize * 1.35, [bodyFontSize]);
+  const titleLargeFont = useFont(
+    require('../../assets/fonts/Fira_Sans/FiraSans-SemiBold.ttf'),
+    titleLargeFontSize,
+  );
+  const bodyLargeFont = useFont(
+    require('../../assets/fonts/Fira_Sans/FiraSans-Regular.ttf'),
+    bodyLargeFontSize,
+  );
   const processNumberFontSize = useMemo(() => {
     const baseSize = Math.max(10, Math.min(46, size.width * 0.068));
     return baseSize * textScale;
@@ -896,6 +906,10 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
 
   const getTemplateTextFont = useCallback((font: RoadmapImageTextFont | undefined) => {
     switch (font) {
+      case 'titleLarge':
+        return titleLargeFont;
+      case 'bodyLarge':
+        return bodyLargeFont;
       case 'bodyBold':
         return bodyBoldFont;
       case 'smallBold':
@@ -908,10 +922,14 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
       default:
         return titleFont;
     }
-  }, [bodyBoldFont, bodyFont, smallBoldFont, smallFont, titleFont]);
+  }, [bodyBoldFont, bodyFont, bodyLargeFont, smallBoldFont, smallFont, titleFont, titleLargeFont]);
 
   const getTemplateTextFontSize = useCallback((font: RoadmapImageTextFont | undefined) => {
     switch (font) {
+      case 'titleLarge':
+        return titleLargeFontSize;
+      case 'bodyLarge':
+        return bodyLargeFontSize;
       case 'bodyBold':
         return bodyFontSize;
       case 'smallBold':
@@ -924,7 +942,7 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
       default:
         return titleFontSize;
     }
-  }, [bodyFontSize, smallFontSize, titleFontSize]);
+  }, [bodyFontSize, bodyLargeFontSize, smallFontSize, titleFontSize, titleLargeFontSize]);
 
   const renderTemplateTextLines = useCallback(
     (
@@ -945,7 +963,7 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
       const emphasizedBaseFont = isGridStepsNumberLabel ? (bodyBold2xFont || baseFont) : baseFont;
 
       const maxWidth = Math.max(1, anchor.maxWidth * frame.width);
-      const forceWhiteForMainText = shouldUseLightMainText && slotKind !== 'title';
+      const forceWhiteForMainText = shouldUseLightMainText && slotKind === 'detail';
       const baseColor = forceWhiteForMainText ? '#FFFFFF' : (anchor.color || fallbackColor);
       type TextLineConfig = {
         text: string;
@@ -1787,10 +1805,10 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
                   const textSlot = textSlotsByCircleId.get(circle.id);
                   const iconColor = textSlot?.label?.color || '#2D85B7';
                   const railDefaultIconByCircleId: Record<string, ProcessCardIconKind> = {
-                    c1: 'idea',
+                    c1: 'research',
                     c2: 'plan',
-                    c3: 'prototype',
-                    c4: 'research',
+                    c3: 'finalize',
+                    c4: 'feedback',
                     c5: 'deploy',
                   };
                   const icon =
@@ -1798,8 +1816,8 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
                     railDefaultIconByCircleId[circle.id] ||
                     PROCESS_CARD_DEFAULT_ICON_BY_CIRCLE_ID[circle.id] ||
                     'idea';
-                  const iconRadius = Math.min(imageTemplateFrame.width, imageTemplateFrame.height) * 0.05;
-                  const strokeWidth = Math.max(1.8, iconRadius * 0.11);
+                  const iconRadius = Math.min(imageTemplateFrame.width, imageTemplateFrame.height) * 0.043;
+                  const strokeWidth = Math.max(1.2, iconRadius * 0.072);
 
                   return (
                     <ProcessCardIconGlyph
@@ -1833,8 +1851,8 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
                     zigzagDefaultIconByCircleId[circle.id] ||
                     PROCESS_CARD_DEFAULT_ICON_BY_CIRCLE_ID[circle.id] ||
                     'idea';
-                  const iconRadius = Math.min(imageTemplateFrame.width, imageTemplateFrame.height) * 0.09;
-                  const strokeWidth = Math.max(1.8, iconRadius * 0.11);
+                  const iconRadius = Math.min(imageTemplateFrame.width, imageTemplateFrame.height) * 0.14;
+                  const strokeWidth = Math.max(1.2, iconRadius * 0.065);
 
                   return (
                     <ProcessCardIconGlyph
