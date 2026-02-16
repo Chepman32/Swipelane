@@ -90,6 +90,7 @@ const RoadmapTemplateScreen: React.FC = () => {
     const templateAspectRatio = getRoadmapTemplateAspectRatio(item.id) ?? 1;
     const isCarousel = item.id === 'carousel';
     const previewSlide = templatePreviewSlides[item.id];
+    const useDynamicSkiaPreview = item.id === 'vertical_icon_rail_5' && !!previewSlide;
     if (!templateImageSource && !isCarousel && !previewSlide) return null;
 
     const previewHeight = cardHeight - infoHeight;
@@ -148,7 +149,7 @@ const RoadmapTemplateScreen: React.FC = () => {
               </View>
             ))}
           </View>
-        ) : templateImageSource ? (
+        ) : templateImageSource && !useDynamicSkiaPreview ? (
           <Image
             source={templateImageSource!}
             style={[

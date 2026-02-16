@@ -666,6 +666,7 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
   const isBubbleTimeline = slide.templateId === 'bubble_timeline_6';
   const isProcessCardsTemplate = slide.templateId === 'process_cards_10';
   const isThreeCircleImageTemplate = slide.templateId === 'template_3_circles';
+  const isVerticalIconRailTemplate = slide.templateId === 'vertical_icon_rail_5';
   const isRoadTrackTemplate = slide.templateId === 'road_track_6';
 
   const handleLayout = useCallback((event: any) => {
@@ -1685,6 +1686,41 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
             </Group>
           ) : imageTemplateReady && imageTemplateConfig && imageTemplateFrame ? (
             <Group>
+              {isVerticalIconRailTemplate &&
+                template.circles.map(circle => {
+                  const content = slide.circles.find(c => c.circleId === circle.id);
+                  if (!content) return null;
+
+                  const geometry = getCircleGeometry(circle, imageTemplateFrame);
+                  const textSlot = textSlotsByCircleId.get(circle.id);
+                  const iconColor = textSlot?.label?.color || '#2D85B7';
+                  const railDefaultIconByCircleId: Record<string, ProcessCardIconKind> = {
+                    c1: 'idea',
+                    c2: 'plan',
+                    c3: 'prototype',
+                    c4: 'research',
+                    c5: 'deploy',
+                  };
+                  const icon =
+                    content.iconKey ||
+                    railDefaultIconByCircleId[circle.id] ||
+                    PROCESS_CARD_DEFAULT_ICON_BY_CIRCLE_ID[circle.id] ||
+                    'idea';
+                  const iconRadius = Math.min(imageTemplateFrame.width, imageTemplateFrame.height) * 0.05;
+                  const strokeWidth = Math.max(1.8, iconRadius * 0.11);
+
+                  return (
+                    <ProcessCardIconGlyph
+                      key={`${circle.id}-icon-glyph`}
+                      icon={icon}
+                      cx={geometry.cx}
+                      cy={geometry.cy}
+                      radius={iconRadius}
+                      color={iconColor}
+                      strokeWidth={strokeWidth}
+                    />
+                  );
+                })}
               {isRoadTrackTemplate &&
                 bodyBoldFont &&
                 roadStepSmallFont &&

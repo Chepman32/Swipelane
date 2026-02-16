@@ -198,12 +198,16 @@ export function createDefaultCircleContent(
   }
 
   if (template.id === 'vertical_icon_rail_5') {
-    return template.circles.map(circle => ({
+    const iconSequence = ['idea', 'plan', 'prototype', 'research', 'deploy'] as const;
+    return template.circles.map((circle, index) => ({
       circleId: circle.id,
       label: 'Lorem Ipsum',
       contentType: 'text' as const,
       text: 'Some important note',
-      iconKey: PROCESS_CARD_DEFAULT_ICON_BY_CIRCLE_ID[circle.id],
+      iconKey:
+        iconSequence[index] ||
+        PROCESS_CARD_DEFAULT_ICON_BY_CIRCLE_ID[circle.id] ||
+        'idea',
     }));
   }
 
