@@ -42,6 +42,19 @@ export const PROCESS_CARD_ICON_OPTIONS: Array<{
     };
   }));
 
+const POPULAR_PROCESS_ICON_VARIANTS = new Set<number>(
+  Array.from({ length: 18 }, (_, index) => index + 1),
+);
+
+export const PROCESS_CARD_ICON_CATALOG_OPTIONS: Array<{
+  id: ProcessCardIconKind;
+  name: string;
+}> = PROCESS_CARD_ICON_OPTIONS.filter(option => {
+  const variantMatch = String(option.id).match(/_(\d+)$/);
+  const variantNumber = variantMatch ? Number(variantMatch[1]) : 1;
+  return POPULAR_PROCESS_ICON_VARIANTS.has(variantNumber);
+});
+
 export const PROCESS_CARD_DEFAULT_ICON_BY_CIRCLE_ID: Record<string, ProcessCardIconKind> = {
   c1: 'research',
   c2: 'plan',

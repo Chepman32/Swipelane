@@ -65,7 +65,7 @@ import ReAnimated, {
 import { Canvas, Circle as SkiaCircle } from '@shopify/react-native-skia';
 import {
   PROCESS_CARD_DEFAULT_ICON_BY_CIRCLE_ID,
-  PROCESS_CARD_ICON_OPTIONS,
+  PROCESS_CARD_ICON_CATALOG_OPTIONS,
   type ProcessCardBaseIconKind,
   type ProcessCardIconKind,
 } from '../constants/processCardIcons';
@@ -225,6 +225,7 @@ const buildProcessIconSearchIndex = (
 };
 
 const editSectionSpring = { damping: 15, stiffness: 150, mass: 0.8 };
+const MAX_UNDO_HISTORY_SIZE = 120;
 
 const AnimatedEditSection: React.FC<{
   isVisible: boolean;
@@ -317,6 +318,12 @@ const RoadmapEditorScreen: React.FC = () => {
   const backgroundAccordionAnim = useRef(new Animated.Value(0)).current;
   const initialSlideSnapshotRef = useRef<string | null>(null);
   const lastSavedSnapshotRef = useRef<string | null>(null);
+  const undoStackRef = useRef<string[]>([]);
+  const redoStackRef = useRef<string[]>([]);
+  const previousSlideSnapshotRef = useRef<string | null>(null);
+  const isApplyingHistoryChangeRef = useRef(false);
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
 
   const isCarouselTemplate = templateId === 'carousel';
 
@@ -371,6 +378,47 @@ const RoadmapEditorScreen: React.FC = () => {
     if (!applyIconColorToAll) return;
     setApplyIconColorToAll(false);
   }, [applyIconColorToAll, showProcessIconColorPicker]);
+
+  const syncHistoryAvailability = useCallback(() => {
+    setCanUndo(undoStackRef.current.length > 0);
+    setCanRedo(redoStackRef.current.length > 0);
+  }, []);
+
+  useEffect(() => {
+    if (!slide) {
+      undoStackRef.current = [];
+      redoStackRef.current = [];
+      previousSlideSnapshotRef.current = null;
+      setCanUndo(false);
+      setCanRedo(false);
+      return;
+    }
+
+    const currentSnapshot = JSON.stringify(slide);
+    if (!previousSlideSnapshotRef.current) {
+      previousSlideSnapshotRef.current = currentSnapshot;
+      return;
+    }
+
+    if (currentSnapshot === previousSlideSnapshotRef.current) {
+      return;
+    }
+
+    if (isApplyingHistoryChangeRef.current) {
+      previousSlideSnapshotRef.current = currentSnapshot;
+      isApplyingHistoryChangeRef.current = false;
+      syncHistoryAvailability();
+      return;
+    }
+
+    undoStackRef.current.push(previousSlideSnapshotRef.current);
+    if (undoStackRef.current.length > MAX_UNDO_HISTORY_SIZE) {
+      undoStackRef.current.shift();
+    }
+    redoStackRef.current = [];
+    previousSlideSnapshotRef.current = currentSnapshot;
+    syncHistoryAvailability();
+  }, [slide, syncHistoryAvailability]);
 
   // Initialize slide once: restore from saved roadmap project by id, fallback to new.
   useEffect(() => {
@@ -535,11 +583,22 @@ const RoadmapEditorScreen: React.FC = () => {
     }
     return PROCESS_CARDS_DEFAULT_ICON_COLOR_BY_CIRCLE_ID[displayCircleContent.circleId] || '#FFFFFF';
   }, [displayCircleContent, isVerticalIconRailTemplate, isZigzagTimelineTemplate, supportsIcons]);
+  const processIconCatalogCircleColor = useMemo(() => {
+    const fallbackColor = '#7CA4E7';
+    if (!slide) return fallbackColor;
+    if (slide.backgroundType === 'gradient') {
+      return slide.backgroundGradient?.colors?.[0] || fallbackColor;
+    }
+    if (slide.backgroundType === 'image') {
+      return slide.backgroundGradient?.colors?.[0] || fallbackColor;
+    }
+    return fallbackColor;
+  }, [slide]);
   const filteredProcessIconOptions = useMemo(() => {
     const normalizedQuery = normalizeIconSearchText(processIconSearchQuery);
-    if (!normalizedQuery) return PROCESS_CARD_ICON_OPTIONS;
+    if (!normalizedQuery) return PROCESS_CARD_ICON_CATALOG_OPTIONS;
     const queryTokens = normalizedQuery.split(' ').filter(Boolean);
-    return PROCESS_CARD_ICON_OPTIONS.filter(option =>
+    return PROCESS_CARD_ICON_CATALOG_OPTIONS.filter(option =>
       queryTokens.every(token =>
         buildProcessIconSearchIndex(option.id, option.name).includes(token),
       ),
@@ -576,6 +635,7 @@ const RoadmapEditorScreen: React.FC = () => {
 
     setSlide(prev => {
       if (!prev || prev.templateId !== 'vertical_icon_rail_5') return prev;
+      isApplyingHistoryChangeRef.current = true;
       return {
         ...prev,
         circles: prev.circles.map(circle => ({
@@ -1019,6 +1079,96 @@ const RoadmapEditorScreen: React.FC = () => {
       projectType: 'roadmap',
     });
   }, [slide, navigation, buildProjectToSave]);
+
+  const handleUndo = useCallback(() => {
+    if (!slide) return;
+    const previousSnapshot = undoStackRef.current.pop();
+    if (!previousSnapshot) return;
+
+    FeedbackService.buttonTap();
+    redoStackRef.current.push(JSON.stringify(slide));
+    isApplyingHistoryChangeRef.current = true;
+    setSlide(JSON.parse(previousSnapshot) as RoadmapSlide);
+    syncHistoryAvailability();
+  }, [slide, syncHistoryAvailability]);
+
+  const handleRedo = useCallback(() => {
+    if (!slide) return;
+    const nextSnapshot = redoStackRef.current.pop();
+    if (!nextSnapshot) return;
+
+    FeedbackService.buttonTap();
+    undoStackRef.current.push(JSON.stringify(slide));
+    isApplyingHistoryChangeRef.current = true;
+    setSlide(JSON.parse(nextSnapshot) as RoadmapSlide);
+    syncHistoryAvailability();
+  }, [slide, syncHistoryAvailability]);
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <View style={styles.headerHistoryActions}>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Undo"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={[
+              styles.headerHistoryButton,
+              {
+                backgroundColor: themeDefinition.colors.card,
+                borderColor: themeDefinition.colors.border,
+              },
+              !canUndo && styles.headerHistoryButtonDisabled,
+            ]}
+            disabled={!canUndo}
+            onPress={handleUndo}
+          >
+            <Text
+              style={[
+                styles.headerHistoryButtonText,
+                { color: themeDefinition.colors.text },
+              ]}
+            >
+              ↺
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Redo"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={[
+              styles.headerHistoryButton,
+              {
+                backgroundColor: themeDefinition.colors.card,
+                borderColor: themeDefinition.colors.border,
+              },
+              !canRedo && styles.headerHistoryButtonDisabled,
+            ]}
+            disabled={!canRedo}
+            onPress={handleRedo}
+          >
+            <Text
+              style={[
+                styles.headerHistoryButtonText,
+                { color: themeDefinition.colors.text },
+              ]}
+            >
+              ↻
+            </Text>
+          </TouchableOpacity>
+        </View>
+      ),
+    });
+  }, [
+    canRedo,
+    canUndo,
+    handleRedo,
+    handleUndo,
+    navigation,
+    themeDefinition.colors.border,
+    themeDefinition.colors.card,
+    themeDefinition.colors.text,
+  ]);
 
   const horizontalContentPadding = scale(16);
   const previewWidth = width;
@@ -1711,9 +1861,9 @@ const RoadmapEditorScreen: React.FC = () => {
                                 icon={selectedProcessCardIconKey}
                                 cx={scale(24)}
                                 cy={scale(24)}
-                                radius={scale(15)}
+                                radius={scale(19)}
                                 color={selectedProcessCardIconColor}
-                                strokeWidth={2.2}
+                                strokeWidth={2.55}
                               />
                             </Canvas>
                           ) : null}
@@ -2372,14 +2522,19 @@ const RoadmapEditorScreen: React.FC = () => {
                         pointerEvents="none"
                         style={{ width: scale(56), height: scale(56) }}
                       >
-                        <SkiaCircle cx={scale(28)} cy={scale(28)} r={scale(27)} color="#7CA4E7" />
+                        <SkiaCircle
+                          cx={scale(28)}
+                          cy={scale(28)}
+                          r={scale(27)}
+                          color={processIconCatalogCircleColor}
+                        />
                         <ProcessCardIconGlyph
                           icon={option.id}
                           cx={scale(28)}
                           cy={scale(28)}
-                          radius={scale(36)}
+                          radius={scale(17)}
                           color={selectedProcessCardIconColor}
-                          strokeWidth={2.2}
+                          strokeWidth={2.35}
                         />
                       </Canvas>
                     </View>
@@ -2499,6 +2654,28 @@ const styles = StyleSheet.create({
   },
   content: {
     alignItems: 'center',
+  },
+  headerHistoryActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingRight: 8,
+  },
+  headerHistoryButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 6,
+  },
+  headerHistoryButtonDisabled: {
+    opacity: 0.4,
+  },
+  headerHistoryButtonText: {
+    fontSize: 18,
+    fontWeight: '700',
+    lineHeight: 20,
   },
   previewContainer: {
     borderWidth: 1,
