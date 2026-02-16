@@ -202,7 +202,7 @@ export function createDefaultCircleContent(
       circleId: circle.id,
       label: 'Lorem Ipsum',
       contentType: 'text' as const,
-      text: 'Lorem ipsum dolor sit mibh,\nA magna maecenas, quam nec quis,\nlorem nunc. Suspendisse viverra.',
+      text: 'Some important note',
       iconKey: PROCESS_CARD_DEFAULT_ICON_BY_CIRCLE_ID[circle.id],
     }));
   }

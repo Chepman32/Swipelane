@@ -41,7 +41,7 @@ export const ROADMAP_TEMPLATE_IMAGES = {
   ribbon_steps_3: require('../assets/templates/F24B4734-F6F7-4DD6-8344-4782A1F3BF1C.png'),
   vertical_flow_5: require('../assets/templates/IMG_0545.png'),
   grid_steps_6: require('../assets/templates/IMG_0548.png'),
-  vertical_icon_rail_5: require('../assets/templates/IMG_0578.jpg'),
+  vertical_icon_rail_5: require('../assets/templates/IMG_0578.png'),
   road_track_6: require('../assets/templates/IMG_0576.png'),
   radial_spokes_8: require('../assets/templates/IMG_0580.jpg'),
 } as const;
@@ -623,7 +623,7 @@ export const ROADMAP_IMAGE_BACKED_TEMPLATE_CONFIG: Partial<
       },
       {
         circleId: 'c6',
-        label: { x: 0.03, y: 0.60, maxWidth: 0.34, align: 'left', color: '#C88703', font: 'title' },
+        label: { x: 0.03, y: 0.60, maxWidth: 0.34, align: 'left', color: '#F5D547', font: 'title' },
         detail: {
           x: 0.03,
           y: 0.645,

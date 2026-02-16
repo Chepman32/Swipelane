@@ -373,7 +373,7 @@ const RoadmapEditorScreen: React.FC = () => {
     lastSelectedContentRef.current = selectedCircleContent;
   }
   const displayCircleContent = selectedCircleContent ?? lastSelectedContentRef.current;
-  const supportsIcons = isProcessCardsTemplate || isVerticalIconRailTemplate;
+  const supportsIcons = isProcessCardsTemplate;
   const selectedProcessCardIconKey = useMemo<ProcessCardIconKind | null>(() => {
     if (!supportsIcons || !displayCircleContent) return null;
     return (
@@ -406,6 +406,24 @@ const RoadmapEditorScreen: React.FC = () => {
     }
     return raw;
   }, [selectedCircleContent]);
+
+  useEffect(() => {
+    if (!isVerticalIconRailTemplate || !slide) return;
+    const replacementText = 'Some important note';
+    const needsUpdate = slide.circles.some(circle => (circle.text?.trim() || '') !== replacementText);
+    if (!needsUpdate) return;
+
+    setSlide(prev => {
+      if (!prev || prev.templateId !== 'vertical_icon_rail_5') return prev;
+      return {
+        ...prev,
+        circles: prev.circles.map(circle => ({
+          ...circle,
+          text: replacementText,
+        })),
+      };
+    });
+  }, [isVerticalIconRailTemplate, slide]);
 
   useEffect(() => {
     if (!isBubbleTimelineTemplate || !slide) return;
@@ -1541,62 +1559,6 @@ const RoadmapEditorScreen: React.FC = () => {
                       multiline
                     />
                   </>
-                )}
-                {isVerticalIconRailTemplate && (
-                  <TouchableOpacity
-                    style={[
-                      styles.optionButton,
-                      {
-                        backgroundColor: themeDefinition.colors.background,
-                        borderColor: themeDefinition.colors.border,
-                        marginTop: scale(10),
-                      },
-                    ]}
-                    onPress={() => {
-                      FeedbackService.buttonTap();
-                      setShowProcessIconPicker(true);
-                    }}
-                  >
-                    <View style={styles.optionButtonRow}>
-                      <Text
-                        style={[
-                          styles.optionButtonText,
-                          { color: themeDefinition.colors.text, fontSize: scaleFont(14) },
-                        ]}
-                      >
-                        Change Icon
-                      </Text>
-                      <View pointerEvents="none" style={styles.processIconButtonPreview}>
-                        {selectedProcessCardIconImageUri ? (
-                          <Image
-                            source={{ uri: selectedProcessCardIconImageUri }}
-                            style={{
-                              width: scale(48),
-                              height: scale(48),
-                              borderRadius: scale(24),
-                            }}
-                          />
-                        ) : selectedProcessCardIconKey ? (
-                          <Canvas style={{ width: scale(48), height: scale(48) }}>
-                            <SkiaCircle
-                              cx={scale(24)}
-                              cy={scale(24)}
-                              r={scale(23)}
-                              color="#7CA4E7"
-                            />
-                            <ProcessCardIconGlyph
-                              icon={selectedProcessCardIconKey}
-                              cx={scale(24)}
-                              cy={scale(24)}
-                              radius={scale(12)}
-                              color="#FFFFFF"
-                              strokeWidth={2.2}
-                            />
-                          </Canvas>
-                        ) : null}
-                      </View>
-                    </View>
-                  </TouchableOpacity>
                 )}
               </>
             )}
