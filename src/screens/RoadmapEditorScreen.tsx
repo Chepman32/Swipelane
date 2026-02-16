@@ -66,6 +66,7 @@ import { Canvas, Circle as SkiaCircle } from '@shopify/react-native-skia';
 import {
   PROCESS_CARD_DEFAULT_ICON_BY_CIRCLE_ID,
   PROCESS_CARD_ICON_OPTIONS,
+  type ProcessCardBaseIconKind,
   type ProcessCardIconKind,
 } from '../constants/processCardIcons';
 import ProcessCardIconGlyph from '../components/roadmap/ProcessCardIconGlyph';
@@ -106,6 +107,122 @@ const BUBBLE_TIMELINE_COLOR_OPTIONS = [
   '#7C6BC9',
   '#32A6BC',
 ];
+
+const VERTICAL_ICON_RAIL_DEFAULT_ICON_BY_CIRCLE_ID: Record<string, ProcessCardIconKind> = {
+  c1: 'idea',
+  c2: 'plan',
+  c3: 'prototype',
+  c4: 'research',
+  c5: 'deploy',
+};
+
+const ZIGZAG_TIMELINE_DEFAULT_ICON_BY_CIRCLE_ID: Record<string, ProcessCardIconKind> = {
+  c1: 'idea',
+  c2: 'plan',
+  c3: 'prototype',
+  c4: 'research',
+  c5: 'deploy',
+};
+
+const PROCESS_CARDS_DEFAULT_ICON_COLOR_BY_CIRCLE_ID: Record<string, string> = {
+  c1: '#2E547D',
+  c2: '#FFFFFF',
+  c3: '#FFFFFF',
+  c4: '#2E547D',
+  c5: '#2E547D',
+  c6: '#FFFFFF',
+  c7: '#FFFFFF',
+  c8: '#2E547D',
+  c9: '#2E547D',
+  c10: '#FFFFFF',
+};
+
+const VERTICAL_ICON_RAIL_DEFAULT_ICON_COLOR_BY_CIRCLE_ID: Record<string, string> = {
+  c1: '#C88703',
+  c2: '#EC6AA0',
+  c3: '#6E3C9B',
+  c4: '#A71111',
+  c5: '#F4C20D',
+};
+
+const ZIGZAG_TIMELINE_DEFAULT_ICON_COLOR_BY_CIRCLE_ID: Record<string, string> = {
+  c1: '#00BCD4',
+  c2: '#4CAF50',
+  c3: '#FFC107',
+  c4: '#7E57C2',
+  c5: '#EF5350',
+};
+
+const PROCESS_ICON_COLOR_OPTIONS = [
+  '#FFFFFF',
+  '#2E547D',
+  '#00BCD4',
+  '#4CAF50',
+  '#FFC107',
+  '#7E57C2',
+  '#EF5350',
+  '#0A84FF',
+  '#FF8C00',
+  '#111111',
+];
+
+const PROCESS_ICON_BASE_ORDER: ProcessCardBaseIconKind[] = [
+  'research',
+  'plan',
+  'idea',
+  'prototype',
+  'user',
+  'feedback',
+  'finalize',
+  'deploy',
+  'review',
+];
+
+const PROCESS_ICON_SEARCH_TERMS_BY_BASE: Record<ProcessCardBaseIconKind, string[]> = {
+  research: ['research', 'analyze', 'analysis', 'explore', 'study', 'discover', 'magnifier'],
+  plan: ['plan', 'planning', 'document', 'doc', 'paper', 'file', 'notes'],
+  idea: ['idea', 'light', 'bulb', 'inspiration', 'brainstorm', 'creative'],
+  prototype: ['prototype', 'mockup', 'wireframe', 'design', 'draft', 'build'],
+  user: ['user', 'person', 'profile', 'people', 'team', 'account'],
+  feedback: ['feedback', 'loop', 'iterate', 'sync', 'cycle', 'improve'],
+  finalize: ['finalize', 'done', 'check', 'approve', 'complete', 'finish', 'task', 'todo'],
+  deploy: ['deploy', 'rocket', 'launch', 'release', 'ship', 'publish'],
+  review: ['review', 'chart', 'metrics', 'growth', 'results', 'report', 'progress'],
+};
+
+const normalizeIconSearchText = (value: string): string =>
+  value
+    .toLowerCase()
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const buildProcessIconSearchIndex = (
+  iconId: ProcessCardIconKind,
+  name: string,
+): string => {
+  const match = String(iconId).match(/^(.*?)(?:_(\d+))?$/);
+  const base = ((match?.[1] || iconId) as ProcessCardBaseIconKind);
+  const variantNumberRaw = Number(match?.[2] || '1');
+  const variantNumber = Number.isFinite(variantNumberRaw) ? Math.max(1, variantNumberRaw) : 1;
+  const baseIndex = PROCESS_ICON_BASE_ORDER.indexOf(base);
+  const visualBase =
+    baseIndex >= 0
+      ? PROCESS_ICON_BASE_ORDER[(baseIndex + variantNumber - 1) % PROCESS_ICON_BASE_ORDER.length]
+      : base;
+
+  const searchParts = [
+    name,
+    iconId,
+    base,
+    visualBase,
+    String(variantNumber),
+    ...PROCESS_ICON_SEARCH_TERMS_BY_BASE[base],
+    ...PROCESS_ICON_SEARCH_TERMS_BY_BASE[visualBase],
+  ];
+
+  return normalizeIconSearchText(searchParts.join(' '));
+};
 
 const editSectionSpring = { damping: 15, stiffness: 150, mass: 0.8 };
 
@@ -193,6 +310,9 @@ const RoadmapEditorScreen: React.FC = () => {
   const [slide, setSlide] = useState<RoadmapSlide | null>(null);
   const [showBackgroundPicker, setShowBackgroundPicker] = useState(false);
   const [showProcessIconPicker, setShowProcessIconPicker] = useState(false);
+  const [showProcessIconColorPicker, setShowProcessIconColorPicker] = useState(false);
+  const [applyIconColorToAll, setApplyIconColorToAll] = useState(false);
+  const [processIconSearchQuery, setProcessIconSearchQuery] = useState('');
   const [percentageSelection, setPercentageSelection] = useState({ start: 0, end: 0 });
   const backgroundAccordionAnim = useRef(new Animated.Value(0)).current;
   const initialSlideSnapshotRef = useRef<string | null>(null);
@@ -239,6 +359,18 @@ const RoadmapEditorScreen: React.FC = () => {
       UIManager.setLayoutAnimationEnabledExperimental(true);
     }
   }, []);
+
+  useEffect(() => {
+    if (showProcessIconPicker) return;
+    if (!processIconSearchQuery) return;
+    setProcessIconSearchQuery('');
+  }, [processIconSearchQuery, showProcessIconPicker]);
+
+  useEffect(() => {
+    if (showProcessIconColorPicker) return;
+    if (!applyIconColorToAll) return;
+    setApplyIconColorToAll(false);
+  }, [applyIconColorToAll, showProcessIconColorPicker]);
 
   // Initialize slide once: restore from saved roadmap project by id, fallback to new.
   useEffect(() => {
@@ -373,17 +505,46 @@ const RoadmapEditorScreen: React.FC = () => {
     lastSelectedContentRef.current = selectedCircleContent;
   }
   const displayCircleContent = selectedCircleContent ?? lastSelectedContentRef.current;
-  const supportsIcons = isProcessCardsTemplate;
+  const supportsIcons =
+    isProcessCardsTemplate || isVerticalIconRailTemplate || isZigzagTimelineTemplate;
   const selectedProcessCardIconKey = useMemo<ProcessCardIconKind | null>(() => {
     if (!supportsIcons || !displayCircleContent) return null;
+    let templateDefaultIcon = PROCESS_CARD_DEFAULT_ICON_BY_CIRCLE_ID[displayCircleContent.circleId];
+    if (isVerticalIconRailTemplate) {
+      templateDefaultIcon = VERTICAL_ICON_RAIL_DEFAULT_ICON_BY_CIRCLE_ID[displayCircleContent.circleId];
+    } else if (isZigzagTimelineTemplate) {
+      templateDefaultIcon = ZIGZAG_TIMELINE_DEFAULT_ICON_BY_CIRCLE_ID[displayCircleContent.circleId];
+    }
+
     return (
       displayCircleContent.iconKey ||
-      PROCESS_CARD_DEFAULT_ICON_BY_CIRCLE_ID[displayCircleContent.circleId] ||
-      'research'
+      templateDefaultIcon ||
+      ((isVerticalIconRailTemplate || isZigzagTimelineTemplate) ? 'idea' : 'research')
     );
-  }, [displayCircleContent, supportsIcons]);
+  }, [displayCircleContent, isVerticalIconRailTemplate, isZigzagTimelineTemplate, supportsIcons]);
   const selectedProcessCardIconImageUri =
     supportsIcons ? displayCircleContent?.iconImageUri : undefined;
+  const selectedProcessCardIconColor = useMemo(() => {
+    if (!supportsIcons || !displayCircleContent) return '#FFFFFF';
+    if (displayCircleContent.iconColor) return displayCircleContent.iconColor;
+    if (isVerticalIconRailTemplate) {
+      return VERTICAL_ICON_RAIL_DEFAULT_ICON_COLOR_BY_CIRCLE_ID[displayCircleContent.circleId] || '#FFFFFF';
+    }
+    if (isZigzagTimelineTemplate) {
+      return ZIGZAG_TIMELINE_DEFAULT_ICON_COLOR_BY_CIRCLE_ID[displayCircleContent.circleId] || '#FFFFFF';
+    }
+    return PROCESS_CARDS_DEFAULT_ICON_COLOR_BY_CIRCLE_ID[displayCircleContent.circleId] || '#FFFFFF';
+  }, [displayCircleContent, isVerticalIconRailTemplate, isZigzagTimelineTemplate, supportsIcons]);
+  const filteredProcessIconOptions = useMemo(() => {
+    const normalizedQuery = normalizeIconSearchText(processIconSearchQuery);
+    if (!normalizedQuery) return PROCESS_CARD_ICON_OPTIONS;
+    const queryTokens = normalizedQuery.split(' ').filter(Boolean);
+    return PROCESS_CARD_ICON_OPTIONS.filter(option =>
+      queryTokens.every(token =>
+        buildProcessIconSearchIndex(option.id, option.name).includes(token),
+      ),
+    );
+  }, [processIconSearchQuery]);
 
   const selectedBubbleTitle = useMemo(() => {
     if (!selectedCircleContent) return '';
@@ -581,6 +742,34 @@ const RoadmapEditorScreen: React.FC = () => {
       console.error('Error picking process card icon image:', error);
     }
   }, [selectedCircleId, t, updateCircleContent]);
+
+  const handleOpenProcessCardIconColorPicker = useCallback(() => {
+    FeedbackService.buttonTap();
+    setApplyIconColorToAll(false);
+    setShowProcessIconColorPicker(true);
+  }, []);
+
+  const handleSelectProcessCardIconColor = useCallback((iconColor: string) => {
+    if (applyIconColorToAll) {
+      setSlide(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          circles: prev.circles.map(circle => ({
+            ...circle,
+            iconColor,
+          })),
+        };
+      });
+      setShowProcessIconColorPicker(false);
+      setApplyIconColorToAll(false);
+      return;
+    }
+
+    if (!selectedCircleId) return;
+    updateCircleContent(selectedCircleId, { iconColor });
+    setShowProcessIconColorPicker(false);
+  }, [applyIconColorToAll, selectedCircleId, updateCircleContent]);
 
   const handleBubbleCountChange = useCallback((nextCount: number) => {
     setSlide(prev => {
@@ -1466,17 +1655,25 @@ const RoadmapEditorScreen: React.FC = () => {
                       placeholder="Initial Research"
                       placeholderTextColor={themeDefinition.colors.text + '66'}
                     />
+                  </>
+                )}
+                {supportsIcons && (
+                  <View
+                    style={[
+                      styles.optionButton,
+                      {
+                        backgroundColor: themeDefinition.colors.background,
+                        borderColor: themeDefinition.colors.border,
+                        paddingHorizontal: scale(12),
+                        paddingVertical: scale(12),
+                        marginTop: scale(10),
+                      },
+                    ]}
+                  >
                     <TouchableOpacity
                       style={[
-                        styles.optionButton,
-                        {
-                          backgroundColor: themeDefinition.colors.background,
-                          borderColor: themeDefinition.colors.border,
-                          paddingHorizontal: scale(12),
-                          paddingVertical: scale(14),
-                          minHeight: scale(84),
-                          marginTop: scale(10),
-                        },
+                        styles.iconActionButton,
+                        { paddingVertical: scale(2) },
                       ]}
                       onPress={() => {
                         FeedbackService.buttonTap();
@@ -1514,8 +1711,8 @@ const RoadmapEditorScreen: React.FC = () => {
                                 icon={selectedProcessCardIconKey}
                                 cx={scale(24)}
                                 cy={scale(24)}
-                                radius={scale(12)}
-                                color="#FFFFFF"
+                                radius={scale(15)}
+                                color={selectedProcessCardIconColor}
                                 strokeWidth={2.2}
                               />
                             </Canvas>
@@ -1523,7 +1720,40 @@ const RoadmapEditorScreen: React.FC = () => {
                         </View>
                       </View>
                     </TouchableOpacity>
-                  </>
+
+                    <TouchableOpacity
+                      style={[
+                        styles.iconColorActionButton,
+                        {
+                          borderColor: themeDefinition.colors.border,
+                          marginTop: scale(10),
+                          paddingVertical: scale(10),
+                          paddingHorizontal: scale(10),
+                        },
+                      ]}
+                      onPress={handleOpenProcessCardIconColorPicker}
+                    >
+                      <View style={styles.optionButtonRow}>
+                        <Text
+                          style={[
+                            styles.optionButtonText,
+                            { color: themeDefinition.colors.text, fontSize: scaleFont(13) },
+                          ]}
+                        >
+                          Change Icon Color
+                        </Text>
+                        <View
+                          style={[
+                            styles.iconColorActionSwatch,
+                            {
+                              backgroundColor: selectedProcessCardIconColor,
+                              borderColor: themeDefinition.colors.border,
+                            },
+                          ]}
+                        />
+                      </View>
+                    </TouchableOpacity>
+                  </View>
                 )}
                 {!isProcessCardsTemplate && (
                   <>
@@ -2084,16 +2314,45 @@ const RoadmapEditorScreen: React.FC = () => {
             ]}
             onPress={event => event.stopPropagation()}
           >
-            <Text style={[styles.modalTitle, { color: themeDefinition.colors.text }]}>
-              Choose Icon
-            </Text>
-
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: themeDefinition.colors.text }]}>
+                Choose Icon
+              </Text>
+              <TouchableOpacity
+                style={[
+                  styles.modalCloseButton,
+                  { borderColor: themeDefinition.colors.border },
+                ]}
+                onPress={() => setShowProcessIconPicker(false)}
+              >
+                <Text style={[styles.modalCloseText, { color: themeDefinition.colors.text + 'CC' }]}>
+                  X
+                </Text>
+              </TouchableOpacity>
+            </View>
+            <TextInput
+              style={[
+                styles.modalSearchInput,
+                {
+                  backgroundColor: themeDefinition.colors.background,
+                  borderColor: themeDefinition.colors.border,
+                  color: themeDefinition.colors.text,
+                },
+              ]}
+              value={processIconSearchQuery}
+              onChangeText={setProcessIconSearchQuery}
+              placeholder="Search icons"
+              placeholderTextColor={themeDefinition.colors.text + '66'}
+              autoCapitalize="none"
+              autoCorrect={false}
+              clearButtonMode="while-editing"
+            />
             <ScrollView
               style={styles.processIconGridScroll}
               contentContainerStyle={styles.processIconGrid}
               showsVerticalScrollIndicator={false}
             >
-              {PROCESS_CARD_ICON_OPTIONS.map(option => {
+              {filteredProcessIconOptions.map(option => {
                 const isSelected =
                   !selectedProcessCardIconImageUri && selectedProcessCardIconKey === option.id;
                 return (
@@ -2118,8 +2377,8 @@ const RoadmapEditorScreen: React.FC = () => {
                           icon={option.id}
                           cx={scale(28)}
                           cy={scale(28)}
-                          radius={scale(30)}
-                          color="#FFFFFF"
+                          radius={scale(36)}
+                          color={selectedProcessCardIconColor}
                           strokeWidth={2.2}
                         />
                       </Canvas>
@@ -2155,12 +2414,78 @@ const RoadmapEditorScreen: React.FC = () => {
                 </View>
               </TouchableOpacity>
             </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
-            <TouchableOpacity style={styles.modalCancel} onPress={() => setShowProcessIconPicker(false)}>
-              <Text style={[styles.modalCancelText, { color: themeDefinition.colors.text + '99' }]}>
-                Cancel
+      <Modal
+        visible={showProcessIconColorPicker}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowProcessIconColorPicker(false)}
+      >
+        <Pressable
+          style={styles.modalBackdrop}
+          onPress={() => setShowProcessIconColorPicker(false)}
+        >
+          <Pressable
+            style={[
+              styles.modalCard,
+              {
+                backgroundColor: themeDefinition.colors.card,
+                borderColor: themeDefinition.colors.border,
+              },
+            ]}
+            onPress={event => event.stopPropagation()}
+          >
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: themeDefinition.colors.text }]}>
+                Icon Color
               </Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.modalCloseButton,
+                  { borderColor: themeDefinition.colors.border },
+                ]}
+                onPress={() => setShowProcessIconColorPicker(false)}
+              >
+                <Text style={[styles.modalCloseText, { color: themeDefinition.colors.text + 'CC' }]}>
+                  X
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.iconColorApplyRow}>
+              <Text style={[styles.iconColorApplyLabel, { color: themeDefinition.colors.text }]}>
+                Apply to all icons
+              </Text>
+              <Switch
+                value={applyIconColorToAll}
+                onValueChange={setApplyIconColorToAll}
+                trackColor={{ false: themeDefinition.colors.border, true: '#007AFF' }}
+                thumbColor="#FFFFFF"
+              />
+            </View>
+
+            <View style={styles.iconColorModalGrid}>
+              {PROCESS_ICON_COLOR_OPTIONS.map(color => {
+                const isSelected = selectedProcessCardIconColor === color;
+                return (
+                  <TouchableOpacity
+                    key={`icon-color-modal-${color}`}
+                    style={[
+                      styles.iconColorModalSwatch,
+                      {
+                        backgroundColor: color,
+                        borderColor: isSelected ? '#007AFF' : themeDefinition.colors.border,
+                        borderWidth: isSelected ? 3 : 1,
+                      },
+                    ]}
+                    onPress={() => handleSelectProcessCardIconColor(color)}
+                  />
+                );
+              })}
+            </View>
           </Pressable>
         </Pressable>
       </Modal>
@@ -2223,6 +2548,20 @@ const styles = StyleSheet.create({
   colorSwatch: {},
   optionButton: {
     borderRadius: 8,
+    borderWidth: 1,
+  },
+  iconActionButton: {
+    width: '100%',
+  },
+  iconColorActionButton: {
+    width: '100%',
+    borderWidth: 1,
+    borderRadius: 8,
+  },
+  iconColorActionSwatch: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     borderWidth: 1,
   },
   optionButtonRow: {
@@ -2338,18 +2677,56 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 16,
   },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
   modalTitle: {
     fontSize: 18,
     fontWeight: '700',
+  },
+  modalCloseButton: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalCloseText: {
+    fontSize: 22,
+    fontWeight: '700',
+    lineHeight: 24,
+  },
+  modalSearchInput: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 15,
     marginBottom: 12,
   },
-  modalCancel: {
-    paddingTop: 14,
+  iconColorApplyRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
   },
-  modalCancelText: {
+  iconColorApplyLabel: {
     fontSize: 15,
     fontWeight: '500',
+  },
+  iconColorModalGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  iconColorModalSwatch: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
   },
   processIconGrid: {
     flexDirection: 'row',

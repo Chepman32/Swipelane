@@ -1702,7 +1702,7 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
                 const iconStrokeWidth = Math.max(1, card.iconRadius * 0.08);
                 const isWhiteCard = !card.isBlue;
                 const iconCircleFill = isWhiteCard ? '#7CA4E7' : '#F8FBFF';
-                const iconGlyphColor = isWhiteCard ? '#FFFFFF' : '#2E547D';
+                const iconGlyphColor = content?.iconColor || (isWhiteCard ? '#FFFFFF' : '#2E547D');
 
                 return (
                   <Group key={`process-card-${card.circleId}`}>
@@ -1763,7 +1763,7 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
                         icon={iconKind}
                         cx={card.iconCx}
                         cy={card.iconCy}
-                        radius={card.iconRadius * 1.56}
+                        radius={card.iconRadius * 1.74}
                         color={iconGlyphColor}
                         strokeWidth={iconStrokeWidth}
                       />
@@ -1803,12 +1803,12 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
 
                   const geometry = getCircleGeometry(circle, imageTemplateFrame);
                   const textSlot = textSlotsByCircleId.get(circle.id);
-                  const iconColor = textSlot?.label?.color || '#2D85B7';
+                  const iconColor = content.iconColor || textSlot?.label?.color || '#2D85B7';
                   const railDefaultIconByCircleId: Record<string, ProcessCardIconKind> = {
-                    c1: 'research',
+                    c1: 'idea',
                     c2: 'plan',
-                    c3: 'finalize',
-                    c4: 'feedback',
+                    c3: 'prototype',
+                    c4: 'research',
                     c5: 'deploy',
                   };
                   const icon =
@@ -1816,10 +1816,19 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
                     railDefaultIconByCircleId[circle.id] ||
                     PROCESS_CARD_DEFAULT_ICON_BY_CIRCLE_ID[circle.id] ||
                     'idea';
+                  const iconImageUri = content.iconImageUri;
                   const iconRadius = Math.min(imageTemplateFrame.width, imageTemplateFrame.height) * 0.043;
                   const strokeWidth = Math.max(1.2, iconRadius * 0.072);
 
-                  return (
+                  return iconImageUri ? (
+                    <ProcessCardIconImage
+                      key={`${circle.id}-icon-image`}
+                      imageUri={iconImageUri}
+                      cx={geometry.cx}
+                      cy={geometry.cy}
+                      radius={iconRadius * 0.98}
+                    />
+                  ) : (
                     <ProcessCardIconGlyph
                       key={`${circle.id}-icon-glyph`}
                       icon={icon}
@@ -1838,7 +1847,7 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
 
                   const geometry = getCircleGeometry(circle, imageTemplateFrame);
                   const textSlot = textSlotsByCircleId.get(circle.id);
-                  const iconColor = textSlot?.label?.color || '#2D85B7';
+                  const iconColor = content.iconColor || textSlot?.label?.color || '#2D85B7';
                   const zigzagDefaultIconByCircleId: Record<string, ProcessCardIconKind> = {
                     c1: 'idea',
                     c2: 'plan',
@@ -1851,10 +1860,19 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
                     zigzagDefaultIconByCircleId[circle.id] ||
                     PROCESS_CARD_DEFAULT_ICON_BY_CIRCLE_ID[circle.id] ||
                     'idea';
+                  const iconImageUri = content.iconImageUri;
                   const iconRadius = Math.min(imageTemplateFrame.width, imageTemplateFrame.height) * 0.14;
                   const strokeWidth = Math.max(1.2, iconRadius * 0.065);
 
-                  return (
+                  return iconImageUri ? (
+                    <ProcessCardIconImage
+                      key={`${circle.id}-icon-image`}
+                      imageUri={iconImageUri}
+                      cx={geometry.cx}
+                      cy={geometry.cy}
+                      radius={iconRadius * 0.98}
+                    />
+                  ) : (
                     <ProcessCardIconGlyph
                       key={`${circle.id}-icon-glyph`}
                       icon={icon}

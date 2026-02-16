@@ -77,6 +77,7 @@ export interface RoadmapCircleContent {
   };
   iconKey?: ProcessCardIconKind;
   iconImageUri?: string;
+  iconColor?: string;
 }
 
 // Corner image configuration

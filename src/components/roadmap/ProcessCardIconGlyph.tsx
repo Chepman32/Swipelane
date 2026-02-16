@@ -1,6 +1,10 @@
 import React from 'react';
 import { Circle, Group, Path, RoundedRect, Skia } from '@shopify/react-native-skia';
-import type { ProcessCardBaseIconKind, ProcessCardIconKind } from '../../constants/processCardIcons';
+import {
+  PROCESS_CARD_VARIANT_COUNT,
+  type ProcessCardBaseIconKind,
+  type ProcessCardIconKind,
+} from '../../constants/processCardIcons';
 
 const makeLinePath = (points: Array<{ x: number; y: number }>) => {
   const path = Skia.Path.Make();
@@ -29,9 +33,31 @@ const resolveIconVariant = (
   const base = (match?.[1] || icon) as ProcessCardBaseIconKind;
   const variantIndexRaw = Number(match?.[2] || '1');
   const variantIndex = Number.isFinite(variantIndexRaw)
-    ? Math.max(1, Math.min(7, variantIndexRaw))
+    ? Math.max(1, Math.min(PROCESS_CARD_VARIANT_COUNT, variantIndexRaw))
     : 1;
   return { baseIcon: base, variantIndex };
+};
+
+const ICON_BASE_ORDER: ProcessCardBaseIconKind[] = [
+  'research',
+  'plan',
+  'idea',
+  'prototype',
+  'user',
+  'feedback',
+  'finalize',
+  'deploy',
+  'review',
+];
+
+const resolveVariantBaseIcon = (
+  baseIcon: ProcessCardBaseIconKind,
+  variantIndex: number,
+): ProcessCardBaseIconKind => {
+  const currentIndex = ICON_BASE_ORDER.indexOf(baseIcon);
+  if (currentIndex < 0) return baseIcon;
+  if (variantIndex <= 1) return baseIcon;
+  return ICON_BASE_ORDER[(currentIndex + variantIndex - 1) % ICON_BASE_ORDER.length];
 };
 
 const ProcessCardIconGlyph: React.FC<ProcessCardIconGlyphProps> = ({
@@ -44,34 +70,56 @@ const ProcessCardIconGlyph: React.FC<ProcessCardIconGlyphProps> = ({
   filled = false,
 }) => {
   const { baseIcon, variantIndex } = resolveIconVariant(icon);
+  const variantBaseIcon = resolveVariantBaseIcon(baseIcon, variantIndex);
+  const overlayVariantIndex = ((variantIndex - 1) % 7) + 1;
+  const styleFamilyIndex = Math.floor((variantIndex - 1) / 7);
   const drawStyle = filled ? 'fill' as const : 'stroke' as const;
   const lineColor = color;
   const s = radius;
-  const variantStrokeWidth = strokeWidth * (0.88 + variantIndex * 0.06);
+  const variantStrokeWidth = strokeWidth * (0.92 + overlayVariantIndex * 0.05 + styleFamilyIndex * 0.04);
   const tinyStroke = Math.max(1, variantStrokeWidth * 0.85);
-  const accentStroke = Math.max(1, variantStrokeWidth * 0.85);
+  const accentStroke = Math.max(1.2, variantStrokeWidth * 0.9);
 
   const variantOverlay = (() => {
-    if (variantIndex === 1) return null;
-    if (variantIndex === 2) {
-      return <Circle cx={cx} cy={cy - s * 0.62} r={s * 0.09} color={lineColor} />;
-    }
-    if (variantIndex === 3) {
-      const bottomLine = makeLinePath([
-        { x: cx - s * 0.38, y: cy + s * 0.58 },
-        { x: cx + s * 0.38, y: cy + s * 0.58 },
-      ]);
-      return <Path path={bottomLine} color={lineColor} style={drawStyle} strokeWidth={accentStroke} />;
-    }
-    if (variantIndex === 4) {
+    if (overlayVariantIndex === 1) return null;
+    if (overlayVariantIndex === 2) {
       return (
         <Group>
-          <Circle cx={cx - s * 0.58} cy={cy} r={s * 0.08} color={lineColor} />
-          <Circle cx={cx + s * 0.58} cy={cy} r={s * 0.08} color={lineColor} />
+          <Circle cx={cx} cy={cy - s * 0.62} r={s * 0.1} color={lineColor} />
+          <Circle cx={cx + s * 0.54} cy={cy - s * 0.44} r={s * 0.08} color={lineColor} />
         </Group>
       );
     }
-    if (variantIndex === 5) {
+    if (overlayVariantIndex === 3) {
+      const topLine = makeLinePath([
+        { x: cx - s * 0.34, y: cy - s * 0.64 },
+        { x: cx + s * 0.34, y: cy - s * 0.64 },
+      ]);
+      const bottomLine = makeLinePath([
+        { x: cx - s * 0.36, y: cy + s * 0.6 },
+        { x: cx + s * 0.36, y: cy + s * 0.6 },
+      ]);
+      return (
+        <Group>
+          <Path path={topLine} color={lineColor} style={drawStyle} strokeWidth={accentStroke} />
+          <Path path={bottomLine} color={lineColor} style={drawStyle} strokeWidth={accentStroke} />
+        </Group>
+      );
+    }
+    if (overlayVariantIndex === 4) {
+      const link = makeLinePath([
+        { x: cx - s * 0.52, y: cy },
+        { x: cx + s * 0.52, y: cy },
+      ]);
+      return (
+        <Group>
+          <Path path={link} color={lineColor} style={drawStyle} strokeWidth={accentStroke} />
+          <Circle cx={cx - s * 0.54} cy={cy} r={s * 0.08} color={lineColor} />
+          <Circle cx={cx + s * 0.54} cy={cy} r={s * 0.08} color={lineColor} />
+        </Group>
+      );
+    }
+    if (overlayVariantIndex === 5) {
       const crossVertical = makeLinePath([
         { x: cx, y: cy - s * 0.66 },
         { x: cx, y: cy - s * 0.46 },
@@ -87,16 +135,23 @@ const ProcessCardIconGlyph: React.FC<ProcessCardIconGlyphProps> = ({
         </Group>
       );
     }
-    if (variantIndex === 6) {
+    if (overlayVariantIndex === 6) {
+      const ring = makeLinePath([
+        { x: cx + s * 0.36, y: cy - s * 0.50 },
+        { x: cx + s * 0.58, y: cy - s * 0.34 },
+      ]);
       return (
-        <Circle
-          cx={cx + s * 0.5}
-          cy={cy - s * 0.5}
-          r={s * 0.12}
-          color={lineColor}
-          style={drawStyle}
-          strokeWidth={accentStroke}
-        />
+        <Group>
+          <Circle
+            cx={cx + s * 0.5}
+            cy={cy - s * 0.5}
+            r={s * 0.12}
+            color={lineColor}
+            style={drawStyle}
+            strokeWidth={accentStroke}
+          />
+          <Path path={ring} color={lineColor} style={drawStyle} strokeWidth={accentStroke} />
+        </Group>
       );
     }
     const topLine = makeLinePath([
@@ -122,7 +177,7 @@ const ProcessCardIconGlyph: React.FC<ProcessCardIconGlyphProps> = ({
     </Group>
   );
 
-  if (baseIcon === 'research') {
+  if (variantBaseIcon === 'research') {
     const clipTopLine = makeLinePath([
       { x: cx - s * 0.25, y: cy - s * 0.34 },
       { x: cx + s * 0.02, y: cy - s * 0.34 },
@@ -150,7 +205,7 @@ const ProcessCardIconGlyph: React.FC<ProcessCardIconGlyphProps> = ({
     );
   }
 
-  if (baseIcon === 'plan') {
+  if (variantBaseIcon === 'plan') {
     const fold = makeLinePath([
       { x: cx + s * 0.15, y: cy - s * 0.37 },
       { x: cx + s * 0.3, y: cy - s * 0.22 },
@@ -183,7 +238,7 @@ const ProcessCardIconGlyph: React.FC<ProcessCardIconGlyphProps> = ({
     );
   }
 
-  if (baseIcon === 'idea') {
+  if (variantBaseIcon === 'idea') {
     const base1 = makeLinePath([
       { x: cx - s * 0.15, y: cy + s * 0.28 },
       { x: cx + s * 0.15, y: cy + s * 0.28 },
@@ -216,7 +271,7 @@ const ProcessCardIconGlyph: React.FC<ProcessCardIconGlyphProps> = ({
     );
   }
 
-  if (baseIcon === 'prototype') {
+  if (variantBaseIcon === 'prototype') {
     const gearOuter = s * 0.14;
     const gearCenterX = cx + s * 0.23;
     const gearCenterY = cy + s * 0.23;
@@ -258,7 +313,7 @@ const ProcessCardIconGlyph: React.FC<ProcessCardIconGlyphProps> = ({
     );
   }
 
-  if (baseIcon === 'user') {
+  if (variantBaseIcon === 'user') {
     const shoulders = makeLinePath([
       { x: cx - s * 0.3, y: cy + s * 0.3 },
       { x: cx + s * 0.3, y: cy + s * 0.3 },
@@ -289,7 +344,7 @@ const ProcessCardIconGlyph: React.FC<ProcessCardIconGlyphProps> = ({
     );
   }
 
-  if (baseIcon === 'feedback') {
+  if (variantBaseIcon === 'feedback') {
     const topArc = Skia.Path.Make();
     topArc.moveTo(cx - s * 0.42, cy - s * 0.08);
     topArc.quadTo(cx, cy - s * 0.54, cx + s * 0.4, cy - s * 0.08);
@@ -316,7 +371,7 @@ const ProcessCardIconGlyph: React.FC<ProcessCardIconGlyphProps> = ({
     );
   }
 
-  if (baseIcon === 'finalize') {
+  if (variantBaseIcon === 'finalize') {
     const clip = makeLinePath([
       { x: cx - s * 0.12, y: cy - s * 0.35 },
       { x: cx + s * 0.12, y: cy - s * 0.35 },
@@ -344,7 +399,7 @@ const ProcessCardIconGlyph: React.FC<ProcessCardIconGlyphProps> = ({
     );
   }
 
-  if (baseIcon === 'deploy') {
+  if (variantBaseIcon === 'deploy') {
     const body = Skia.Path.Make();
     body.moveTo(cx - s * 0.08, cy + s * 0.35);
     body.quadTo(cx - s * 0.3, cy + s * 0.05, cx - s * 0.14, cy - s * 0.28);

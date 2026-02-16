@@ -9,11 +9,11 @@ export type ProcessCardBaseIconKind =
   | 'deploy'
   | 'review';
 
-type ProcessCardIconVariantSuffix = '' | '_2' | '_3' | '_4' | '_5' | '_6' | '_7';
-
 export type ProcessCardIconKind =
   | ProcessCardBaseIconKind
-  | `${ProcessCardBaseIconKind}${Exclude<ProcessCardIconVariantSuffix, ''>}`;
+  | `${ProcessCardBaseIconKind}_${number}`;
+
+export const PROCESS_CARD_VARIANT_COUNT = 35;
 
 const BASE_ICON_OPTIONS: Array<{ id: ProcessCardBaseIconKind; name: string }> = [
   { id: 'research', name: 'Research' },
@@ -27,17 +27,20 @@ const BASE_ICON_OPTIONS: Array<{ id: ProcessCardBaseIconKind; name: string }> = 
   { id: 'review', name: 'Review' },
 ];
 
-const VARIANT_SUFFIXES: ProcessCardIconVariantSuffix[] = ['', '_2', '_3', '_4', '_5', '_6', '_7'];
-
 export const PROCESS_CARD_ICON_OPTIONS: Array<{
   id: ProcessCardIconKind;
   name: string;
 }> = BASE_ICON_OPTIONS.flatMap(base =>
-  VARIANT_SUFFIXES.map((suffix, index) => ({
-    id: `${base.id}${suffix}` as ProcessCardIconKind,
-    name: index === 0 ? base.name : `${base.name} ${index + 1}`,
-  }))
-);
+  Array.from({ length: PROCESS_CARD_VARIANT_COUNT }, (_, index) => {
+    const variantNumber = index + 1;
+    return {
+      id:
+        variantNumber === 1
+          ? base.id
+          : `${base.id}_${variantNumber}` as ProcessCardIconKind,
+      name: variantNumber === 1 ? base.name : `${base.name} ${variantNumber}`,
+    };
+  }));
 
 export const PROCESS_CARD_DEFAULT_ICON_BY_CIRCLE_ID: Record<string, ProcessCardIconKind> = {
   c1: 'research',
