@@ -182,6 +182,7 @@ const RoadmapTemplateScreen: React.FC = () => {
             >
               <SkiaRoadmapRenderer
                 slide={previewSlide!}
+                previewTextScale={0.72}
                 style={{ flex: 1 }}
               />
             </View>

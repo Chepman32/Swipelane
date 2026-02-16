@@ -40,8 +40,6 @@ import settingsIcon from '../assets/icons/settings.png';
 import { useResponsive } from '../hooks/useResponsive';
 import { useFont } from '@shopify/react-native-skia';
 import Animated, {
-  FadeIn,
-  FadeOut,
   LinearTransition,
   useSharedValue,
   useAnimatedStyle,
@@ -101,12 +99,13 @@ const AnimatedAccordion: React.FC<{
   children: React.ReactNode;
 }> = ({ isExpanded, children }) => {
   return (
-    <Animated.View layout={listLayoutTransition}>
-      {isExpanded ? (
-        <Animated.View entering={FadeIn.duration(140)} exiting={FadeOut.duration(120)}>
-          {children}
-        </Animated.View>
-      ) : null}
+    <Animated.View layout={listLayoutTransition} style={styles.accordionBodyOuter}>
+      <Animated.View
+        pointerEvents={isExpanded ? 'auto' : 'none'}
+        style={isExpanded ? styles.accordionBodyExpanded : styles.accordionBodyCollapsed}
+      >
+        {children}
+      </Animated.View>
     </Animated.View>
   );
 };
@@ -156,7 +155,7 @@ const getRoadmapPreviewAspectRatio = (item: RoadmapProjectItem): number => {
   return 1 / 1.2;
 };
 
-const SlidePreview: React.FC<{ slide: any }> = ({ slide }) => {
+const SlidePreview: React.FC<{ slide: any }> = React.memo(({ slide }) => {
   const { themeDefinition } = useTheme();
   const { t } = useLanguage();
   const { isPad, scaleFont } = useResponsive();
@@ -299,7 +298,38 @@ const SlidePreview: React.FC<{ slide: any }> = ({ slide }) => {
       )}
     </View>
   );
-};
+});
+SlidePreview.displayName = 'SlidePreview';
+
+const RoadmapCardPreview: React.FC<{
+  slide: RoadmapProjectItem['slide'];
+  aspectRatio: number;
+  cardColor: string;
+  borderColor: string;
+}> = React.memo(({ slide, aspectRatio, cardColor, borderColor }) => {
+  return (
+    <View
+      pointerEvents="none"
+      style={[
+        styles.slidePreview,
+        {
+          backgroundColor: cardColor,
+          borderColor,
+          overflow: 'hidden',
+          height: undefined,
+          aspectRatio,
+        },
+      ]}
+    >
+      <SkiaRoadmapRenderer
+        slide={slide}
+        previewTextScale={0.72}
+        style={styles.roadmapRenderer}
+      />
+    </View>
+  );
+});
+RoadmapCardPreview.displayName = 'RoadmapCardPreview';
 
 const HomeScreen: React.FC = () => {
   const [recentProjects, setRecentProjects] = useState<TextProjectItem[]>([]);
@@ -726,24 +756,12 @@ const HomeScreen: React.FC = () => {
         delayLongPress={260}
       >
         {item.projectKind === 'roadmap' ? (
-          <View
-            pointerEvents="none"
-            style={[
-              styles.slidePreview,
-              {
-                backgroundColor: themeDefinition.colors.card,
-                borderColor: themeDefinition.colors.border,
-                overflow: 'hidden',
-                height: undefined,
-                aspectRatio: roadmapPreviewAspectRatio,
-              },
-            ]}
-          >
-            <SkiaRoadmapRenderer
-              slide={item.slide}
-              style={{ flex: 1, width: '100%', height: '100%' }}
-            />
-          </View>
+          <RoadmapCardPreview
+            slide={item.slide}
+            aspectRatio={roadmapPreviewAspectRatio}
+            cardColor={themeDefinition.colors.card}
+            borderColor={themeDefinition.colors.border}
+          />
         ) : (
           <SlidePreview slide={firstSlide} />
         )}
@@ -786,10 +804,9 @@ const HomeScreen: React.FC = () => {
       <Animated.View
         key={item.id}
         layout={listLayoutTransition}
-        entering={FadeIn.duration(160)}
-        exiting={FadeOut.duration(120)}
         style={[
           styles.projectCardWrapper,
+          { width: `${100 / gridColumns}%` },
           isLastOdd && styles.projectCardFullWidthWrapper,
         ]}
       >
@@ -819,19 +836,14 @@ const HomeScreen: React.FC = () => {
         </Text>
       );
     }
-    const rows: BaseGridItem[][] = [];
-    for (let i = 0; i < items.length; i += gridColumns) {
-      rows.push(items.slice(i, i + gridColumns));
-    }
-    return rows.map((row, rowIdx) => (
-      <Animated.View key={rowIdx} layout={listLayoutTransition} style={styles.gridRow}>
-        {row.map(item => {
-          const isLastOdd = items.length % gridColumns !== 0 && items.indexOf(item) === items.length - 1;
+    return (
+      <Animated.View layout={listLayoutTransition} style={styles.gridWrap}>
+        {items.map((item, index) => {
+          const isLastOdd = items.length % gridColumns !== 0 && index === items.length - 1;
           return renderProjectItem(item, isLastOdd, parentFolderId);
         })}
-        {row.length < gridColumns && <View style={styles.projectCardPlaceholder} />}
       </Animated.View>
-    ));
+    );
   };
 
   const renderFolderHeader = (label: string, folderId: string) => {
@@ -1157,6 +1169,18 @@ const styles = StyleSheet.create({
     borderBottomColor: '#eee',
     marginBottom: 4,
   },
+  accordionBodyOuter: {
+    overflow: 'hidden',
+  },
+  accordionBodyExpanded: {
+    opacity: 1,
+    overflow: 'hidden',
+  },
+  accordionBodyCollapsed: {
+    height: 0,
+    opacity: 0,
+    overflow: 'hidden',
+  },
   accordionHeaderMain: {
     flex: 1,
     flexDirection: 'row',
@@ -1171,15 +1195,12 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: '#888',
   },
-  gridRow: {
+  gridWrap: {
     flexDirection: 'row',
-  },
-  projectCardPlaceholder: {
-    flex: 1,
-    margin: 8,
+    flexWrap: 'wrap',
   },
   projectCardWrapper: {
-    flex: 1,
+    flexShrink: 0,
   },
   projectCardFullWidthWrapper: {
     flexBasis: '100%',
@@ -1236,6 +1257,11 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,
+  },
+  roadmapRenderer: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
   },
   noPreviewText: {
     fontSize: 14,

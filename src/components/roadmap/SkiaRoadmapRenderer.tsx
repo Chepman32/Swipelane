@@ -439,6 +439,7 @@ function wrapTextToLines(text: string, font: FontMeasurer, maxWidth: number): st
 interface SkiaRoadmapRendererProps {
   slide: RoadmapSlide;
   style?: StyleProp<ViewStyle>;
+  previewTextScale?: number;
   selectedCircleId?: string | null;
   onCircleTap?: (circleId: string, x: number, y: number) => void;
   selectedPanelIndex?: number;
@@ -654,6 +655,7 @@ const ProcessCardIconImage: React.FC<ProcessCardIconImageProps> = ({ imageUri, c
 const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
   slide,
   style,
+  previewTextScale = 1,
   selectedCircleId,
   onCircleTap,
   selectedPanelIndex,
@@ -728,20 +730,29 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
     }
     return size.width;
   }, [isCarousel, slide.carouselData, size.width]);
+  const textScale = useMemo(
+    () => Math.max(0.5, Math.min(1, previewTextScale)),
+    [previewTextScale],
+  );
 
   const titleFontSize = useMemo(() => {
-    if (isCarousel) return Math.max(10, Math.min(20, effectivePanelWidth * 0.09));
-    return Math.max(12, Math.min(24, size.width * 0.04));
-  }, [isCarousel, effectivePanelWidth, size.width]);
+    const baseSize = isCarousel
+      ? Math.max(10, Math.min(20, effectivePanelWidth * 0.09))
+      : Math.max(12, Math.min(24, size.width * 0.04));
+    return baseSize * textScale;
+  }, [isCarousel, effectivePanelWidth, size.width, textScale]);
 
   const bodyFontSize = useMemo(() => {
-    if (isCarousel) return Math.max(8, Math.min(16, effectivePanelWidth * 0.065));
-    return Math.max(11, Math.min(20, size.width * 0.032));
-  }, [isCarousel, effectivePanelWidth, size.width]);
+    const baseSize = isCarousel
+      ? Math.max(8, Math.min(16, effectivePanelWidth * 0.065))
+      : Math.max(11, Math.min(20, size.width * 0.032));
+    return baseSize * textScale;
+  }, [isCarousel, effectivePanelWidth, size.width, textScale]);
 
   const smallFontSize = useMemo(() => {
-    return Math.max(7, Math.min(12, effectivePanelWidth * 0.05));
-  }, [effectivePanelWidth]);
+    const baseSize = Math.max(7, Math.min(12, effectivePanelWidth * 0.05));
+    return baseSize * textScale;
+  }, [effectivePanelWidth, textScale]);
 
   const titleFont = useFont(
     require('../../assets/fonts/Fira_Sans/FiraSans-SemiBold.ttf'),
@@ -776,11 +787,13 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
     smallFontSize,
   );
   const processNumberFontSize = useMemo(() => {
-    return Math.max(10, Math.min(46, size.width * 0.068));
-  }, [size.width]);
+    const baseSize = Math.max(10, Math.min(46, size.width * 0.068));
+    return baseSize * textScale;
+  }, [size.width, textScale]);
   const processTitleFontSize = useMemo(() => {
-    return Math.max(7, Math.min(28, size.width * 0.034));
-  }, [size.width]);
+    const baseSize = Math.max(7, Math.min(28, size.width * 0.034));
+    return baseSize * textScale;
+  }, [size.width, textScale]);
   const processNumberFont = useFont(
     require('../../assets/fonts/Fira_Sans/FiraSans-Bold.ttf'),
     processNumberFontSize,
