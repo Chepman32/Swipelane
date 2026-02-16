@@ -67,6 +67,8 @@ type ProcessCardLayoutInput = {
   icon: ProcessCardIconKind;
 };
 
+type RgbColor = { r: number; g: number; b: number };
+
 const PROCESS_CARDS_LAYOUT_INPUT: ProcessCardLayoutInput[] = [
   { circleId: 'c1', x: 0.06, y: 0.105, width: 0.41, height: 0.128, isBlue: true, icon: 'research' },
   { circleId: 'c2', x: 0.53, y: 0.105, width: 0.41, height: 0.128, isBlue: false, icon: 'plan' },
@@ -652,6 +654,62 @@ const ProcessCardIconImage: React.FC<ProcessCardIconImageProps> = ({ imageUri, c
   );
 };
 
+const parseColorToRgb = (color: string | undefined): RgbColor | null => {
+  if (!color) return null;
+  const trimmed = color.trim();
+  if (!trimmed) return null;
+
+  if (trimmed.startsWith('#')) {
+    const hex = trimmed.slice(1);
+    if (hex.length === 3 || hex.length === 4) {
+      const r = Number.parseInt(`${hex[0]}${hex[0]}`, 16);
+      const g = Number.parseInt(`${hex[1]}${hex[1]}`, 16);
+      const b = Number.parseInt(`${hex[2]}${hex[2]}`, 16);
+      if ([r, g, b].every(Number.isFinite)) return { r, g, b };
+      return null;
+    }
+    if (hex.length === 6 || hex.length === 8) {
+      const r = Number.parseInt(hex.slice(0, 2), 16);
+      const g = Number.parseInt(hex.slice(2, 4), 16);
+      const b = Number.parseInt(hex.slice(4, 6), 16);
+      if ([r, g, b].every(Number.isFinite)) return { r, g, b };
+      return null;
+    }
+    return null;
+  }
+
+  const rgbMatch = trimmed.match(/^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)(?:\s*,\s*[\d.]+\s*)?\)$/i);
+  if (!rgbMatch) return null;
+  const r = Number.parseFloat(rgbMatch[1]);
+  const g = Number.parseFloat(rgbMatch[2]);
+  const b = Number.parseFloat(rgbMatch[3]);
+  if (![r, g, b].every(Number.isFinite)) return null;
+  return {
+    r: Math.max(0, Math.min(255, r)),
+    g: Math.max(0, Math.min(255, g)),
+    b: Math.max(0, Math.min(255, b)),
+  };
+};
+
+const getRelativeLuminance = ({ r, g, b }: RgbColor): number => {
+  const normalize = (value: number) => {
+    const channel = value / 255;
+    return channel <= 0.03928
+      ? channel / 12.92
+      : Math.pow((channel + 0.055) / 1.055, 2.4);
+  };
+  const rn = normalize(r);
+  const gn = normalize(g);
+  const bn = normalize(b);
+  return 0.2126 * rn + 0.7152 * gn + 0.0722 * bn;
+};
+
+const isDarkColor = (color: string | undefined): boolean => {
+  const rgb = parseColorToRgb(color);
+  if (!rgb) return false;
+  return getRelativeLuminance(rgb) < 0.35;
+};
+
 const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
   slide,
   style,
@@ -813,6 +871,29 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
     return slotMap;
   }, [imageTemplateConfig]);
 
+  const shouldUseLightMainText = useMemo(() => {
+    if (slide.backgroundType === 'solid' && slide.backgroundColor) {
+      return isDarkColor(slide.backgroundColor);
+    }
+    if (slide.backgroundType === 'gradient') {
+      const gradientColors = slide.backgroundGradient?.colors ?? ROADMAP_BACKGROUNDS[0].colors;
+      const parsed = gradientColors.map(parseColorToRgb).filter(Boolean) as RgbColor[];
+      if (!parsed.length) return false;
+      const avgLuminance =
+        parsed.reduce((total, rgb) => total + getRelativeLuminance(rgb), 0) / parsed.length;
+      return avgLuminance < 0.35;
+    }
+    if (imageTemplateConfig?.canvasBackgroundColor) {
+      return isDarkColor(imageTemplateConfig.canvasBackgroundColor);
+    }
+    return false;
+  }, [
+    imageTemplateConfig?.canvasBackgroundColor,
+    slide.backgroundColor,
+    slide.backgroundGradient?.colors,
+    slide.backgroundType,
+  ]);
+
   const getTemplateTextFont = useCallback((font: RoadmapImageTextFont | undefined) => {
     switch (font) {
       case 'bodyBold':
@@ -852,6 +933,7 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
       keyPrefix: string,
       frame: RectFrame,
       fallbackColor: string,
+      slotKind: 'label' | 'title' | 'detail',
     ) => {
       const trimmed = text.trim();
       if (!trimmed || !anchor) return null;
@@ -863,7 +945,8 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
       const emphasizedBaseFont = isGridStepsNumberLabel ? (bodyBold2xFont || baseFont) : baseFont;
 
       const maxWidth = Math.max(1, anchor.maxWidth * frame.width);
-      const baseColor = anchor.color || fallbackColor;
+      const forceWhiteForMainText = shouldUseLightMainText && slotKind !== 'title';
+      const baseColor = forceWhiteForMainText ? '#FFFFFF' : (anchor.color || fallbackColor);
       type TextLineConfig = {
         text: string;
         fontType: RoadmapImageTextFont | undefined;
@@ -878,7 +961,7 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
           preparedLines.push({
             text: firstLine,
             fontType: anchor.firstLineFont,
-            color: anchor.firstLineColor || baseColor,
+            color: forceWhiteForMainText ? '#FFFFFF' : (anchor.firstLineColor || baseColor),
           });
         }
         const remainingText = remainingParts.join('\n').trim();
@@ -943,7 +1026,14 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
         );
       });
     },
-    [bodyBold2xFont, bodyFontSize, getTemplateTextFont, getTemplateTextFontSize, slide.templateId],
+    [
+      bodyBold2xFont,
+      bodyFontSize,
+      getTemplateTextFont,
+      getTemplateTextFontSize,
+      shouldUseLightMainText,
+      slide.templateId,
+    ],
   );
 
   // Carousel-specific image hooks (always called, return null when not carousel)
@@ -1511,6 +1601,7 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
                         `${content.circleId}-bubble-body`,
                         { x: 0, y: 0, width: size.width, height: size.height },
                         '#EDEDED',
+                        'detail',
                       )
                     ) : null}
                   </Group>
@@ -1802,6 +1893,7 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
                       `${circle.id}-label`,
                       imageTemplateFrame,
                       '#2D2D2D',
+                      'label',
                     )}
                     {renderTemplateTextLines(
                       titleText,
@@ -1809,6 +1901,7 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
                       `${circle.id}-title`,
                       imageTemplateFrame,
                       '#FFFFFF',
+                      'title',
                     )}
                     {renderTemplateTextLines(
                       detailText,
@@ -1816,6 +1909,7 @@ const SkiaRoadmapRenderer: React.FC<SkiaRoadmapRendererProps> = ({
                       `${circle.id}-detail`,
                       imageTemplateFrame,
                       '#3D3D3D',
+                      'detail',
                     )}
                   </Group>
                 );
