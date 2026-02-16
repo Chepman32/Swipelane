@@ -401,26 +401,33 @@ const ProcessCardIconGlyph: React.FC<ProcessCardIconGlyphProps> = ({
 
   if (variantBaseIcon === 'deploy') {
     const body = Skia.Path.Make();
-    body.moveTo(cx - s * 0.08, cy + s * 0.35);
-    body.quadTo(cx - s * 0.3, cy + s * 0.05, cx - s * 0.14, cy - s * 0.28);
-    body.quadTo(cx + s * 0.02, cy - s * 0.52, cx + s * 0.22, cy - s * 0.26);
-    body.quadTo(cx + s * 0.36, cy - s * 0.02, cx + s * 0.16, cy + s * 0.28);
+    body.moveTo(cx, cy - s * 0.48);
+    body.cubicTo(cx + s * 0.14, cy - s * 0.48, cx + s * 0.24, cy - s * 0.3, cx + s * 0.24, cy - s * 0.06);
+    body.lineTo(cx + s * 0.24, cy + s * 0.18);
+    body.lineTo(cx - s * 0.24, cy + s * 0.18);
+    body.lineTo(cx - s * 0.24, cy - s * 0.06);
+    body.cubicTo(cx - s * 0.24, cy - s * 0.3, cx - s * 0.14, cy - s * 0.48, cx, cy - s * 0.48);
     body.close();
-    const fin = makeLinePath([
-      { x: cx - s * 0.08, y: cy + s * 0.35 },
-      { x: cx - s * 0.28, y: cy + s * 0.42 },
-      { x: cx - s * 0.1, y: cy + s * 0.16 },
-    ]);
-    const flame = makeLinePath([
-      { x: cx - s * 0.19, y: cy + s * 0.38 },
-      { x: cx - s * 0.27, y: cy + s * 0.56 },
-      { x: cx - s * 0.1, y: cy + s * 0.48 },
-    ]);
+    const leftFin = Skia.Path.Make();
+    leftFin.moveTo(cx - s * 0.24, cy + s * 0.06);
+    leftFin.lineTo(cx - s * 0.42, cy + s * 0.32);
+    leftFin.lineTo(cx - s * 0.24, cy + s * 0.18);
+    leftFin.close();
+    const rightFin = Skia.Path.Make();
+    rightFin.moveTo(cx + s * 0.24, cy + s * 0.06);
+    rightFin.lineTo(cx + s * 0.42, cy + s * 0.32);
+    rightFin.lineTo(cx + s * 0.24, cy + s * 0.18);
+    rightFin.close();
+    const flame = Skia.Path.Make();
+    flame.moveTo(cx - s * 0.14, cy + s * 0.18);
+    flame.quadTo(cx - s * 0.08, cy + s * 0.34, cx, cy + s * 0.48);
+    flame.quadTo(cx + s * 0.08, cy + s * 0.34, cx + s * 0.14, cy + s * 0.18);
     return decorate(
       <Group>
         <Path path={body} color={lineColor} style={drawStyle} strokeWidth={variantStrokeWidth} />
-        <Circle cx={cx + s * 0.05} cy={cy - s * 0.16} r={s * 0.09} color={lineColor} style={drawStyle} strokeWidth={tinyStroke} />
-        <Path path={fin} color={lineColor} style={drawStyle} strokeWidth={tinyStroke} />
+        <Circle cx={cx} cy={cy - s * 0.18} r={s * 0.1} color={lineColor} style={drawStyle} strokeWidth={tinyStroke} />
+        <Path path={leftFin} color={lineColor} style={drawStyle} strokeWidth={tinyStroke} />
+        <Path path={rightFin} color={lineColor} style={drawStyle} strokeWidth={tinyStroke} />
         <Path path={flame} color={lineColor} style={drawStyle} strokeWidth={tinyStroke} />
       </Group>
     );

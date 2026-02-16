@@ -2562,7 +2562,7 @@ const RoadmapEditorScreen: React.FC = () => {
                           icon={option.id}
                           cx={scale(28)}
                           cy={scale(28)}
-                          radius={scale(17)}
+                          radius={scale(30)}
                           color={selectedProcessCardIconColor}
                           strokeWidth={2.35}
                         />
