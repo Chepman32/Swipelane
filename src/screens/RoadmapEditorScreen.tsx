@@ -329,6 +329,7 @@ const RoadmapEditorScreen: React.FC = () => {
   const [showProcessIconPicker, setShowProcessIconPicker] = useState(false);
   const [showProcessIconColorPicker, setShowProcessIconColorPicker] = useState(false);
   const [applyIconColorToAll, setApplyIconColorToAll] = useState(false);
+  const applyIconColorToAllRef = useRef(false);
   const [processIconSearchQuery, setProcessIconSearchQuery] = useState('');
   const [percentageSelection, setPercentageSelection] = useState({ start: 0, end: 0 });
   const backgroundAccordionAnim = useRef(new Animated.Value(0)).current;
@@ -390,6 +391,8 @@ const RoadmapEditorScreen: React.FC = () => {
     if (!processIconSearchQuery) return;
     setProcessIconSearchQuery('');
   }, [processIconSearchQuery, showProcessIconPicker]);
+
+  applyIconColorToAllRef.current = applyIconColorToAll;
 
   useEffect(() => {
     if (showProcessIconColorPicker) return;
@@ -836,7 +839,7 @@ const RoadmapEditorScreen: React.FC = () => {
   }, []);
 
   const handleSelectProcessCardIconColor = useCallback((iconColor: string) => {
-    if (applyIconColorToAll) {
+    if (applyIconColorToAllRef.current) {
       setSlide(prev => {
         if (!prev) return prev;
         return {
@@ -855,7 +858,7 @@ const RoadmapEditorScreen: React.FC = () => {
     if (!selectedCircleId) return;
     updateCircleContent(selectedCircleId, { iconColor });
     setShowProcessIconColorPicker(false);
-  }, [applyIconColorToAll, selectedCircleId, updateCircleContent]);
+  }, [selectedCircleId, updateCircleContent]);
 
   const handleBubbleCountChange = useCallback((nextCount: number) => {
     setSlide(prev => {

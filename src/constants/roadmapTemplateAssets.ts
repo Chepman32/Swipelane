@@ -46,6 +46,23 @@ export const ROADMAP_TEMPLATE_IMAGES = {
   zigzag_timeline_5: require('../assets/templates/IMG_0580.png'),
 } as const;
 
+// Used only on the "Choose Template" screen.
+// Keep this separate from ROADMAP_TEMPLATE_IMAGES so editor rendering assets stay unchanged.
+export const ROADMAP_TEMPLATE_PREVIEW_IMAGES: Partial<Record<string, number>> = {
+  grid_4_circles: require('../assets/previews/grid_4_circles_preview.jpg'),
+  diagonal_3_circles: require('../assets/previews/diagonal_3_circles_preview.jpg'),
+  winding_5_road: require('../assets/previews/winding_5_road_preview.jpg'),
+  bubble_timeline_6: require('../assets/previews/bubble_timeline_6_preview.jpg'),
+  ribbon_steps_3: require('../assets/previews/ribbon_steps_3_preview.jpg'),
+  vertical_flow_5: require('../assets/previews/vertical_flow_5_preview.jpg'),
+  grid_steps_6: require('../assets/previews/grid_steps_6_preview.jpg'),
+  vertical_icon_rail_5: require('../assets/previews/vertical_icon_rail_5_preview.jpg'),
+  road_track_6: require('../assets/previews/road_track_6_preview.png'),
+  zigzag_timeline_5: require('../assets/previews/zigzag_timeline_5_preview.jpg'),
+  spine_timeline_5: require('../assets/previews/spine_timeline_5_preview.jpg'),
+  process_cards_10: require('../assets/previews/process_cards_10_preview.jpg'),
+};
+
 type RoadmapTemplateImageId = keyof typeof ROADMAP_TEMPLATE_IMAGES;
 
 export const ROADMAP_IMAGE_BACKED_TEMPLATE_CONFIG: Partial<
@@ -795,6 +812,10 @@ export const ROADMAP_IMAGE_BACKED_TEMPLATE_CONFIG: Partial<
 
 export function getRoadmapTemplateImageSource(templateId: string): number | undefined {
   return ROADMAP_TEMPLATE_IMAGES[templateId as RoadmapTemplateImageId];
+}
+
+export function getRoadmapTemplatePreviewImageSource(templateId: string): number | undefined {
+  return ROADMAP_TEMPLATE_PREVIEW_IMAGES[templateId];
 }
 
 export function getRoadmapImageBackedTemplateConfig(

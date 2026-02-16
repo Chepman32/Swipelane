@@ -17,6 +17,7 @@ import FeedbackService from '../services/FeedbackService';
 import { useResponsive } from '../hooks/useResponsive';
 import { ROADMAP_TEMPLATES, ROADMAP_BACKGROUNDS } from '../constants/roadmapTemplates';
 import {
+  getRoadmapTemplatePreviewImageSource,
   getRoadmapTemplateImageSource,
   getRoadmapImageBackedTemplateConfig,
   getRoadmapTemplateAspectRatio,
@@ -85,12 +86,13 @@ const RoadmapTemplateScreen: React.FC = () => {
   }, []);
 
   const renderTemplateCard = ({ item }: { item: RoadmapTemplate }) => {
-    const templateImageSource = getRoadmapTemplateImageSource(item.id);
+    const templateImageSource =
+      getRoadmapTemplatePreviewImageSource(item.id) ??
+      getRoadmapTemplateImageSource(item.id);
     const imageTemplateConfig = getRoadmapImageBackedTemplateConfig(item.id);
     const templateAspectRatio = getRoadmapTemplateAspectRatio(item.id) ?? 1;
     const isCarousel = item.id === 'carousel';
     const previewSlide = templatePreviewSlides[item.id];
-    const useDynamicSkiaPreview = item.id === 'vertical_icon_rail_5' && !!previewSlide;
     if (!templateImageSource && !isCarousel && !previewSlide) return null;
 
     const previewHeight = cardHeight - infoHeight;
@@ -149,7 +151,7 @@ const RoadmapTemplateScreen: React.FC = () => {
               </View>
             ))}
           </View>
-        ) : templateImageSource && !useDynamicSkiaPreview ? (
+        ) : templateImageSource ? (
           <Image
             source={templateImageSource!}
             style={[
