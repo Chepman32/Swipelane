@@ -178,22 +178,19 @@ export const ROAD_TRACK_6_TEMPLATE: RoadmapTemplate = {
   defaultDashPattern: ROADMAP_DEFAULTS.dashPattern,
 };
 
-// Template 13: Eight radial spokes infographic
-// Image-backed; one editable content block per colored spoke.
-export const RADIAL_SPOKES_8_TEMPLATE: RoadmapTemplate = {
-  id: 'radial_spokes_8',
-  name: 'Radial Spokes',
-  description: 'Eight-point radial infographic with side callouts',
-  circleCount: 8,
+// Template 13: Zigzag alternating icon/text timeline (5 steps)
+// Image-backed; five tap targets are aligned to large icons along a central rail.
+export const ZIGZAG_TIMELINE_5_TEMPLATE: RoadmapTemplate = {
+  id: 'zigzag_timeline_5',
+  name: 'Zigzag Timeline',
+  description: 'Five-step alternating icon and text callouts on a zigzag rail',
+  circleCount: 5,
   circles: [
-    { id: 'c1', position: { x: 0.50, y: 0.21 }, radius: 0.06, labelPosition: 'bottom' },
-    { id: 'c2', position: { x: 0.66, y: 0.30 }, radius: 0.06, labelPosition: 'bottom' },
-    { id: 'c3', position: { x: 0.76, y: 0.48 }, radius: 0.06, labelPosition: 'bottom' },
-    { id: 'c4', position: { x: 0.66, y: 0.67 }, radius: 0.06, labelPosition: 'bottom' },
-    { id: 'c5', position: { x: 0.50, y: 0.76 }, radius: 0.06, labelPosition: 'bottom' },
-    { id: 'c6', position: { x: 0.34, y: 0.67 }, radius: 0.06, labelPosition: 'bottom' },
-    { id: 'c7', position: { x: 0.24, y: 0.48 }, radius: 0.06, labelPosition: 'bottom' },
-    { id: 'c8', position: { x: 0.34, y: 0.30 }, radius: 0.06, labelPosition: 'bottom' },
+    { id: 'c1', position: { x: 0.60, y: 0.14 }, radius: 0.058, labelPosition: 'bottom' },
+    { id: 'c2', position: { x: 0.38, y: 0.32 }, radius: 0.058, labelPosition: 'bottom' },
+    { id: 'c3', position: { x: 0.60, y: 0.50 }, radius: 0.058, labelPosition: 'bottom' },
+    { id: 'c4', position: { x: 0.38, y: 0.68 }, radius: 0.058, labelPosition: 'bottom' },
+    { id: 'c5', position: { x: 0.60, y: 0.86 }, radius: 0.058, labelPosition: 'bottom' },
   ],
   connectors: [],
   defaultStrokeColor: ROADMAP_DEFAULTS.strokeColor,
@@ -375,7 +372,7 @@ export const ROADMAP_TEMPLATES: RoadmapTemplate[] = [
   WINDING_5_ROAD_TEMPLATE,
   VERTICAL_ICON_RAIL_5_TEMPLATE,
   ROAD_TRACK_6_TEMPLATE,
-  RADIAL_SPOKES_8_TEMPLATE,
+  ZIGZAG_TIMELINE_5_TEMPLATE,
   LINEAR_4_CHAIN_TEMPLATE,
   BUBBLE_TIMELINE_6_TEMPLATE,
   RIBBON_STEPS_3_TEMPLATE,

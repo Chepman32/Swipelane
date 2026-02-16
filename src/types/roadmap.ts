@@ -220,12 +220,12 @@ export function createDefaultCircleContent(
     }));
   }
 
-  if (template.id === 'radial_spokes_8') {
+  if (template.id === 'zigzag_timeline_5') {
     return template.circles.map(circle => ({
       circleId: circle.id,
-      label: 'Lorem Ipsum',
+      label: 'Step Title',
       contentType: 'text' as const,
-      text: 'Lorem ipsum dolor sit amet,\nmagna maecenas, quam nec quis,\nlorem nunc.',
+      text: 'Describe this step in your roadmap. Keep it concise and clear.',
     }));
   }
 

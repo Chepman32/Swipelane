@@ -216,7 +216,7 @@ const RoadmapEditorScreen: React.FC = () => {
   const isVerticalIvoryFlowTemplate = templateId === 'vertical_flow_5';
   const isVerticalIconRailTemplate = templateId === 'vertical_icon_rail_5';
   const isRoadTrackTemplate = templateId === 'road_track_6';
-  const isRadialSpokesTemplate = templateId === 'radial_spokes_8';
+  const isZigzagTimelineTemplate = templateId === 'zigzag_timeline_5';
   const isGridStepsTemplate = templateId === 'grid_steps_6';
   const isProcessCardsTemplate = templateId === 'process_cards_10';
   const templateAspectRatio = useMemo(
@@ -230,7 +230,7 @@ const RoadmapEditorScreen: React.FC = () => {
     isRibbonStepsTemplate ||
     isVerticalIconRailTemplate ||
     isRoadTrackTemplate ||
-    isRadialSpokesTemplate ||
+    isZigzagTimelineTemplate ||
     isGridStepsTemplate ||
     isProcessCardsTemplate;
 
@@ -849,7 +849,7 @@ const RoadmapEditorScreen: React.FC = () => {
         ? 'Title'
       : isRoadTrackTemplate
         ? 'Title'
-      : isRadialSpokesTemplate
+      : isZigzagTimelineTemplate
         ? 'Title'
       : isGridStepsTemplate
         ? 'Step Number'
@@ -869,8 +869,8 @@ const RoadmapEditorScreen: React.FC = () => {
         ? 'Your Text Here'
       : isRoadTrackTemplate
         ? 'Put Text Here'
-      : isRadialSpokesTemplate
-        ? 'Lorem Ipsum'
+      : isZigzagTimelineTemplate
+        ? 'Step Title'
       : isHorizontalLoopTemplate
         ? 'Zone text...'
       : isGridStepsTemplate
